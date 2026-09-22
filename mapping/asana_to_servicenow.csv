@@ -1,0 +1,52 @@
+map_id,source_object,source_field,source_label,canonical_field,target_table,target_field,target_label,transform_rule,value_map,required,status,owner,notes
+AS-P01,Project,gid,Project ID,source_id,pm_project,correlation_id,Correlation ID,"Prefix ASANA:",,Y,Proposed,,Coalesce key for transform map
+AS-P02,Project,gid,Project ID,source_key,pm_project,u_legacy_id,Legacy ID,Direct,,Y,Proposed,,Custom field - add to task table
+AS-P03,Project,permalink_url,Project link,source_url,pm_project,u_legacy_url,Legacy URL,Direct,,N,Proposed,,Custom URL field for hypercare
+AS-P04,Project,name,Name,name,pm_project,short_description,Name,Truncate 160,,Y,Proposed,,
+AS-P05,Project,notes,Description,description,pm_project,description,Description,Strip HTML,,N,Proposed,,html_notes if rich text needed
+AS-P06,Project,owner.email,Owner,owner_email,pm_project,project_manager,Project manager,Match sys_user.email; else placeholder,,Y,Proposed,,Blank owner -> placeholder user; see users_referenced.csv
+AS-P07,Project,completed / archived / current_status_update.status_type,Status,status,pm_project,state,State,Derived: completed > archived > on_hold > active,project_state,Y,Proposed,,Asana has no project state field; derived in normalizer
+AS-P08,Project,custom field 'Stage',Stage,phase,pm_project,phase,Phase,Via value map (passthrough),project_phase,N,Proposed,,Only if using phase-based templates; also drives classification
+AS-P09,Project,start_on,Start date,start_date,pm_project,start_date,Planned start date,Date; fallback created_at,,Y,Proposed,,Required by schedule engine
+AS-P10,Project,due_on,Due date,end_date,pm_project,end_date,Planned end date,Date; fallback start_date,,Y,Proposed,,
+AS-P11,Project,completed_at,Completed on,completed_at,pm_project,work_end,Actual end date,Date,,N,Proposed,,
+AS-P12,Project,(computed from tasks),% tasks complete,percent_complete,pm_project,percent_complete,% complete,Completed tasks / all tasks,,N,Proposed,,Rolls up from tasks in SN when tasks are loaded
+AS-P13,Portfolio item,portfolio name,Portfolio,portfolio,pm_project,primary_portfolio,Portfolio,Match pm_portfolio.name,portfolio_name,N,Proposed,,First portfolio if project is in several
+AS-P14,Project,custom field 'Program',Program,program,pm_project,primary_program,Program,Match pm_program.name,,N,Proposed,,
+AS-P15,Project,custom field 'Priority',Priority,priority,pm_project,priority,Priority,Via value map,priority,N,Proposed,,
+AS-P16,Project,custom field 'Department' / team.name,Department,department,pm_project,department,Department,Match cmn_department.name,,N,Proposed,,Team is often a proxy for department
+AS-P17,Project,(constant),,,pm_project,time_constraint,Time constraint,Constant start_on_specific_date,,Y,Proposed,,Prevents schedule engine moving dates
+AS-P18,Project,current_status_update.status_type,Status color,health,project_status,overall_health,Overall health,Via value map,health,N,Proposed,,One project_status row per Asana status update
+AS-P19,Status update,title + text,Status update,title/text,project_status,comments,Comments,Concatenate,,N,Proposed,,
+AS-P20,Status update,created_at,Posted on,as_on,project_status,as_on,As on,Date,,Y,Proposed,,
+AS-D01,Project (pipeline) / Intake task,gid,ID,source_id,dmn_demand,correlation_id,Correlation ID,"Prefix ASANA:",,Y,Proposed,,Same key as project so a record can switch class safely
+AS-D02,Project / Intake task,name,Name,name,dmn_demand,short_description,Name,Truncate 160,,Y,Proposed,,
+AS-D03,Project / Intake task,notes,Description,description,dmn_demand,description,Description,Strip HTML,,N,Proposed,,
+AS-D04,Project / Intake task,(constant),,,dmn_demand,type,Type,Constant project,,Y,Proposed,,Change if some intake items are enhancements/defects
+AS-D05,Project / Intake task,custom field 'Category',Category,custom.Category,dmn_demand,category,Category,Via value map; default strategic,demand_category,Y,Proposed,,
+AS-D06,Project / Intake task,status (derived),Status,status,dmn_demand,state,State,Via value map,demand_state,Y,Proposed,,Loading directly as approved may fire workflows
+AS-D07,Project owner / Task assignee,owner.email / assignee.email,Owner,owner_email,dmn_demand,assigned_to,Demand manager,Match sys_user.email,,N,Proposed,,Some releases use demand_manager
+AS-D08,Intake task,custom field 'Requester Email' or created_by.email,Requester,requester_email,dmn_demand,opened_by,Submitter,Match sys_user.email,,N,Proposed,,Asana Forms put the submitter in created_by or a form field
+AS-D09,Project / Intake task,start_on,Start,start_date,dmn_demand,start_date,Start date,Date,,N,Proposed,,
+AS-D10,Project / Intake task,due_on / due_at,Due,end_date,dmn_demand,due_date,Due date,Date,,N,Proposed,,
+AS-D11,Portfolio item,portfolio name,Portfolio,portfolio,dmn_demand,portfolio,Portfolio,Match pm_portfolio.name,portfolio_name,N,Proposed,,
+AS-D12,Project / Intake task,custom field 'Business Case',Business case,custom.Business Case,dmn_demand,business_case,Business case,Direct,,N,Proposed,,
+AS-D13,Project / Intake task,custom field 'Priority',Priority,priority,dmn_demand,priority,Priority,Via value map,priority,N,Proposed,,
+AS-T01,Task / Subtask,gid,Task ID,source_id,pm_project_task,correlation_id,Correlation ID,"Prefix ASANA:",,Y,Proposed,,
+AS-T02,Task / Subtask,parent.gid (or project),Parent,parent_source_id,pm_project_task,parent,Parent,Resolve by u_parent_correlation_id in transform script,,Y,Proposed,,Top-level tasks parent = project
+AS-T03,Task,_project_gid,Project,project_source_id,pm_project_task,top_task,Top task,Resolve by u_project_correlation_id,,Y,Proposed,,Multi-homed tasks use first project (multi_homed_tasks.csv)
+AS-T04,Task,name,Name,name,pm_project_task,short_description,Short description,Truncate 160,,Y,Proposed,,
+AS-T05,Task,notes,Notes,description,pm_project_task,description,Description,Strip HTML,,N,Proposed,,
+AS-T06,Task,assignee.email,Assignee,assignee_email,pm_project_task,assigned_to,Assigned to,Match sys_user.email,,N,Proposed,,Collaborators/followers not migrated
+AS-T07,Task,completed + start_on,Status,status,pm_project_task,state,State,"completed -> Closed Complete; started -> WIP; else Pending",task_state,Y,Proposed,,
+AS-T08,Task,start_on (fallback due_on),Start,start_date,pm_project_task,start_date,Planned start,Date,,Y,Proposed,,Many Asana tasks have only a due date
+AS-T09,Task,due_on / due_at,Due,end_date,pm_project_task,end_date,Planned end,Date,,Y,Proposed,,
+AS-T10,Task,completed_at,Completed on,actual_end,pm_project_task,work_end,Actual end,Date,,N,Proposed,,
+AS-T11,Task,resource_subtype = milestone,Milestone,is_milestone,pm_project_task,milestone,Milestone,Boolean,,N,Proposed,,
+AS-T12,Task,(position in list),Order,order,pm_project_task,wbs_order,Order,Sibling sequence,,N,Proposed,,
+AS-T13,Section,name,Section,(phase row),pm_project_task,short_description,Phase task,Only when sections_as_phases = true,,N,Proposed,,Decide per project style
+AS-R01,Task,dependencies[].gid,Dependencies,predecessor_id,planned_task_rel_planned_task,parent,Predecessor,Resolve by correlation,,Y,Proposed,,Asana only has finish-to-start
+AS-R02,Task,gid,Task,successor_id,planned_task_rel_planned_task,child,Successor,Resolve by correlation,,Y,Proposed,,
+AS-X01,Task,stories,Comments,,task,work_notes / attachment,History,Decision needed (README Step 5),,N,Open question,,Not extracted by default
+AS-X02,Task,attachments,Files,,sys_attachment,,Attachments,Attachment API,,N,Open question,,Not extracted by default
+AS-X03,Project,members / followers,Members,,,,,,,N,Not migrating,,Use resource plans if needed

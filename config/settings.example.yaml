@@ -1,0 +1,129 @@
+# Copy to config/settings.yaml (git-ignored). ${VAR} is expanded from the environment.
+
+paths:
+  raw: data/raw
+  staging: data/staging
+  load: data/load
+  reference: data/reference   # sys_dictionary.csv, sys_choice.csv, sys_user.csv exports
+
+# Fix "today" for reproducible classification runs (age-based rules). null = real today.
+as_of_date: null
+
+servicenow:
+  # Unmatched / blank users are loaded as this user and reported in users_unmatched.csv
+  placeholder_user_email: migration.unassigned@example.com
+
+# ---------------------------------------------------------------------------
+asana:
+  token: ${ASANA_PAT}
+  workspace_gid: "1200000000000000"
+  page_size: 100
+  project_gids: []                  # empty = every project the token can see
+  include_status_updates: true
+
+  # Portfolios to record membership for. Names become the canonical `portfolio`
+  # value, so classification rules can say e.g. portfolio: {in: ["FY27 Pipeline"]}
+  portfolios:
+    - {gid: "1200000000000001", name: "Enterprise Delivery"}
+    - {gid: "1200000000000002", name: "FY27 Pipeline"}
+
+  # Projects whose *tasks* are requests (Asana Forms intake boards). Each task
+  # becomes a candidate Demand; the intake project itself is skipped.
+  intake_project_gids: []
+
+  # Emit Asana sections as phase-level project tasks (tasks nested under them)
+  sections_as_phases: false
+
+  # Asana custom field names promoted to canonical columns (case-sensitive)
+  custom_field_map:
+    phase: Stage
+    priority: Priority
+    requester_email: Requester Email
+    department: Department
+    program: Program
+
+# ---------------------------------------------------------------------------
+adaptive:
+  # Data-center URL. Find yours via getServerDefinition (docs/03_source_adaptive.md)
+  base_url: https://api2.clarizen.com/v2.0/services
+  api_key: ${ADAPTIVE_API_KEY}
+  # username: ${ADAPTIVE_USER}      # alternative to api_key
+  # password: ${ADAPTIVE_PASSWORD}
+  page_size: 1000
+
+  # One CZQL query per entity. `role` tells the normalizer what the entity is.
+  # SELECT list = field_map[role] values + extra_fields. Confirm API names with
+  # `python -m spm_migration.cli describe-adaptive` before the first full extract.
+  entities:
+    Project:
+      role: project
+      extra_fields: [C_Stage, C_Department, C_BusinessCase]   # your tenant's C_ fields
+      where: "IsTemplate = false"
+    EnhancementRequest:           # "Request" in the UI
+      role: request
+      extra_fields: [C_BusinessCase]
+    Task:
+      role: task
+      extra_fields: []
+    Milestone:
+      role: milestone
+      extra_fields: []
+    Link:
+      role: dependency
+      extra_fields: []
+
+  # canonical field -> Adaptive API field (dot paths traverse references)
+  field_map:
+    project:
+      name: Name
+      source_key: SYSID
+      description: Description
+      status: State
+      phase: Phase
+      health: TrackStatus
+      priority: Priority
+      owner_email: ProjectManager.Email
+      program: ParentProject.Name
+      project_type: ProjectType
+      start_date: StartDate
+      end_date: DueDate
+      actual_start: ActualStartDate
+      actual_end: ActualEndDate
+      percent_complete: PercentCompleted
+      created_at: CreatedOn
+      updated_at: LastUpdatedOn
+      planned_cost: PlannedBudget
+      actual_cost: ActualCost
+      planned_hours: Work
+      actual_hours: ActualEffort
+    request:
+      name: Title
+      source_key: SYSID
+      description: Description
+      status: State
+      priority: Priority
+      owner_email: AssignedTo.Email
+      requester_email: SubmittedBy.Email
+      end_date: DueDate
+      created_at: CreatedOn
+      updated_at: LastUpdatedOn
+    task:                          # also used for Milestone
+      name: Name
+      source_key: SYSID
+      description: Description
+      project_id: Project
+      parent_id: Parent
+      status: State
+      assignee_email: Manager.Email
+      start_date: StartDate
+      end_date: DueDate
+      actual_start: ActualStartDate
+      actual_end: ActualEndDate
+      percent_complete: PercentCompleted
+      planned_hours: Work
+      actual_hours: ActualEffort
+    dependency:
+      predecessor_id: Predecessor
+      successor_id: Successor
+      type: DependencyType
+      lag: Lag

@@ -1,0 +1,98 @@
+# Ordered rules: FIRST MATCH WINS. Overrides in config/overrides.csv beat every rule.
+# target: project | demand | skip | review
+# include_tasks: false  -> load the header only (no WBS), e.g. for older completed work
+# Operators: equals, not_equals, in, not_in, regex, empty, not_empty, gt, lt,
+#            older_than_days, newer_than_days.  Fields: canonical columns or custom.<Name>
+# See docs/04_classification_rules.md
+
+default: review
+
+rules:
+  # ---------------------------------------------------------------- global skips
+  - name: templates_are_skipped
+    target: skip
+    note: Rebuild as ServiceNow project templates instead
+    when:
+      name: {regex: "(?i)\\btemplate\\b"}
+
+  - name: intake_boards_themselves_are_skipped
+    target: skip
+    note: The intake project is a container; its tasks become demands
+    when:
+      source_type: {equals: asana_intake_project}
+
+  - name: old_closed_work_is_skipped
+    target: skip
+    note: Completed/archived and untouched for 2+ years - archive the raw export instead
+    when:
+      status: {in: [completed, archived, Completed, Cancelled]}
+      updated_at: {older_than_days: 730}
+
+  - name: cancelled_adaptive_projects_are_skipped
+    target: skip
+    when:
+      source_type: {equals: adaptive_project}
+      status: {equals: Cancelled}
+
+  # ---------------------------------------------------------------- demands
+  - name: asana_intake_tasks_are_demands
+    target: demand
+    when:
+      source_type: {equals: asana_intake_task}
+
+  - name: adaptive_requests_are_demands
+    target: demand
+    when:
+      source_type: {equals: adaptive_request}
+
+  - name: pipeline_portfolio_projects_are_demands
+    target: demand
+    when:
+      portfolio: {in: ["FY27 Pipeline"]}
+
+  - name: pre_approval_stage_is_demand
+    target: demand
+    when:
+      phase: {in: [Idea, Ideation, Proposed, Proposal, Intake, Initiation, Business Case, Under Review, Pending Approval]}
+      task_count: {lt: 1}
+
+  - name: pre_approval_stage_with_tasks_needs_review
+    target: review
+    note: Pre-approval stage but has tasks - is work already under way?
+    when:
+      phase: {in: [Idea, Ideation, Proposed, Proposal, Intake, Initiation, Business Case, Under Review, Pending Approval]}
+
+  - name: adaptive_draft_projects_are_demands
+    target: demand
+    when:
+      source_type: {equals: adaptive_project}
+      status: {equals: Draft}
+      actual_start: {empty: true}
+
+  # ---------------------------------------------------------------- projects
+  - name: recently_completed_projects_header_only
+    target: project
+    include_tasks: false
+    note: Completed in the last 2 years - header for reporting, no WBS
+    when:
+      status: {in: [completed, archived, Completed]}
+
+  - name: empty_shell_asana_projects_need_review
+    target: review
+    note: No tasks and no start date - stale idea or real project?
+    when:
+      source_type: {equals: asana_project}
+      task_count: {lt: 1}
+      start_date: {empty: true}
+
+  - name: active_asana_projects
+    target: project
+    when:
+      source_type: {equals: asana_project}
+      status: {in: [active, on_hold]}
+
+  - name: active_adaptive_projects
+    target: project
+    when:
+      source_type: {equals: adaptive_project}
+      status: {in: [Active, On Hold, Draft]}

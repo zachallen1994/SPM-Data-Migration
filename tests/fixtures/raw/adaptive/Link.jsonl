@@ -1,0 +1,1 @@
+{"id":"/Link/L1","Predecessor":{"id":"/Task/T1"},"Successor":{"id":"/Milestone/M1"},"DependencyType":"Finish to Start","Lag":16}

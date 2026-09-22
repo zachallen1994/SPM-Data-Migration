@@ -1,0 +1,9 @@
+# Business data never goes in git
+data/
+config/settings.yaml
+config/overrides.csv
+*.pyc
+__pycache__/
+.pytest_cache/
+*.egg-info/
+.venv/

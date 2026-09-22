@@ -1,0 +1,68 @@
+map_name,source_system,source_value,target_value,notes
+demand_state,asana,open,submitted,Intake task still open. Confirm stored value in sys_choice (dmn_demand.state)
+demand_state,asana,active,draft,Pipeline-portfolio project not yet approved
+demand_state,asana,on_hold,deferred,
+demand_state,asana,completed,completed,Intake task closed; usually approved -> became a project
+demand_state,adaptive,Draft,draft,
+demand_state,adaptive,Submitted,submitted,Request states vary by tenant; list them via describeEntities
+demand_state,adaptive,Opened,screening,
+demand_state,adaptive,Assigned,screening,
+demand_state,adaptive,Approved,approved,Loading into approved may trigger workflow - see docs/01 section 6
+demand_state,adaptive,Resolved,completed,
+demand_state,adaptive,Closed,completed,
+demand_state,adaptive,Rejected,deferred,
+demand_state,adaptive,Cancelled,incomplete,
+demand_state,*,,draft,Blank source value
+demand_category,*,,strategic,Default. Values: strategic | operational (confirm in sys_choice)
+project_state,asana,active,2,Work in Progress (OOB pm_project.state integers - CONFIRM in sys_choice)
+project_state,asana,on_hold,-3,On Hold - CONFIRM value; some releases have no On Hold state (use Open + status report)
+project_state,asana,completed,3,Closed Complete
+project_state,asana,archived,3,Closed Complete (archived in Asana)
+project_state,adaptive,Draft,-5,Pending
+project_state,adaptive,Active,2,Work in Progress
+project_state,adaptive,On Hold,-3,On Hold - CONFIRM
+project_state,adaptive,Completed,3,Closed Complete
+project_state,adaptive,Cancelled,4,Closed Incomplete
+task_state,asana,not_started,-5,Pending
+task_state,asana,in_progress,2,Work in Progress
+task_state,asana,completed,3,Closed Complete
+task_state,adaptive,Draft,-5,Pending
+task_state,adaptive,Active,2,Work in Progress
+task_state,adaptive,On Hold,-3,On Hold - CONFIRM
+task_state,adaptive,Completed,3,Closed Complete
+task_state,adaptive,Cancelled,7,Closed Skipped
+task_state,*,,-5,Blank -> Pending (e.g. Asana section/phase rows)
+health,asana,on_track,green,
+health,asana,at_risk,yellow,
+health,asana,off_track,red,
+health,asana,on_hold,yellow,No OOB 'on hold' health; mention in comments
+health,asana,complete,green,
+health,asana,achieved,green,
+health,asana,partial,yellow,
+health,asana,missed,red,
+health,asana,dropped,red,
+health,adaptive,On Track,green,TrackStatus values vary by tenant
+health,adaptive,At Risk,yellow,
+health,adaptive,Off Track,red,
+health,adaptive,Green,green,
+health,adaptive,Yellow,yellow,
+health,adaptive,Red,red,
+priority,*,Critical,1,1 - Critical (task.priority)
+priority,*,Urgent,1,
+priority,*,High,2,2 - High
+priority,*,Medium,3,3 - Moderate
+priority,*,Normal,3,
+priority,*,Low,4,4 - Low
+priority,*,,4,Blank -> Low (agree default with PMO)
+dependency_type,*,fs,fs,Finish to Start
+dependency_type,adaptive,Finish to Start,fs,
+dependency_type,adaptive,FinishToStart,fs,
+dependency_type,adaptive,Start to Start,ss,
+dependency_type,adaptive,StartToStart,ss,
+dependency_type,adaptive,Finish to Finish,ff,
+dependency_type,adaptive,FinishToFinish,ff,
+dependency_type,adaptive,Start to Finish,sf,
+dependency_type,adaptive,StartToFinish,sf,
+project_phase,*,,,Only used with phase-based templates; map source phases to your SN phase choices
+portfolio_name,*,FY27 Pipeline,FY27 Pipeline,Source portfolio name -> exact pm_portfolio.name in ServiceNow
+portfolio_name,*,Enterprise Delivery,Enterprise Delivery,

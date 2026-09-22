@@ -1,0 +1,3 @@
+source_system,source_id,target_class,include_tasks,demand_link,note
+asana,1204567890123456,demand,,,"Owner confirmed still in intake - JS 2026-09-22"
+adaptive,/Project/abc123,project,true,ASANA:1209999999999999,"Delivery project for intake request 1209999999999999"

@@ -1,0 +1,107 @@
+# Canonical staging fields -> ServiceNow import-set columns.
+# Each output file feeds one import set table + transform map (docs/05_servicenow_build.md).
+# Column spec keys:
+#   from:      canonical field, custom.<Name>, or a list (first non-empty wins)
+#   const:     fixed value
+#   value_map: map name in mapping/value_maps.csv (key = source_system + source value)
+#   transform: date | user | truncate:<n> | number | bool | html_strip
+#   default:   value when result is empty
+#   passthrough: true = keep the source value when value_map has no entry (else blank + logged)
+# Column names = ServiceNow field names. Columns prefixed u_ are helper columns the
+# transform scripts use to resolve references (they don't need to exist on the target).
+# Verify every non-u_ column with: python -m spm_migration.cli validate-fields
+
+targets:
+  dmn_demand:
+    file: 01_dmn_demand.csv
+    source: work_items
+    target_class: demand
+    columns:
+      correlation_id:      {from: correlation_id}
+      correlation_display: {from: correlation_display}
+      u_legacy_id:         {from: [source_key, source_id]}
+      u_legacy_url:        {from: source_url}
+      short_description:   {from: name, transform: "truncate:160"}
+      description:         {from: description, transform: html_strip}
+      type:                {const: project}
+      category:            {from: custom.Category, value_map: demand_category, default: strategic}
+      state:               {from: status, value_map: demand_state}
+      assigned_to:         {from: owner_email, transform: user}
+      opened_by:           {from: [requester_email, owner_email], transform: user}
+      portfolio:           {from: portfolio, value_map: portfolio_name, passthrough: true}
+      primary_program:     {from: program}
+      department:          {from: department}
+      start_date:          {from: start_date, transform: date}
+      due_date:            {from: end_date, transform: date}
+      priority:            {from: priority, value_map: priority}
+      business_case:       {from: [custom.C_BusinessCase, custom.Business Case]}
+
+  pm_project:
+    file: 02_pm_project.csv
+    source: work_items
+    target_class: project
+    columns:
+      correlation_id:      {from: correlation_id}
+      correlation_display: {from: correlation_display}
+      u_legacy_id:         {from: [source_key, source_id]}
+      u_legacy_url:        {from: source_url}
+      short_description:   {from: name, transform: "truncate:160"}
+      description:         {from: description, transform: html_strip}
+      project_manager:     {from: owner_email, transform: user}
+      state:               {from: status, value_map: project_state}
+      phase:               {from: phase, value_map: project_phase, passthrough: true}
+      start_date:          {from: [start_date, created_at], transform: date}
+      end_date:            {from: [end_date, start_date, created_at], transform: date}
+      work_start:          {from: actual_start, transform: date}
+      work_end:            {from: [actual_end, completed_at], transform: date}
+      percent_complete:    {from: percent_complete, transform: number}
+      primary_portfolio:   {from: portfolio, value_map: portfolio_name, passthrough: true}
+      primary_program:     {from: program}
+      department:          {from: department}
+      priority:            {from: priority, value_map: priority}
+      time_constraint:     {const: start_on_specific_date}
+      u_demand_correlation_id: {from: demand_link}
+      u_include_tasks:     {from: include_tasks}
+
+  pm_project_task:
+    file: 03_pm_project_task.csv
+    source: tasks
+    columns:
+      correlation_id:           {from: correlation_id}
+      correlation_display:      {from: correlation_display}
+      u_legacy_id:              {from: [source_key, source_id]}
+      u_legacy_url:             {from: source_url}
+      u_project_correlation_id: {from: project_correlation_id}
+      u_parent_correlation_id:  {from: parent_correlation_id}
+      u_level:                  {from: level}
+      wbs_order:                {from: order}
+      short_description:        {from: name, transform: "truncate:160", default: "(untitled task)"}
+      description:              {from: description, transform: html_strip}
+      assigned_to:              {from: assignee_email, transform: user}
+      state:                    {from: status, value_map: task_state}
+      milestone:                {from: is_milestone, transform: bool}
+      start_date:               {from: [start_date, end_date], transform: date}
+      end_date:                 {from: [end_date, start_date], transform: date}
+      work_start:               {from: actual_start, transform: date}
+      work_end:                 {from: actual_end, transform: date}
+      percent_complete:         {from: percent_complete, transform: number}
+      time_constraint:          {const: start_on_specific_date}
+
+  planned_task_rel_planned_task:
+    file: 04_planned_task_rel_planned_task.csv
+    source: dependencies
+    columns:
+      u_predecessor_correlation_id: {from: predecessor_correlation_id}
+      u_successor_correlation_id:   {from: successor_correlation_id}
+      type:                         {from: type, value_map: dependency_type, default: fs}
+      lag:                          {from: lag_days, transform: number, default: 0}
+
+  project_status:
+    file: 05_project_status.csv
+    source: status_updates
+    columns:
+      u_project_correlation_id: {from: project_correlation_id}
+      as_on:                    {from: as_on, transform: date}
+      overall_health:           {from: health, value_map: health}
+      comments:                 {from: [title, text]}
+      u_detail:                 {from: text}

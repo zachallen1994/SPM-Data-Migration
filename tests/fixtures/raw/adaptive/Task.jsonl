@@ -1,0 +1,3 @@
+{"id":"/Task/T1","Name":"Migrate servers","SYSID":"T-1","Project":{"id":"/Project/A1"},"Parent":{"id":"/Project/A1"},"State":"Active","Manager":{"Email":"ops@example.com"},"StartDate":"2026-02-01T00:00:00","DueDate":"2026-11-30T00:00:00","PercentCompleted":50}
+{"id":"/Task/T2","Name":"Wave 1","SYSID":"T-2","Project":{"id":"/Project/A1"},"Parent":{"id":"/Task/T1"},"State":"Completed","StartDate":"2026-02-01T00:00:00","DueDate":"2026-04-30T00:00:00","ActualEndDate":"2026-05-02T00:00:00","PercentCompleted":100}
+{"id":"/Task/T9","Name":"Draft plan","SYSID":"T-9","Project":{"id":"/Project/A2"},"Parent":{"id":"/Project/A2"},"State":"Draft"}
