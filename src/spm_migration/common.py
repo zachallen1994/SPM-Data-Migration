@@ -112,5 +112,49 @@ def correlation_id(source_system: str, source_id: str) -> str:
     return f"{SYSTEM_PREFIX[source_system]}:{source_id}" if source_id else ""
 
 
+_MOJIBAKE_MARKERS = ("¬", "‚Ä", "Ã", "Â")
+
+
+def repair_text(value: Any) -> str:
+    """Undo UTF-8-read-as-MacRoman/cp1252 damage (e.g. '¬∑¬†' -> '· ') and tidy whitespace."""
+    text = "" if value is None else str(value)
+    if any(m in text for m in _MOJIBAKE_MARKERS):
+        for codec in ("mac_roman", "cp1252"):
+            try:
+                text = text.encode(codec).decode("utf-8")
+                break
+            except (UnicodeEncodeError, UnicodeDecodeError):
+                continue
+    text = text.replace("\xa0", " ")
+    text = re.sub(r"[ \t]{2,}", " ", text)
+    return text.strip()
+
+
+def split_multi(value: Any) -> list[str]:
+    """Split multi-select values: lists, 'a, b', 'a; b' or newline-separated."""
+    if value in (None, ""):
+        return []
+    if isinstance(value, list):
+        items = value
+    else:
+        items = re.split(r"[;,\n]", str(value))
+    return [str(i).strip() for i in items if str(i).strip()]
+
+
+def parse_percent(value: Any) -> float | str:
+    """'50%' -> 50, 0.5 -> 50 (fractions from Asana/Excel), 75 -> 75."""
+    if value in (None, ""):
+        return ""
+    text = str(value).strip()
+    has_pct = text.endswith("%")
+    try:
+        n = float(text.rstrip("%").strip())
+    except ValueError:
+        return ""
+    if not has_pct and 0 < n <= 1 and "." in text:
+        n *= 100
+    return round(n, 2)
+
+
 def truthy(value: Any) -> bool:
     return str(value).strip().lower() in {"true", "1", "yes", "y"}

@@ -31,16 +31,46 @@ asana:
   # becomes a candidate Demand; the intake project itself is skipped.
   intake_project_gids: []
 
-  # Emit Asana sections as phase-level project tasks (tasks nested under them)
-  sections_as_phases: false
+  # Portfolio-tracker projects: each top-level TASK is a project/demand (e.g. the HR
+  # "HR_Project_Portfolio_2026" project, where sections are COE areas). Subtasks become
+  # WBS tasks under that item. See docs/07_mapping_review.md, finding A1.
+  tracker_project_gids: []
+  tracker_section_as: program          # canonical field that receives the section name
 
-  # Asana custom field names promoted to canonical columns (case-sensitive)
+  # Optional: separate Asana "plan" projects that hold the detailed WBS for a tracker
+  # item (the task-level template). CSV columns: tracker_item_gid,plan_project_gid
+  plan_links_file: config/asana_plan_links.csv
+
+  # Emit Asana sections as phase-level project tasks (the task-level template uses
+  # sections as phases: Project Initiation, Analysis/Design, Build, Test, ...)
+  sections_as_phases: true
+  skip_untitled_sections: true         # tasks in "Untitled section" sit directly under the project
+  milestone_name_regex: "(?i)\\bmilestone\\b"   # template names milestones "... Milestone 1"
+
+  # Custom field names (as shown in Asana) promoted to canonical columns.
+  # Applies to projects, tracker items and intake tasks.
   custom_field_map:
+    status: Project Status             # Not Started | Started/Scoping | In Progress | Delayed | On Hold | Completed | Cancelled
+    owner_email: PM Assigned           # display names -> resolved via user_crosswalk.csv
+    project_type: Project Type         # Project | Annual Program | Project/Annual Program
+    size: Size/Complexity              # Low | Medium | High
+    it_integrations: I&T Integrations Needed
+    business_owner: HRSP / SME / Project Lead
+    strategy_focus: Strategy Focus
+    strategy_timeline: Strategy Timeline
+    expense_type: Funding              # CapEx | OpEx
+    cost_center: Cost Center
+    impacted_business_units: Entity/Organization   # multi: BSMH, RSFH, GBS, External Partners
+    cross_impacts: HR Cross-Impacts
+    coes_engaged: HR COEs Engaged
     phase: Stage
     priority: Priority
     requester_email: Requester Email
-    department: Department
-    program: Program
+
+  # Task-level custom fields (Asana task-level template)
+  task_custom_field_map:
+    status: Task Status
+    percent_complete: "% Complete"      # 0.5 or "50%" -> 50
 
 # ---------------------------------------------------------------------------
 adaptive:
@@ -52,16 +82,14 @@ adaptive:
   page_size: 1000
 
   # One CZQL query per entity. `role` tells the normalizer what the entity is.
-  # SELECT list = field_map[role] values + extra_fields. Confirm API names with
-  # `python -m spm_migration.cli describe-adaptive` before the first full extract.
+  # SELECT list = field_map[role] values + extra_fields. The C_ names below are the
+  # tenant custom fields from Proj_Data_Mapping_08172026 with GUESSED API names -
+  # confirm them with `python -m spm_migration.cli describe-adaptive` first.
   entities:
     Project:
       role: project
-      extra_fields: [C_Stage, C_Department, C_BusinessCase]   # your tenant's C_ fields
+      extra_fields: []
       where: "IsTemplate = false"
-    EnhancementRequest:           # "Request" in the UI
-      role: request
-      extra_fields: [C_BusinessCase]
     Task:
       role: task
       extra_fields: []
@@ -75,36 +103,39 @@ adaptive:
   # canonical field -> Adaptive API field (dot paths traverse references)
   field_map:
     project:
-      name: Name
+      name: Name                               # Name
       source_key: SYSID
-      description: Description
-      status: State
-      phase: Phase
-      health: TrackStatus
-      priority: Priority
-      owner_email: ProjectManager.Email
-      program: ParentProject.Name
-      project_type: ProjectType
-      start_date: StartDate
-      end_date: DueDate
+      description: Description                 # Project Description
+      owner_email: ProjectManager.Email        # Manager
+      business_owner: C_BusinessSponsor        # Business Sponsor (free text, may list several)
+      capital_id: C_CN                         # CN#
+      cost_center: C_DeptforExpense            # Dept # for Expense
+      sites: C_Region                          # Region (multi-select)
+      go_live_date: C_NextGoLiveDate           # Next Go-Live Date
+      start_date: StartDate                    # (not in the mapping sheet - required by ServiceNow)
+      end_date: DueDate                        # Planned Finish
       actual_start: ActualStartDate
       actual_end: ActualEndDate
+      funding_source: C_ProjectFundingType     # Project Funding Type (capital pool by market)
+      expense_type: C_FundingType              # Funding Type (Opex | Capex)
+      status: State                            # Requested | Draft | Active | On Hold | Cancelled | Completed
+      phase: Phase                             # Initiation | Discovery & Design | Execution | Close Out
+      health_budget: C_BudgetHealth            # Budget Health
+      health: C_Health                         # Health (overall)
+      health_resource: C_ResourceHealth
+      health_risk: C_RiskHealth
+      health_schedule: C_ScheduleHealth
+      health_scope: C_ScopeHealth
+      status_notes: C_UpdateNotes              # Update Notes (weekly)
+      estimate_type: C_EstimateType
+      request_received: C_RequestReceived
+      request_assigned: C_RequestAssigned
+      estimate_complete: C_EstimateComplete
+      ready_for_delivery: C_ReadyForDelivery
+      project_assigned: C_ProjectAssigned
+      business_unit: C_Customers               # Customers
+      business_category: C_BusinessCategory
       percent_complete: PercentCompleted
-      created_at: CreatedOn
-      updated_at: LastUpdatedOn
-      planned_cost: PlannedBudget
-      actual_cost: ActualCost
-      planned_hours: Work
-      actual_hours: ActualEffort
-    request:
-      name: Title
-      source_key: SYSID
-      description: Description
-      status: State
-      priority: Priority
-      owner_email: AssignedTo.Email
-      requester_email: SubmittedBy.Email
-      end_date: DueDate
       created_at: CreatedOn
       updated_at: LastUpdatedOn
     task:                          # also used for Milestone

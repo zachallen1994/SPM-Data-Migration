@@ -135,6 +135,26 @@ SPMMigrationUtil.prototype = {
 })(source, map, log, target);
 ```
 
+### List fields (`u_sites`, `impacted_business_units`, `additional_assignee_list`): field map script
+The load files carry comma-separated **names** (or emails, for people). List fields store
+comma-separated **sys_ids**, so resolve them in a scripted field map. For `u_sites`, adjust the
+table and name field to wherever your Sites choices live:
+```javascript
+answer = (function transformEntry(source) {
+    var u = new SPMMigrationUtil();
+    var names = u.col(source, 'u_sites').split(',');
+    var ids = [];
+    for (var i = 0; i < names.length; i++) {
+        var gr = new GlideRecord('cmn_location');          // <- your Sites table
+        if (names[i] && gr.get('name', names[i].trim())) ids.push(gr.getUniqueValue());
+        else if (names[i]) log.warn('Site not found: ' + names[i]);
+    }
+    return ids.join(',');
+})(source);
+```
+Use the same pattern with `business_unit` (match on `name`) for `impacted_business_units`, and
+with `u.userByEmail()` for `additional_assignee_list`.
+
 ### `u_imp_spm_dependency` → `planned_task_rel_planned_task`: field maps
 Create two **scripted field maps** and set both to *Coalesce*.
 

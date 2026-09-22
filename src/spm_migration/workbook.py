@@ -11,12 +11,15 @@ from openpyxl.worksheet.datavalidation import DataValidation
 from .common import read_csv
 
 SHEETS = [
+    ("Decisions", "decisions.csv"),
+    ("Data Quality", "data_quality.csv"),
     ("Asana to ServiceNow", "asana_to_servicenow.csv"),
     ("Adaptive to ServiceNow", "adaptive_to_servicenow.csv"),
+    ("ServiceNow Form Fields", "servicenow_form_fields.csv"),
     ("Value Maps", "value_maps.csv"),
 ]
 HEADER_FILL = PatternFill("solid", fgColor="1F4E78")
-STATUS_VALUES = '"Proposed,Confirmed,Deferred,Not migrating,Open question"'
+STATUS_VALUES = '"Proposed,Confirmed,Deferred,Not migrating,Open question,Open,Fixed in code,Fixed in config,Partly fixed"'
 
 
 def build(mapping_dir: str | Path, out_path: str | Path) -> Path:
@@ -27,13 +30,16 @@ def build(mapping_dir: str | Path, out_path: str | Path) -> Path:
     for i, line in enumerate([
         "SPM migration field mapping workbook (generated from mapping/*.csv; edit the CSVs, then rebuild)",
         "",
-        "1. Each row maps one source field to one ServiceNow field.",
+        "Start with 'Decisions' (open questions that block the build) and 'Data Quality' (fix in source).",
+        "",
+        "1. Each row maps one source field to one ServiceNow field. 'decision_ref' points to the Decisions sheet.",
         "2. In workshops, set 'status' to Confirmed / Deferred / Not migrating / Open question.",
         "3. 'target_table' shows where the value lands; both pm_project and dmn_demand rows exist",
         "   because the same source record can become either, depending on classification.",
         "4. Value Maps holds the state/health/priority translations. target_value must be a stored",
         "   value from your instance's sys_choice export, not the display label.",
-        "5. Copy agreed changes back into the CSVs (the CSVs are the source of truth for the code).",
+        "5. 'ServiceNow Form Fields' lists every form field with its (proposed) field name and which source feeds it.",
+        "6. Copy agreed changes back into the CSVs (the CSVs are the source of truth for the code).",
     ], 1):
         readme.cell(row=i, column=1, value=line)
     readme["A1"].font = Font(bold=True, size=13)

@@ -3,48 +3,92 @@
 # include_tasks: false  -> load the header only (no WBS), e.g. for older completed work
 # Operators: equals, not_equals, in, not_in, regex, empty, not_empty, gt, lt,
 #            older_than_days, newer_than_days.  Fields: canonical columns or custom.<Name>
-# See docs/04_classification_rules.md
+# See docs/04_classification_rules.md and docs/07_mapping_review.md (section 3)
 
 default: review
 
 rules:
-  # ---------------------------------------------------------------- global skips
+  # ---------------------------------------------------------------- containers / templates
   - name: templates_are_skipped
     target: skip
     note: Rebuild as ServiceNow project templates instead
     when:
       name: {regex: "(?i)\\btemplate\\b"}
 
-  - name: intake_boards_themselves_are_skipped
+  - name: containers_are_skipped
     target: skip
-    note: The intake project is a container; its tasks become demands
+    note: Intake boards, portfolio trackers and plan projects are containers - their items/tasks migrate
     when:
-      source_type: {equals: asana_intake_project}
+      source_type: {in: [asana_intake_project, asana_tracker_project, asana_plan_project]}
+
+  # ---------------------------------------------------------------- cut rules
+  - name: cancelled_work_is_skipped
+    target: skip
+    note: Cancelled in the source. Override to 'demand' if the PMO wants rejection history
+    when:
+      status: {in: [Cancelled, cancelled]}
 
   - name: old_closed_work_is_skipped
     target: skip
     note: Completed/archived and untouched for 2+ years - archive the raw export instead
     when:
-      status: {in: [completed, archived, Completed, Cancelled]}
+      status: {in: [completed, archived, Completed]}
       updated_at: {older_than_days: 730}
 
-  - name: cancelled_adaptive_projects_are_skipped
+  - name: completed_before_2025_is_skipped
     target: skip
+    note: Tracker rows have no modified date in exports - fall back to the planned end date
+    when:
+      status: {in: [completed, Completed]}
+      end_date: {older_than_days: 730}
+
+  # ---------------------------------------------------------------- Adaptive (Nordic IT PMO)
+  - name: adaptive_requested_or_draft_is_demand
+    target: demand
+    note: Request received / being estimated - not yet a delivery project
     when:
       source_type: {equals: adaptive_project}
-      status: {equals: Cancelled}
+      status: {in: [Requested, Draft]}
 
-  # ---------------------------------------------------------------- demands
-  - name: asana_intake_tasks_are_demands
-    target: demand
+  - name: adaptive_active_without_delivery_handoff_needs_review
+    target: review
+    note: Active but no Ready For Delivery / Project Assigned date - still estimating (demand) or a project?
     when:
-      source_type: {equals: asana_intake_task}
+      source_type: {equals: adaptive_project}
+      status: {in: [Active, On Hold]}
+      ready_for_delivery: {empty: true}
+      project_assigned: {empty: true}
+      phase: {in: ["", Initiation]}
 
   - name: adaptive_requests_are_demands
     target: demand
     when:
       source_type: {equals: adaptive_request}
 
+  # ---------------------------------------------------------------- Asana (HR portfolio tracker)
+  - name: asana_intake_tasks_are_demands
+    target: demand
+    when:
+      source_type: {equals: asana_intake_task}
+
+  - name: asana_not_started_without_pm_needs_review
+    target: review
+    note: Not started and no PM (blank / TBD / N/A) - candidate demand
+    when:
+      source_type: {equals: asana_tracker_item}
+      status: {in: [Not Started, Started/Scoping, ""]}
+      owner_email: {in: ["", TBD, N/A, NA]}
+
+  - name: asana_tracker_item_without_status_or_dates_needs_review
+    target: review
+    note: No Project Status and no dates - program container, placeholder or idea?
+    when:
+      source_type: {equals: asana_tracker_item}
+      status: {in: ["", open]}
+      start_date: {empty: true}
+      end_date: {empty: true}
+
+  # ---------------------------------------------------------------- generic demand signals
   - name: pipeline_portfolio_projects_are_demands
     target: demand
     when:
@@ -53,21 +97,14 @@ rules:
   - name: pre_approval_stage_is_demand
     target: demand
     when:
-      phase: {in: [Idea, Ideation, Proposed, Proposal, Intake, Initiation, Business Case, Under Review, Pending Approval]}
+      phase: {in: [Idea, Ideation, Proposed, Proposal, Intake, Business Case, Under Review, Pending Approval]}
       task_count: {lt: 1}
 
   - name: pre_approval_stage_with_tasks_needs_review
     target: review
     note: Pre-approval stage but has tasks - is work already under way?
     when:
-      phase: {in: [Idea, Ideation, Proposed, Proposal, Intake, Initiation, Business Case, Under Review, Pending Approval]}
-
-  - name: adaptive_draft_projects_are_demands
-    target: demand
-    when:
-      source_type: {equals: adaptive_project}
-      status: {equals: Draft}
-      actual_start: {empty: true}
+      phase: {in: [Idea, Ideation, Proposed, Proposal, Intake, Business Case, Under Review, Pending Approval]}
 
   # ---------------------------------------------------------------- projects
   - name: recently_completed_projects_header_only
@@ -88,11 +125,11 @@ rules:
   - name: active_asana_projects
     target: project
     when:
-      source_type: {equals: asana_project}
-      status: {in: [active, on_hold]}
+      source_type: {in: [asana_project, asana_tracker_item]}
+      status: {in: [active, on_hold, In Progress, Delayed, On Hold, Not Started, Started/Scoping, open]}
 
   - name: active_adaptive_projects
     target: project
     when:
       source_type: {equals: adaptive_project}
-      status: {in: [Active, On Hold, Draft]}
+      status: {in: [Active, On Hold]}

@@ -1,52 +1,34 @@
-map_id,source_object,source_field,source_label,canonical_field,target_table,target_field,target_label,transform_rule,value_map,required,status,owner,notes
-AD-P01,Project,id,Entity ID,source_id,pm_project,correlation_id,Correlation ID,"Prefix ADAPTIVE:",,Y,Proposed,,e.g. ADAPTIVE:/Project/abc123
-AD-P02,Project,SYSID,Project ID,source_key,pm_project,u_legacy_id,Legacy ID,Direct,,Y,Proposed,,e.g. P-00123
-AD-P03,Project,Name,Name,name,pm_project,short_description,Name,Truncate 160,,Y,Proposed,,
-AD-P04,Project,Description,Description,description,pm_project,description,Description,Strip HTML,,N,Proposed,,
-AD-P05,Project,ProjectManager.Email,Project manager,owner_email,pm_project,project_manager,Project manager,Match sys_user.email,,Y,Proposed,,
-AD-P06,Project,State,State,status,pm_project,state,State,Via value map,project_state,Y,Proposed,,Draft usually -> demand (classification)
-AD-P07,Project,Phase,Phase,phase,pm_project,phase,Phase,Via value map (passthrough),project_phase,N,Proposed,,Tenant-specific values
-AD-P08,Project,StartDate,Start date,start_date,pm_project,start_date,Planned start,Date,,Y,Proposed,,
-AD-P09,Project,DueDate,Due date,end_date,pm_project,end_date,Planned end,Date,,Y,Proposed,,
-AD-P10,Project,ActualStartDate,Actual start,actual_start,pm_project,work_start,Actual start,Date,,N,Proposed,,
-AD-P11,Project,ActualEndDate,Actual end,actual_end,pm_project,work_end,Actual end,Date,,N,Proposed,,
-AD-P12,Project,PercentCompleted,% complete,percent_complete,pm_project,percent_complete,% complete,Number,,N,Proposed,,Recalculated from tasks in SN
-AD-P13,Project,ParentProject.Name,Program,program,pm_project,primary_program,Program,Match pm_program.name,,N,Proposed,,If programs are modelled as parent projects
-AD-P14,Project,Priority,Priority,priority,pm_project,priority,Priority,Via value map,priority,N,Proposed,,Confirm field name in describeEntities
-AD-P15,Project,C_Department,Department,custom.C_Department,pm_project,department,Department,Match cmn_department.name,,N,Proposed,,Tenant custom field
-AD-P16,Project,TrackStatus,Track status,health,project_status,overall_health,Overall health,Via value map,health,N,Proposed,,One synthetic status report per project
-AD-P17,Project,PlannedBudget,Planned budget,planned_cost,cost_plan,unit_cost / amount,Cost plan,One cost plan line per project,,N,Open question,,Do not write pm_project cost fields directly
-AD-P18,Project,ActualCost,Actual cost,actual_cost,expense_line,amount,Actual cost,Single expense line or custom field,,N,Open question,,Financials decision needed
-AD-P19,Project,Work / ActualEffort,Planned / actual effort,planned_hours / actual_hours,pm_project,u_legacy_planned_hours / u_legacy_actual_hours,Legacy effort,Convert to hours,,N,Open question,,Resource plans vs reference only
-AD-D01,EnhancementRequest,id,Entity ID,source_id,dmn_demand,correlation_id,Correlation ID,"Prefix ADAPTIVE:",,Y,Proposed,,
-AD-D02,EnhancementRequest,SYSID,Request ID,source_key,dmn_demand,u_legacy_id,Legacy ID,Direct,,Y,Proposed,,
-AD-D03,EnhancementRequest / Draft Project,Title / Name,Title,name,dmn_demand,short_description,Name,Truncate 160,,Y,Proposed,,
-AD-D04,EnhancementRequest,Description,Description,description,dmn_demand,description,Description,Strip HTML,,N,Proposed,,
-AD-D05,EnhancementRequest,State,State,status,dmn_demand,state,State,Via value map,demand_state,Y,Proposed,,
-AD-D06,EnhancementRequest,AssignedTo.Email,Assigned to,owner_email,dmn_demand,assigned_to,Demand manager,Match sys_user.email,,N,Proposed,,
-AD-D07,EnhancementRequest,SubmittedBy.Email,Submitted by,requester_email,dmn_demand,opened_by,Submitter,Match sys_user.email,,N,Proposed,,
-AD-D08,EnhancementRequest,DueDate,Due date,end_date,dmn_demand,due_date,Due date,Date,,N,Proposed,,
-AD-D09,EnhancementRequest,Priority,Priority,priority,dmn_demand,priority,Priority,Via value map,priority,N,Proposed,,
-AD-D10,EnhancementRequest / Project,C_BusinessCase,Business case,custom.C_BusinessCase,dmn_demand,business_case,Business case,Direct,,N,Proposed,,
-AD-D11,(constant),,,,dmn_demand,type,Type,Constant project,,Y,Proposed,,
-AD-D12,(constant),,,,dmn_demand,category,Category,Default strategic,demand_category,Y,Proposed,,
-AD-T01,Task / Milestone,id,Entity ID,source_id,pm_project_task,correlation_id,Correlation ID,"Prefix ADAPTIVE:",,Y,Proposed,,
-AD-T02,Task / Milestone,Parent,Parent,parent_source_id,pm_project_task,parent,Parent,Resolve by u_parent_correlation_id,,Y,Proposed,,Parent = project -> top-level
-AD-T03,Task / Milestone,Project,Project,project_source_id,pm_project_task,top_task,Top task,Resolve by u_project_correlation_id,,Y,Proposed,,
-AD-T04,Task,Name,Name,name,pm_project_task,short_description,Short description,Truncate 160,,Y,Proposed,,
-AD-T05,Task,Description,Description,description,pm_project_task,description,Description,Strip HTML,,N,Proposed,,
-AD-T06,Task,Manager.Email,Task manager,assignee_email,pm_project_task,assigned_to,Assigned to,Match sys_user.email,,N,Proposed,,Or first ResourceLink resource
-AD-T07,Task,State,State,status,pm_project_task,state,State,Via value map,task_state,Y,Proposed,,
-AD-T08,Task,StartDate,Start,start_date,pm_project_task,start_date,Planned start,Date,,Y,Proposed,,
-AD-T09,Task,DueDate,Due,end_date,pm_project_task,end_date,Planned end,Date,,Y,Proposed,,
-AD-T10,Task,ActualStartDate,Actual start,actual_start,pm_project_task,work_start,Actual start,Date,,N,Proposed,,
-AD-T11,Task,ActualEndDate,Actual end,actual_end,pm_project_task,work_end,Actual end,Date,,N,Proposed,,
-AD-T12,Task,PercentCompleted,% complete,percent_complete,pm_project_task,percent_complete,% complete,Number,,N,Proposed,,
-AD-T13,Milestone,(entity type),Milestone,is_milestone,pm_project_task,milestone,Milestone,true for Milestone entity,,N,Proposed,,
-AD-R01,Link,Predecessor,Predecessor,predecessor_id,planned_task_rel_planned_task,parent,Predecessor,Resolve by correlation,,Y,Proposed,,
-AD-R02,Link,Successor,Successor,successor_id,planned_task_rel_planned_task,child,Successor,Resolve by correlation,,Y,Proposed,,
-AD-R03,Link,DependencyType,Type,type,planned_task_rel_planned_task,type,Type,Via value map,dependency_type,Y,Proposed,,
-AD-R04,Link,Lag,Lag,lag_days,planned_task_rel_planned_task,lag,Lag,Hours / 8 -> days,,N,Proposed,,Check lag unit in describeEntities
-AD-X01,Issue / Risk,*,RAID,,issue / risk,,,Separate mapping if in scope,,N,Open question,,
-AD-X02,Timesheet,*,Time,,time_card,,,Usually not migrated,,N,Not migrating,,Keep in data warehouse
-AD-X03,Discussion / Document,*,Posts / files,,sys_attachment,,,History decision (README Step 5),,N,Open question,,
+map_id,source_object,source_field,source_type,sample_values,target_table,target_field,target_label,transform_rule,value_map,recommendation,status,decision_ref,notes
+AD-01,Project,Name,Short text,,pm_project / dmn_demand,short_description,Name,Truncate 160,,Map,Proposed,,
+AD-02,Project,Project Description,Long text,Scope and business objective,pm_project / dmn_demand,description,Description,Strip HTML; repair encoding,,Map,Proposed,,Business Case tab 'In scope' is the alternative home
+AD-03,Project,Manager,User,,pm_project / dmn_demand,project_manager / assigned_to,Project manager / Demand manager,Email -> sys_user,,Map,Proposed,,
+AD-04,Project,Business Sponsor,Free text (multiple names),,pm_project / dmn_demand,u_business_owner,Business Owner,First name -> sys_user via crosswalk; full text appended to description if several,,Map,Open question,D10,Field help says 'who the PMO works with for scope/funding/approvals' = Business Owner. u_executive_sponsor stays blank unless Adaptive has a separate sponsor
+AD-05,Project,CN#,Number,Capital ID,pm_project / dmn_demand,u_cn,CN,Direct (string - keep leading zeros),,Map,Proposed,,
+AD-06,Project,Dept # for Expense,Pick list (Cost Center table),,pm_project / dmn_demand,u_cost_center,Cost center,Match cmn_cost_center by code,,Map + new field,Open question,D11,No cost-center field on either form. Alternative: department (if departments carry cost centers)
+AD-07,Project,Region,Multi-select,Location(s) where project will occur,pm_project / dmn_demand,u_sites,Sites,Split; map each to Sites list; script resolves sys_ids,site,Map,Proposed,DQ14,Region values not in the sheet - export them. Paducah and St Petersburg are not on the Sites list
+AD-08,Project,Next Go-Live Date,Date,,pm_project,u_next_go_live_date,Next go-live date,Date,,Map + new field,Open question,D12,Alternative: a Go-Live milestone task (lost for header-only projects)
+AD-09,Project,Planned Finish,Date,Final go-live date,pm_project / dmn_demand,end_date / due_date,Planned end date,Date,,Map,Proposed,,
+AD-10,Project,(Start Date - not in sheet),Date,,pm_project / dmn_demand,start_date,Planned start date,Date; fallback Request Received,,Map,Open question,DQ9,Required by the ServiceNow schedule engine - add to the Adaptive extract
+AD-11,Project,Project Funding Type,Single select,BSMH IT Capital; CIN (Cincinnati) Capital ... Expense; Clinical Fleet (19 values),pm_project / dmn_demand,u_funding_source,Funding Source,Direct (label),,Map,Proposed,D4,u_funding_source is a string - consider a choice list with these 19 values
+AD-12,Project,Funding Type,Single select,Opex; Capex,pm_project / dmn_demand,expense_type (+ u_funding_type),Expense type,Opex->opex; Capex->capex,expense_type / funding_type,Map,Proposed,D4,
+AD-13,Project,State,Single select,Requested; Draft; Active; On Hold; Cancelled; Completed,pm_project / dmn_demand,state,State,Via value map; Requested/Draft -> Demand,project_state / demand_state,Map,Proposed,DQ10,Projects sheet list lacks Requested/Draft - confirm which list is live
+AD-14,Project,Phase,Single select,Initiation; Discovery & Design; Execution; Close Out,pm_project,phase,Phase,Pass through until SN phase choices confirmed,project_phase,Map,Open question,D5,Phase = Initiation with no delivery dates -> review list
+AD-15,Project,Budget Health,Single select,On Target; Needs Attention; In Trouble,project_status,cost,Cost,Green / Yellow / Red,health,Map (status report),Proposed,,
+AD-16,Project,Health,Single select,On Plan; Needs Attention; In Trouble,project_status,overall_health,Overall health,Green / Yellow / Red,health,Map (status report),Proposed,,
+AD-17,Project,Resource Health,Single select,On Plan; Needs Attention; In Trouble,project_status,resources,Resources,Green / Yellow / Red,health,Map (status report),Proposed,,
+AD-18,Project,Risk Health,Single select,On Plan; Needs Attention; In Trouble,project_status,u_risk_health,Risk health,Green / Yellow / Red,health,Map + new field,Open question,D13,No OOB risk indicator on status reports - add one or drop
+AD-19,Project,Schedule Health,Single select,On Plan; Needs Attention; In Trouble,project_status,schedule,Schedule,Green / Yellow / Red,health,Map (status report),Proposed,,
+AD-20,Project,Scope Health,Single select,On Plan; Needs Attention; In Trouble,project_status,scope,Scope,Green / Yellow / Red,health,Map (status report),Proposed,,
+AD-21,Project,Update Notes,Long text,Weekly status notes,project_status,comments,Comments,Latest note -> one status report per project,,Map (status report),Proposed,D14,History only if Adaptive keeps prior notes (Discussions)
+AD-22,Project,Estimate Type,Single select,Detailed Estimate; SAT - Detailed Estimate; Detailed Estimate- Straight to PM; Packaging,pm_project / dmn_demand,u_estimate_type,Estimate type,Via value map,estimate_type,Map + new field,Open question,D12,
+AD-23,Project,Request Received,Date,,pm_project / dmn_demand,u_request_received,Request received,Date,,Map + new field,Open question,D12,Lifecycle dates drive Nordic cycle-time reporting
+AD-24,Project,Request Assigned,Date,,pm_project / dmn_demand,u_request_assigned,Request assigned,Date,,Map + new field,Open question,D12,
+AD-25,Project,Estimate Complete,Date,,pm_project / dmn_demand,u_estimate_complete,Estimate complete,Date,,Map + new field,Open question,D12,
+AD-26,Project,Ready For Delivery,Date,,pm_project,u_ready_for_delivery,Ready for delivery,Date; also a classification signal,,Map + new field,Open question,D12,Blank on an Active project -> review (still estimating?)
+AD-27,Project,Project Assigned,Date,,pm_project,u_project_assigned (+ work_start fallback),Project assigned,Date,,Map + new field,Open question,D12,
+AD-28,Project,Customers,Single select,,pm_project / dmn_demand,business_unit,Business Unit,Match business_unit.name,business_unit,Map,Proposed,D8,Values not in the sheet - export them
+AD-29,Project,Business Category,Single select,11 values (Construction/Relocation ... Urgent Care),pm_project / dmn_demand,u_business_category,Business Category,Project list: exact stored values. Demand list: about 6 of 11 have a close equivalent,business_category_project / business_category_demand,Map,Open question,D1,Demand and project choice lists differ - unify before go-live
+AD-30,(derived),n/a,Constant,,dmn_demand,u_demand_type,Demand Type,New Project (New Application when category = Application?),demand_type,Map,Open question,D9,
+AD-31,Project,SYSID,System ID,P-00123,pm_project / dmn_demand,u_legacy_id,Legacy ID,Direct,,Map + new field,Proposed,,Plus correlation_id = ADAPTIVE:<entity id> (coalesce key)
+AD-32,Project,% Complete / Actual Start / Actual End,Number / Date,,pm_project,percent_complete / work_start / work_end,Actuals,Direct,,Map,Proposed,DQ9,Not in the sheet but in Adaptive - include in extract
+AD-33,Task / Milestone / Link,WBS,Hierarchy,,pm_project_task / planned_task_rel_planned_task,,,See docs/03,,Map (active projects only),Open question,D3,Mapping sheet is header-only - confirm whether Adaptive WBS migrates

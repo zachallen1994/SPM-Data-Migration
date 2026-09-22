@@ -5,7 +5,7 @@ Outputs (data/load/):
   excluded_tasks.csv       tasks not loaded (parent classified demand/skip/review, or header-only)
   excluded_dependencies.csv links whose predecessor or successor is not being loaded
   unmapped_values.csv      source values with no value_map entry -> fill mapping/value_maps.csv
-  users_referenced.csv     every user email used, with match status against sys_user export
+  users_referenced.csv     every user value used (email or display name) and what it resolved to
 """
 from __future__ import annotations
 
@@ -16,8 +16,10 @@ from collections import Counter
 from pathlib import Path
 from typing import Any
 
-from .common import (SYSTEM_DISPLAY, correlation_id, iso_date, load_yaml, read_csv,
-                     truthy, write_csv)
+from .common import (SYSTEM_DISPLAY, correlation_id, iso_date, load_yaml, parse_percent,
+                     read_csv, repair_text, split_multi, truthy, write_csv)
+
+BLANK_USER_TOKENS = {"", "n/a", "na", "tbd", "none", "-", "unassigned", "unknown"}
 
 
 class ValueMaps:
@@ -41,24 +43,53 @@ class ValueMaps:
 
 
 class UserResolver:
-    def __init__(self, known_emails: set[str] | None, placeholder: str):
-        self.known = known_emails
-        self.placeholder = placeholder.lower()
-        self.seen: Counter = Counter()
+    """Resolve source people (emails *or* display names) to sys_user emails.
 
-    def resolve(self, email: Any) -> str:
-        e = str(email or "").strip().lower()
-        if not e:
-            return self.placeholder
-        self.seen[e] += 1
-        if self.known is not None and e not in self.known:
-            return self.placeholder
-        return e
+    Sources: data/reference/sys_user.csv (email + name or first_name/last_name) and
+    data/reference/user_crosswalk.csv (source_value,email) for nicknames/aliases,
+    e.g. 'Jen Smith' -> jennifer.smith@org.com.
+    """
+
+    def __init__(self, sys_users: list[dict], crosswalk: list[dict], placeholder: str):
+        self.placeholder = placeholder.lower()
+        self.have_reference = bool(sys_users)
+        self.emails = {u["email"].strip().lower() for u in sys_users if u.get("email")}
+        self.by_name: dict[str, str] = {}
+        for u in sys_users:
+            email = (u.get("email") or "").strip().lower()
+            names = [u.get("name", ""), f"{u.get('first_name', '')} {u.get('last_name', '')}"]
+            for n in names:
+                key = " ".join(n.lower().split())
+                if key and email:
+                    self.by_name.setdefault(key, email)
+        for c in crosswalk:
+            key = " ".join((c.get("source_value") or "").lower().split())
+            if key and c.get("email"):
+                self.by_name[key] = c["email"].strip().lower()
+        self.seen: Counter = Counter()
+        self.result: dict[str, str] = {}
+
+    def lookup(self, value: Any) -> str:
+        """Resolved email, or '' when blank/unresolvable (and records what happened)."""
+        v = " ".join(str(value or "").strip().lower().split())
+        if v in BLANK_USER_TOKENS:
+            return ""
+        self.seen[v] += 1
+        if "@" in v:
+            email = v if (not self.have_reference or v in self.emails) else ""
+        else:
+            email = self.by_name.get(v, "")
+        self.result[v] = email
+        return email
+
+    def resolve(self, value: Any, placeholder: bool = True) -> str:
+        email = self.lookup(value)
+        return email or (self.placeholder if placeholder else "")
 
 
 def _html_strip(text: str) -> str:
     text = re.sub(r"<br\s*/?>|</p>|</li>", "\n", text, flags=re.I)
-    return html.unescape(re.sub(r"<[^>]+>", "", text)).strip()
+    return repair_text(html.unescape(re.sub(r"<[^>]+>", "", text)))
 
 
 def _get(row: dict, field: str) -> Any:
@@ -70,35 +101,66 @@ def _get(row: dict, field: str) -> Any:
     return row.get(field, "")
 
 
+def _first_value(row: dict, spec: dict) -> Any:
+    if "const" in spec:
+        return spec["const"]
+    sources = spec.get("from", [])
+    sources = sources if isinstance(sources, list) else [sources]
+    return next((v for v in (_get(row, s) for s in sources) if v not in (None, "")), "")
+
+
 def map_row(row: dict, columns: dict, vmaps: ValueMaps, users: UserResolver) -> dict:
+    """Apply one target's column specs to a canonical row (see config/target_mapping.yaml)."""
     out = {}
     system = row.get("source_system", "")
     for col, spec in columns.items():
-        if "const" in spec:
-            value: Any = spec["const"]
-        else:
-            sources = spec.get("from", [])
-            sources = sources if isinstance(sources, list) else [sources]
-            value = next((v for v in (_get(row, s) for s in sources) if v not in (None, "")), "")
-        if "value_map" in spec:
-            value = vmaps.lookup(spec["value_map"], system, value, spec.get("passthrough", False))
+        value: Any = _first_value(row, spec)
         t = spec.get("transform", "")
-        if t == "date":
-            value = iso_date(value)
-        elif t == "user":
-            value = users.resolve(value)
-        elif t.startswith("truncate:"):
-            n = int(t.split(":", 1)[1])
-            value = str(value)[:n]
-        elif t == "number":
-            try:
-                value = round(float(value), 2) if value not in ("", None) else ""
-            except ValueError:
-                value = ""
-        elif t == "bool":
-            value = "true" if truthy(value) else "false"
-        elif t == "html_strip":
-            value = _html_strip(str(value))
+        vm = spec.get("value_map")
+        passthrough = spec.get("passthrough", False)
+
+        if t in ("list", "first"):
+            items = split_multi(value)
+            if vm:
+                items = [vmaps.lookup(vm, system, i, passthrough) for i in items]
+            items = list(dict.fromkeys(i for i in items if i))
+            value = (items[0] if items else "") if t == "first" else ",".join(items)
+        elif t == "user_first":
+            value = next((e for e in (users.lookup(i) for i in split_multi(value)) if e), "")
+            if not value and spec.get("placeholder"):
+                value = users.placeholder
+        elif t == "user_list":
+            value = ",".join(dict.fromkeys(e for e in (users.lookup(i) for i in split_multi(value)) if e))
+        else:
+            if vm:
+                value = vmaps.lookup(vm, system, value, passthrough)
+            if t == "date":
+                value = iso_date(value)
+            elif t == "user":
+                value = users.resolve(value, placeholder=True)
+            elif t == "user_optional":
+                value = users.resolve(value, placeholder=False)
+            elif t.startswith("truncate:"):
+                value = repair_text(value)[: int(t.split(":", 1)[1])]
+            elif t == "number":
+                try:
+                    value = round(float(value), 2) if value not in ("", None) else ""
+                except ValueError:
+                    value = ""
+            elif t == "percent":
+                value = parse_percent(value)
+            elif t == "bool":
+                value = "true" if truthy(value) else "false"
+            elif t in ("html_strip", "clean"):
+                value = _html_strip(str(value))
+
+        if spec.get("append"):
+            # Source attributes with no ServiceNow home: keep them readable in a text field
+            lines = [f"{label}: {repair_text(_get(row, field))}"
+                     for label, field in spec["append"].items() if _get(row, field) not in (None, "")]
+            if lines:
+                header = spec.get("append_header", f"Migrated from {SYSTEM_DISPLAY.get(system, system)}")
+                value = (f"{value}\n\n" if value else "") + f"--- {header} ---\n" + "\n".join(lines)
         if value in ("", None) and "default" in spec:
             value = spec["default"]
         out[col] = value
@@ -111,10 +173,8 @@ def run(settings: dict, mapping_path: str | Path, value_maps_path: str | Path) -
     mapping = load_yaml(mapping_path)
     vmaps = ValueMaps(read_csv(value_maps_path))
 
-    sys_users = read_csv(ref / "sys_user.csv")
-    known = {u.get("email", "").strip().lower() for u in sys_users if u.get("email")} if sys_users else None
     placeholder = settings.get("servicenow", {}).get("placeholder_user_email", "migration.unassigned@example.com")
-    users = UserResolver(known, placeholder)
+    users = UserResolver(read_csv(ref / "sys_user.csv"), read_csv(ref / "user_crosswalk.csv"), placeholder)
 
     items = read_csv(staging / "work_items_classified.csv")
     for w in items:
@@ -161,12 +221,15 @@ def run(settings: dict, mapping_path: str | Path, value_maps_path: str | Path) -
             s["project_correlation_id"] = correlation_id(*key)
             statuses.append(s)
             have_status.add(key)
+    health_fields = ("health", "health_budget", "health_resource", "health_risk", "health_schedule",
+                     "health_scope", "status_notes")
     for w in items:
         key = (w["source_system"], w["source_id"])
-        if key in project_keys and key not in have_status and w.get("health"):
+        if key in project_keys and key not in have_status and any(w.get(f) for f in health_fields):
             statuses.append({"source_system": w["source_system"], "project_correlation_id": w["correlation_id"],
-                             "as_on": w.get("updated_at"), "health": w["health"],
-                             "title": "Status at migration", "text": ""})
+                             "as_on": w.get("updated_at") or w.get("created_at"),
+                             "title": "Status at migration", "text": w.get("status_notes", ""),
+                             **{f: w.get(f, "") for f in health_fields if f != "status_notes"}})
 
     sources = {"work_items": items, "tasks": tasks, "dependencies": deps, "status_updates": statuses}
     counts = {}
@@ -184,10 +247,10 @@ def run(settings: dict, mapping_path: str | Path, value_maps_path: str | Path) -
                for (m, s, v), n in sorted(vmaps.unmapped.items())],
               ["map_name", "source_system", "source_value", "occurrences"])
     write_csv(load / "users_referenced.csv",
-              [{"email": e, "references": n,
-                "matched": "" if known is None else ("yes" if e in known else "NO")}
-               for e, n in users.seen.most_common()],
-              ["email", "references", "matched"])
+              [{"source_value": v, "references": n, "resolved_email": users.result.get(v, ""),
+                "matched": "yes" if users.result.get(v) else "NO"}
+               for v, n in users.seen.most_common()],
+              ["source_value", "references", "resolved_email", "matched"])
     counts["unmapped_values"] = len(vmaps.unmapped)
     counts["excluded_tasks"] = len(excluded_tasks)
     return counts

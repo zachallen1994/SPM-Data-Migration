@@ -34,6 +34,7 @@ Look for these patterns. Configure each one in `config/classification.yaml` and
 | **Intake/request project** (usually fed by an Asana Form) | A project named something like "Project Requests" or "Intake". Each **task** is one request | Each task becomes a `dmn_demand`. List these project gids in `asana.intake_project_gids` |
 | **Pipeline portfolio** | A portfolio such as "Proposed" or "FY27 Pipeline" | Each project in it becomes a `dmn_demand` |
 | **Stage or status custom field** | A project custom field such as `Stage` = Idea, Proposed or Under Review | A `dmn_demand` when the value is pre-approval |
+| **Portfolio tracker** (your HR portfolio) | One Asana project where each **task** is a project, sections are COE areas, and subtasks are workstreams | Each top-level task is a project or demand. Set `asana.tracker_project_gids`. See doc 07, finding A1 |
 | **Empty shell projects** | No tasks, no start date, not completed | Sent for **review**. Often an idea that never started |
 
 ## 3. Extraction (API)

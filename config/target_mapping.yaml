@@ -4,12 +4,22 @@
 #   from:      canonical field, custom.<Name>, or a list (first non-empty wins)
 #   const:     fixed value
 #   value_map: map name in mapping/value_maps.csv (key = source_system + source value)
-#   transform: date | user | truncate:<n> | number | bool | html_strip
+#   transform: date | user | user_optional | user_first | user_list | list | first | truncate:<n> |
+#              number | percent | bool | html_strip
+#              user          blank/unmatched -> placeholder user (use for mandatory people fields)
+#              user_optional blank/unmatched -> blank (still reported in users_referenced.csv)
+#              user_first    'A, B' -> first name that resolves (multi-name sponsor fields);
+#                            add `placeholder: true` to fall back to the placeholder user
+#              list / first  split multi-select, value-map each item, join with "," / keep first
 #   default:   value when result is empty
 #   passthrough: true = keep the source value when value_map has no entry (else blank + logged)
-# Column names = ServiceNow field names. Columns prefixed u_ are helper columns the
-# transform scripts use to resolve references (they don't need to exist on the target).
-# Verify every non-u_ column with: python -m spm_migration.cli validate-fields
+#   append:    {Label: field, ...} lines appended under "--- Migrated from <source> ---"
+#              (source attributes with no ServiceNow field; see docs/07 decision D6)
+#
+# Column names = ServiceNow field names. OOB names come from docs/07 (verify with
+# validate-fields); u_ fields from the Project/Demand Form Fields workbooks are marked
+# [form]; u_ fields this review PROPOSES creating are marked [proposed]; u_ columns used
+# only by transform scripts are marked [helper].
 
 targets:
   dmn_demand:
@@ -19,22 +29,52 @@ targets:
     columns:
       correlation_id:      {from: correlation_id}
       correlation_display: {from: correlation_display}
-      u_legacy_id:         {from: [source_key, source_id]}
-      u_legacy_url:        {from: source_url}
+      u_legacy_id:         {from: [source_key, source_id]}                  # [proposed]
+      u_legacy_url:        {from: source_url}                               # [proposed]
       short_description:   {from: name, transform: "truncate:160"}
-      description:         {from: description, transform: html_strip}
+      description:
+        from: [description, status_notes]
+        transform: html_strip
+        append:
+          Business sponsor(s): business_owner
+          Section / COE area: program
+          Project type: project_type
+          Size / complexity: size
+          I&T integrations needed: it_integrations
+          Strategy focus: strategy_focus
+          Strategy timeline: strategy_timeline
+          HR COEs engaged: coes_engaged
+          HR cross-impacts: cross_impacts
+          Estimate type: estimate_type
+          Tags: tags
       type:                {const: project}
+      u_demand_type:       {from: source_system, value_map: demand_type}   # [form] New Application | New Project | HR
       category:            {from: custom.Category, value_map: demand_category, default: strategic}
       state:               {from: status, value_map: demand_state}
-      assigned_to:         {from: owner_email, transform: user}
-      opened_by:           {from: [requester_email, owner_email], transform: user}
+      assigned_to:         {from: owner_email, transform: user_optional}   # Demand manager
+      opened_by:           {from: [requester_email, business_owner, owner_email], transform: user_first, placeholder: true}
+      u_business_owner:    {from: business_owner, transform: user_first}  # [form] first resolvable name
+      u_executive_sponsor: {from: executive_sponsor, transform: user_optional}  # [form]
       portfolio:           {from: portfolio, value_map: portfolio_name, passthrough: true}
-      primary_program:     {from: program}
-      department:          {from: department}
+      primary_program:     {from: program, value_map: program_name, passthrough: true}
+      u_cn:                {from: capital_id}                              # [form]
+      u_funding_type:      {from: expense_type, value_map: funding_type}   # [form]
+      u_funding_source:    {from: funding_source}                          # [form]
+      expense_type:        {from: expense_type, value_map: expense_type}
+      u_business_category: {from: business_category, value_map: business_category_demand}  # [form]
+      u_sites:             {from: sites, transform: list, value_map: site}  # [form] list
+      business_unit:       {from: [business_unit, impacted_business_units], transform: first, value_map: business_unit}
+      impacted_business_units: {from: impacted_business_units, transform: list, value_map: business_unit}
+      u_cost_center:       {from: cost_center}                             # [proposed] ref cmn_cost_center
+      size:                {from: size, value_map: tshirt_size}
       start_date:          {from: start_date, transform: date}
       due_date:            {from: end_date, transform: date}
       priority:            {from: priority, value_map: priority}
       business_case:       {from: [custom.C_BusinessCase, custom.Business Case]}
+      u_request_received:  {from: request_received, transform: date}       # [proposed]
+      u_request_assigned:  {from: request_assigned, transform: date}       # [proposed]
+      u_estimate_complete: {from: estimate_complete, transform: date}      # [proposed]
+      u_estimate_type:     {from: estimate_type, value_map: estimate_type} # [proposed]
 
   pm_project:
     file: 02_pm_project.csv
@@ -43,25 +83,55 @@ targets:
     columns:
       correlation_id:      {from: correlation_id}
       correlation_display: {from: correlation_display}
-      u_legacy_id:         {from: [source_key, source_id]}
-      u_legacy_url:        {from: source_url}
+      u_legacy_id:         {from: [source_key, source_id]}                  # [proposed]
+      u_legacy_url:        {from: source_url}                               # [proposed]
       short_description:   {from: name, transform: "truncate:160"}
-      description:         {from: description, transform: html_strip}
+      description:
+        from: description
+        transform: html_strip
+        append:
+          Business sponsor(s): business_owner
+          Section / COE area: program
+          Size / complexity: size
+          I&T integrations needed: it_integrations
+          Strategy focus: strategy_focus
+          Strategy timeline: strategy_timeline
+          HR COEs engaged: coes_engaged
+          HR cross-impacts: cross_impacts
+          Tags: tags
       project_manager:     {from: owner_email, transform: user}
+      u_business_owner:    {from: business_owner, transform: user_first}  # [form] first resolvable name
+      u_executive_sponsor: {from: executive_sponsor, transform: user_optional}  # [form]
       state:               {from: status, value_map: project_state}
       phase:               {from: phase, value_map: project_phase, passthrough: true}
-      start_date:          {from: [start_date, created_at], transform: date}
-      end_date:            {from: [end_date, start_date, created_at], transform: date}
-      work_start:          {from: actual_start, transform: date}
+      start_date:          {from: [start_date, request_received, created_at], transform: date}
+      end_date:            {from: [end_date, go_live_date, start_date, created_at], transform: date}
+      work_start:          {from: [actual_start, project_assigned], transform: date}
       work_end:            {from: [actual_end, completed_at], transform: date}
-      percent_complete:    {from: percent_complete, transform: number}
+      percent_complete:    {from: percent_complete, transform: percent}
       primary_portfolio:   {from: portfolio, value_map: portfolio_name, passthrough: true}
-      primary_program:     {from: program}
-      department:          {from: department}
+      primary_program:     {from: program, value_map: program_name, passthrough: true}
+      investment_class:    {from: project_type, value_map: investment_class}
+      u_cn:                {from: capital_id}                              # [form]
+      u_funding_type:      {from: expense_type, value_map: funding_type}   # [form]
+      u_funding_source:    {from: funding_source}                          # [form]
+      expense_type:        {from: expense_type, value_map: expense_type}
+      u_business_category: {from: business_category, value_map: business_category_project}  # [form]
+      u_sites:             {from: sites, transform: list, value_map: site}  # [form] list
+      business_unit:       {from: [business_unit, impacted_business_units], transform: first, value_map: business_unit}
+      impacted_business_units: {from: impacted_business_units, transform: list, value_map: business_unit}
+      u_cost_center:       {from: cost_center}                             # [proposed] ref cmn_cost_center
       priority:            {from: priority, value_map: priority}
       time_constraint:     {const: start_on_specific_date}
-      u_demand_correlation_id: {from: demand_link}
-      u_include_tasks:     {from: include_tasks}
+      u_next_go_live_date: {from: go_live_date, transform: date}           # [proposed]
+      u_estimate_type:     {from: estimate_type, value_map: estimate_type} # [proposed]
+      u_request_received:  {from: request_received, transform: date}       # [proposed]
+      u_request_assigned:  {from: request_assigned, transform: date}       # [proposed]
+      u_estimate_complete: {from: estimate_complete, transform: date}      # [proposed]
+      u_ready_for_delivery: {from: ready_for_delivery, transform: date}    # [proposed]
+      u_project_assigned:  {from: project_assigned, transform: date}       # [proposed]
+      u_demand_correlation_id: {from: demand_link}                         # [helper]
+      u_include_tasks:     {from: include_tasks}                           # [helper]
 
   pm_project_task:
     file: 03_pm_project_task.csv
@@ -69,30 +139,31 @@ targets:
     columns:
       correlation_id:           {from: correlation_id}
       correlation_display:      {from: correlation_display}
-      u_legacy_id:              {from: [source_key, source_id]}
-      u_legacy_url:             {from: source_url}
-      u_project_correlation_id: {from: project_correlation_id}
-      u_parent_correlation_id:  {from: parent_correlation_id}
-      u_level:                  {from: level}
+      u_legacy_id:              {from: [source_key, source_id]}            # [proposed]
+      u_legacy_url:             {from: source_url}                         # [proposed]
+      u_project_correlation_id: {from: project_correlation_id}             # [helper]
+      u_parent_correlation_id:  {from: parent_correlation_id}              # [helper]
+      u_level:                  {from: level}                              # [helper]
       wbs_order:                {from: order}
       short_description:        {from: name, transform: "truncate:160", default: "(untitled task)"}
       description:              {from: description, transform: html_strip}
-      assigned_to:              {from: assignee_email, transform: user}
+      assigned_to:              {from: assignee_email, transform: user_optional}
+      additional_assignee_list: {from: additional_assignees, transform: user_list}
       state:                    {from: status, value_map: task_state}
       milestone:                {from: is_milestone, transform: bool}
       start_date:               {from: [start_date, end_date], transform: date}
       end_date:                 {from: [end_date, start_date], transform: date}
       work_start:               {from: actual_start, transform: date}
       work_end:                 {from: actual_end, transform: date}
-      percent_complete:         {from: percent_complete, transform: number}
+      percent_complete:         {from: percent_complete, transform: percent}
       time_constraint:          {const: start_on_specific_date}
 
   planned_task_rel_planned_task:
     file: 04_planned_task_rel_planned_task.csv
     source: dependencies
     columns:
-      u_predecessor_correlation_id: {from: predecessor_correlation_id}
-      u_successor_correlation_id:   {from: successor_correlation_id}
+      u_predecessor_correlation_id: {from: predecessor_correlation_id}     # [helper]
+      u_successor_correlation_id:   {from: successor_correlation_id}       # [helper]
       type:                         {from: type, value_map: dependency_type, default: fs}
       lag:                          {from: lag_days, transform: number, default: 0}
 
@@ -100,8 +171,12 @@ targets:
     file: 05_project_status.csv
     source: status_updates
     columns:
-      u_project_correlation_id: {from: project_correlation_id}
+      u_project_correlation_id: {from: project_correlation_id}             # [helper]
       as_on:                    {from: as_on, transform: date}
       overall_health:           {from: health, value_map: health}
-      comments:                 {from: [title, text]}
-      u_detail:                 {from: text}
+      schedule:                 {from: health_schedule, value_map: health}
+      cost:                     {from: health_budget, value_map: health}
+      resources:                {from: health_resource, value_map: health}
+      scope:                    {from: health_scope, value_map: health}
+      u_risk_health:            {from: health_risk, value_map: health}     # [proposed] no OOB risk indicator
+      comments:                 {from: [text, title], transform: html_strip}

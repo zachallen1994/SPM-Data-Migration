@@ -1,68 +1,133 @@
 map_name,source_system,source_value,target_value,notes
+demand_type,*,asana,hr,u_demand_type: all Asana items are HR work. CONFIRM stored value (form lists labels New Application / New Project / HR)
+demand_type,*,adaptive,new_project,Adaptive/Nordic IT work. Use new_application for Business Category = Application if agreed (decision D9). CONFIRM stored value
 demand_state,asana,open,submitted,Intake task still open. Confirm stored value in sys_choice (dmn_demand.state)
+demand_state,asana,Not Started,qualified,HR tracker item not started (only reaches demand via review/override)
+demand_state,asana,Started/Scoping,screening,
+demand_state,asana,On Hold,deferred,
+demand_state,asana,Cancelled,incomplete,
 demand_state,asana,active,draft,Pipeline-portfolio project not yet approved
-demand_state,asana,on_hold,deferred,
-demand_state,asana,completed,completed,Intake task closed; usually approved -> became a project
+demand_state,asana,completed,completed,
+demand_state,adaptive,Requested,submitted,Nordic request received / being estimated
 demand_state,adaptive,Draft,draft,
-demand_state,adaptive,Submitted,submitted,Request states vary by tenant; list them via describeEntities
-demand_state,adaptive,Opened,screening,
-demand_state,adaptive,Assigned,screening,
-demand_state,adaptive,Approved,approved,Loading into approved may trigger workflow - see docs/01 section 6
-demand_state,adaptive,Resolved,completed,
-demand_state,adaptive,Closed,completed,
-demand_state,adaptive,Rejected,deferred,
+demand_state,adaptive,Active,screening,Active but not yet Ready For Delivery (estimation in progress) - via review/override
+demand_state,adaptive,On Hold,deferred,
 demand_state,adaptive,Cancelled,incomplete,
 demand_state,*,,draft,Blank source value
-demand_category,*,,strategic,Default. Values: strategic | operational (confirm in sys_choice)
-project_state,asana,active,2,Work in Progress (OOB pm_project.state integers - CONFIRM in sys_choice)
-project_state,asana,on_hold,-3,On Hold - CONFIRM value; some releases have no On Hold state (use Open + status report)
-project_state,asana,completed,3,Closed Complete
-project_state,asana,archived,3,Closed Complete (archived in Asana)
-project_state,adaptive,Draft,-5,Pending
+demand_category,*,,strategic,OOB category. Values: strategic | operational (confirm in sys_choice)
+project_state,asana,Not Started,-5,Pending (OOB pm_project.state integers - CONFIRM in sys_choice)
+project_state,asana,Started/Scoping,1,Open
+project_state,asana,In Progress,2,Work in Progress
+project_state,asana,Delayed,2,Work in Progress + schedule health red on status report (decision D7)
+project_state,asana,On Hold,-3,On Hold - CONFIRM value exists in your release
+project_state,asana,Completed,3,Closed Complete
+project_state,asana,Cancelled,4,Closed Incomplete (only if cancelled work is migrated; default rule skips it)
+project_state,asana,active,2,Standard Asana project (derived status)
+project_state,asana,on_hold,-3,
+project_state,asana,completed,3,
+project_state,asana,archived,3,
+project_state,asana,open,-5,Tracker item with no Project Status
+project_state,adaptive,Requested,-5,Normally classified as demand
+project_state,adaptive,Draft,-5,Normally classified as demand
 project_state,adaptive,Active,2,Work in Progress
 project_state,adaptive,On Hold,-3,On Hold - CONFIRM
 project_state,adaptive,Completed,3,Closed Complete
 project_state,adaptive,Cancelled,4,Closed Incomplete
-task_state,asana,not_started,-5,Pending
-task_state,asana,in_progress,2,Work in Progress
-task_state,asana,completed,3,Closed Complete
-task_state,adaptive,Draft,-5,Pending
-task_state,adaptive,Active,2,Work in Progress
-task_state,adaptive,On Hold,-3,On Hold - CONFIRM
-task_state,adaptive,Completed,3,Closed Complete
+task_state,asana,Not Started,-5,Task Status custom field (task-level template)
+task_state,asana,In Progress,2,
+task_state,asana,Completed,3,
+task_state,asana,On Hold,-3,CONFIRM
+task_state,asana,not_started,-5,Derived when Task Status is blank
+task_state,asana,in_progress,2,
+task_state,asana,completed,3,
+task_state,adaptive,Draft,-5,
+task_state,adaptive,Active,2,
+task_state,adaptive,On Hold,-3,CONFIRM
+task_state,adaptive,Completed,3,
 task_state,adaptive,Cancelled,7,Closed Skipped
-task_state,*,,-5,Blank -> Pending (e.g. Asana section/phase rows)
-health,asana,on_track,green,
+task_state,*,,-5,Blank -> Pending (e.g. phase rows)
+health,adaptive,On Target,green,Budget Health list uses On Target
+health,adaptive,On Plan,green,Health/Resource/Risk/Schedule/Scope lists use On Plan (picklist sheet) - same meaning
+health,adaptive,Needs Attention,yellow,
+health,adaptive,In Trouble,red,
+health,asana,on_track,green,Asana native status updates
 health,asana,at_risk,yellow,
 health,asana,off_track,red,
-health,asana,on_hold,yellow,No OOB 'on hold' health; mention in comments
+health,asana,on_hold,yellow,
 health,asana,complete,green,
-health,asana,achieved,green,
-health,asana,partial,yellow,
-health,asana,missed,red,
-health,asana,dropped,red,
-health,adaptive,On Track,green,TrackStatus values vary by tenant
-health,adaptive,At Risk,yellow,
-health,adaptive,Off Track,red,
-health,adaptive,Green,green,
-health,adaptive,Yellow,yellow,
-health,adaptive,Red,red,
-priority,*,Critical,1,1 - Critical (task.priority)
-priority,*,Urgent,1,
-priority,*,High,2,2 - High
-priority,*,Medium,3,3 - Moderate
-priority,*,Normal,3,
-priority,*,Low,4,4 - Low
-priority,*,,4,Blank -> Low (agree default with PMO)
+investment_class,asana,Project,change,OOB investment_class (Run vs Change). CONFIRM stored values
+investment_class,asana,Annual Program,run,Recurring annual programs are Run work
+investment_class,asana,Project/Annual Program,change,Ambiguous - defaulted to Change; owners to confirm (data-quality DQ5)
+investment_class,*,,change,Default (all Adaptive/Nordic work is project delivery)
+expense_type,*,Capex,capex,OOB expense type. CONFIRM stored values
+expense_type,*,Opex,opex,
+funding_type,*,Capex,capex_required,u_funding_type choice 'Capex required'. CONFIRM stored value (decision D4)
+funding_type,*,Opex,opex_required,u_funding_type choice 'Opex required'. CONFIRM stored value
+business_category_project,adaptive,Construction/Relocation,construction_relocation,Stored values from Project_Form_Fields 'Business category' tab
+business_category_project,adaptive,Onboarding (new Provider group - no construction),onboarding,
+business_category_project,adaptive,Application,application,
+business_category_project,adaptive,Epic,epic,
+business_category_project,adaptive,GHC - all non RSFH work,ghc,SN label reads 'GHC - all not FSFH work' (typo - DQ12)
+business_category_project,adaptive,Infrastructure,infrastructure,
+business_category_project,adaptive,Medical Group,medical_group,
+business_category_project,adaptive,Revenue Cycle (includes Ensemble requests,revenue_cycle,Source value is missing its closing parenthesis
+business_category_project,adaptive,Revenue Cycle (includes Ensemble requests),revenue_cycle,
+business_category_project,adaptive,RSFH,rsfh,
+business_category_project,adaptive,Security,security,
+business_category_project,adaptive,Urgent Care,urgent care,SN stored value contains a space - fix before go-live (DQ13)
+business_category_demand,asana,,Human Resources,All Asana (HR) demands. Demand list stored values from Demand_Form_Fields
+business_category_demand,adaptive,Construction/Relocation,Construction Renovation Relocation,Demand list differs from project list (decision D1)
+business_category_demand,adaptive,Onboarding (new Provider group - no construction),Employed Physician Onboarding,Closest match - CONFIRM
+business_category_demand,adaptive,Epic,EHR,
+business_category_demand,adaptive,Infrastructure,Infrastructure,
+business_category_demand,adaptive,Revenue Cycle (includes Ensemble requests,Rev Cycle,
+business_category_demand,adaptive,Revenue Cycle (includes Ensemble requests),Rev Cycle,
+business_category_demand,adaptive,Security,Security,
+site,*,Cincinnati,Cincinnati,u_sites list; transform script resolves names to sys_ids. Region values not supplied - extend once exported
+site,*,CIN,Cincinnati,Market codes used in Project Funding Type
+site,*,Greenville,Greenville,
+site,*,GVL,Greenville,
+site,*,Hampton Roads,Hampton Roads,
+site,*,HMP,Hampton Roads,
+site,*,Lima,Lima,
+site,*,LIM,Lima,
+site,*,Lorain,Lorain,
+site,*,LOR,Lorain,
+site,*,Richmond,Richmond,
+site,*,RCH,Richmond,
+site,*,Springfield,Springfield,
+site,*,SPG,Springfield,
+site,*,Toledo,Toledo,
+site,*,TOL,Toledo,
+site,*,Youngstown,Youngstown,
+site,*,YNG,Youngstown,
+site,*,Home Office,Home Office,
+site,*,RSFH,Roper St. Francis Healthcare,
+site,*,Roper St Francis,Roper St. Francis Healthcare,
+site,*,Ireland,Ireland,
+site,*,Enterprise,Enterprise,
+site,*,Paducah,Kentucky,ASSUMPTION - Paducah is not on the Sites list (DQ14). CONFIRM
+site,*,PAD,Kentucky,ASSUMPTION - CONFIRM
+business_unit,*,BSMH,BSMH,Entity/Organization + Customers -> business_unit (name must match business_unit.name). CONFIRM names
+business_unit,*,RSFH,RSFH,
+business_unit,*,GBS,GBS,
+business_unit,*,External Partners,External Partners,May not warrant a business unit - decision D8
+tshirt_size,*,Low,small,Size/Complexity -> demand T-Shirt Size. CONFIRM stored values
+tshirt_size,*,Medium,medium,
+tshirt_size,*,High,large,
+estimate_type,adaptive,Detailed Estimate,detailed_estimate,Proposed new choice field u_estimate_type (we define the values)
+estimate_type,adaptive,SAT - Detailed Estimate,sat_detailed_estimate,
+estimate_type,adaptive,Detailed Estimate- Straight to PM,detailed_estimate_straight_to_pm,
+estimate_type,adaptive,Packaging,packaging,Only on the Picklists sheet - confirm it is in use
+program_name,asana,Ireland Projects 2026 - 2027,Ireland Projects 2026 - 2027,Asana sections -> pm_program.name (decision D2). Other sections pass through unchanged
+portfolio_name,asana,,Human Resources,ASSUMPTION: every Asana item belongs to one HR portfolio (decision D2)
+priority,*,Critical,1,1 - Critical (task.priority) - neither source has priority today
+priority,*,High,2,
+priority,*,Medium,3,
+priority,*,Low,4,
 dependency_type,*,fs,fs,Finish to Start
 dependency_type,adaptive,Finish to Start,fs,
-dependency_type,adaptive,FinishToStart,fs,
 dependency_type,adaptive,Start to Start,ss,
-dependency_type,adaptive,StartToStart,ss,
 dependency_type,adaptive,Finish to Finish,ff,
-dependency_type,adaptive,FinishToFinish,ff,
 dependency_type,adaptive,Start to Finish,sf,
-dependency_type,adaptive,StartToFinish,sf,
-project_phase,*,,,Only used with phase-based templates; map source phases to your SN phase choices
-portfolio_name,*,FY27 Pipeline,FY27 Pipeline,Source portfolio name -> exact pm_portfolio.name in ServiceNow
-portfolio_name,*,Enterprise Delivery,Enterprise Delivery,
+project_phase,*,,,Adaptive Phase passes through; map once SN phase choices are confirmed (decision D5)

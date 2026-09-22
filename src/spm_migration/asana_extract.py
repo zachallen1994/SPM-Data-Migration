@@ -23,13 +23,16 @@ PROJECT_FIELDS = ",".join([
     "start_on", "due_on", "permalink_url", "owner.email", "owner.name", "team.name",
     "current_status_update.status_type", "current_status_update.title",
     "custom_fields.name", "custom_fields.display_value",
+    "custom_fields.people_value.email", "custom_fields.people_value.name",
 ])
 TASK_FIELDS = ",".join([
     "name", "notes", "completed", "completed_at", "created_at", "modified_at",
     "start_on", "due_on", "due_at", "permalink_url", "resource_subtype", "num_subtasks",
     "assignee.email", "created_by.email", "parent.gid",
     "memberships.project.gid", "memberships.section.gid", "memberships.section.name",
-    "dependencies.gid", "custom_fields.name", "custom_fields.display_value",
+    "dependencies.gid", "followers.email", "tags.name",
+    "custom_fields.name", "custom_fields.display_value",
+    "custom_fields.people_value.email", "custom_fields.people_value.name",
 ])
 STATUS_FIELDS = "status_type,title,text,created_at,author.email"
 

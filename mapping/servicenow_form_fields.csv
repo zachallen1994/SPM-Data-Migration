@@ -1,0 +1,79 @@
+form,tab,field_label,custom,field_name,name_source,fed_by_asana,fed_by_adaptive,migration_note
+Project,Header,Project Name,No,short_description,Given (form workbook),Name,Name,
+Project,Header,Project Manager,No,project_manager,OOB - verify,PM Assigned,Manager,
+Project,Header,Status,No,status (overall health),OOB - verify,,Health,Confirm what 'Status' is on your form; health is best loaded via project_status
+Project,Header,State,No,state,OOB - verify,Project Status,State,Integers in sys_choice
+Project,Header,Percent Complete,,percent_complete,OOB - verify,(rolled up from tasks),% Complete,Rolls up once tasks exist
+Project,Header,Number,No,number,OOB - verify,,,Auto-numbered; source ID goes to u_legacy_id
+Project,Header,Assigned To,No,assigned_to,OOB - verify,,,
+Project,Header,Assignment Group,No,assignment_group,OOB - verify,,,Not fed by either source
+Project,Header,Additional assignee list,No,additional_assignee_list,OOB - verify,,,
+Project,Header,Detailed Description,No,description,OOB - verify,Notes,Project Description,
+Project,Dates,Schedule,,schedule,OOB - verify,,,Calendar reference - set a default
+Project,Dates,Approved start date,,approved_start_date,OOB - verify,,,No source; leave blank
+Project,Dates,Planned start date,,start_date,OOB - verify,Start Date,(StartDate - add to extract),Required
+Project,Dates,Actual start date,,work_start,OOB - verify,,Actual start / Project Assigned,
+Project,Dates,Duration,,duration,Calculated - do not load,,,Derived from dates
+Project,Dates,Planned effort,,effort,OOB - verify,,Work (hours),Only if resource planning is in scope
+Project,Dates,Approved end date,,approved_end_date,OOB - verify,,,No source; leave blank
+Project,Dates,Planned end date,,end_date,OOB - verify,Due Date,Planned Finish,
+Project,Dates,Actual end date,,work_end,OOB - verify,completed_at,Actual end,
+Project,Dates,Actual duration,,work_duration,Calculated - do not load,,,
+Project,Dates,Actual effort,,work_effort,Calculated - do not load,,,Rolls up from time cards
+Project,Details,Portfolio,No,primary_portfolio,OOB - verify,(constant: HR portfolio),,
+Project,Details,Program,No,primary_program,OOB - verify,Section/Column,,Create the programs before loading
+Project,Details,Business Owner,Yes,u_business_owner,Given (form workbook),HRSP / SME / Project Lead,Business Sponsor,Reference sys_user
+Project,Details,Executive Sponsor,Yes,u_executive_sponsor,Given (form workbook),,,No reliable source in either system
+Project,Details,Investment Class,No,investment_class,OOB - verify,Project Type,(default Change),Run vs Change
+Project,Details,Investment Type,No,investment_type,OOB - verify,,,
+Project,Details,Execution Type,No,execution_type,OOB - verify,,,Default waterfall
+Project,Details,Expense type,No,expense_type,OOB - verify,Funding,Funding Type,
+Project,Details,CN,Yes,u_cn,Given (form workbook),,CN#,
+Project,Details,Funding Type,Yes,u_funding_type,Given (form workbook),Funding,Funding Type,Choice list is intake-oriented (Opex required ...) - see decision D4
+Project,Details,Funding Source,Yes,u_funding_source,Given (form workbook),,Project Funding Type,
+Project,Details,Priority,No,priority,OOB - verify,,,No source in either system
+Project,Details,Phase,No,phase,OOB - verify,(plan-project sections become phase tasks),Phase,
+Project,Details,Business Category,Yes,u_business_category,Given (form workbook),(no HR value in the project list),Business Category,Project list differs from demand list - decision D1
+Project,Details,Department,No,department,OOB - verify,,Dept # for Expense?,Or u_cost_center - decision D11
+Project,Details,Business Unit,No,business_unit,OOB - verify,Entity/Organization (first),Customers,
+Project,Details,Sites,Yes,u_sites,Given (form workbook),,Region,List - transform script resolves names to sys_ids
+Project,Details,Impacted Business Units,No,impacted_business_units,OOB - verify,Entity/Organization,,
+Project,Details,Business Capabilities,No,business_capabilities,OOB - verify,,,
+Project,Details,Impacted Business Applications,No,business_applications,OOB - verify,,,
+Project,Business Case,Strategic Priority,No,strategic_priority,OOB - verify,,,
+Project,Business Case,Primary Goal,No,primary_goal,OOB - verify,Strategy Focus?,,Only if HR goals are loaded
+Project,Business Case,Business Case,No,business_case,OOB - verify,,,
+Project,Business Case,Risk of Performing / not Performing,No,risk_of_performing / risk_of_not_performing,OOB - verify,,,
+Project,Business Case,Enablers / Barriers,No,enablers / barriers,OOB - verify,,,
+Project,Business Case,In scope / Out of scope / Assumptions,No,in_scope / out_of_scope / assumptions,OOB - verify,,Project Description (scope),
+Project,Financials,All financial fields,No,(cost_plan / benefit_plan roll-ups),Calculated - do not load,,,Neither source supplies budget amounts
+Project,Score,"Risk / Value / Size Score, Score",No,risk_score / value_score / size_score / score,Calculated - do not load,,,Calculated from assessments
+Project,Notes / Preferences,Request variables (Requested For ... Priority Justification),,(catalog variables),Not loadable,,,"These tabs repeat the request variables. Migrated records have no request, so variables cannot be populated (DQ16)"
+Demand,Header,Name,No,short_description,OOB - verify,Name,Name,
+Demand,Header,Category,No,category,OOB - verify,,,strategic/operational default
+Demand,Header,Type,No,type,OOB - verify,,,Constant project; drives 'Convert to'
+Demand,Header,Demand Type,Yes,u_demand_type,Given (form workbook),(constant HR),(constant New Project),
+Demand,Header,Number,No,number,OOB - verify,,,
+Demand,Header,Approved start / end date,No,approved_start_date / approved_end_date,OOB - verify,,,
+Demand,Header,Planned start date,No,start_date,OOB - verify,Start Date,StartDate,
+Demand,Header,Planned end date,No,due_date,OOB - verify,Due Date,Planned Finish,Confirm: demand uses due_date
+Demand,Header,Detailed Description,No,description,OOB - verify,Notes,Project Description,
+Demand,Details,Portfolio / Program,No,portfolio / primary_program,OOB - verify,(HR portfolio) / Section,,
+Demand,Details,Business Owner,Yes,u_business_owner,Given (form workbook),HRSP / SME / Project Lead,Business Sponsor,
+Demand,Details,Executive Sponsor,Yes,u_executive_sponsor,Given (form workbook),,,
+Demand,Details,Investment Class / Type,No,investment_class / investment_type,OOB - verify,Project Type,,
+Demand,Details,Expense type,No,expense_type,OOB - verify,Funding,Funding Type,
+Demand,Details,CN,Yes,u_cn,Given (form workbook),,CN#,
+Demand,Details,Funding Type,Yes,u_funding_type,Given (form workbook),Funding,Funding Type,
+Demand,Details,Funding Source,Yes,u_funding_source,Given (form workbook),,Project Funding Type,
+Demand,Details,Priority,No,priority,OOB - verify,,,
+Demand,Details,Business Category,Yes,u_business_category,Given (form workbook),(Human Resources),Business Category,"Label shows 'Sites' in the workbook (typo, DQ12)"
+Demand,Details,Department / Business Unit,No,department / business_unit,OOB - verify,Entity/Organization,Customers,
+Demand,Details,Sites,Yes,u_sites,Given (form workbook),,Region,
+Demand,Details,Demand Manager,No,assigned_to (or demand_manager),OOB - verify,PM Assigned,Manager,
+Demand,Details,Project Manager,No,project_manager,OOB - verify,PM Assigned,Manager,Carried to the project on conversion
+Demand,Details,Impacted Business Units / Capabilities / Applications,No,impacted_business_units / business_capabilities / business_applications,OOB - verify,Entity/Organization,,
+Demand,Business Case,(same fields as the project form),No,"business_case, in_scope, ...",OOB - verify,,,
+Demand,Financials,All financial fields,No,(calculated),Calculated - do not load,,,
+Demand,Assessment Data,Impact / Risk / Value / T-Shirt Size / Score / Assessment Required,No,impact / risk / value / size / score / assessment_required,OOB - verify,Size/Complexity -> size,,Scores are calculated from assessments
+Demand,Notes / Preferences / RequesT,Request variables,,(catalog variables),Not loadable,,,Same as the project form (DQ16)

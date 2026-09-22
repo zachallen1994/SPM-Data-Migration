@@ -19,16 +19,22 @@ docs/
   04_classification_rules.md      Project vs. Demand decision tree
   05_servicenow_build.md          Import sets, transform maps, scripts to paste in
   06_testing_and_cutover.md       Mock loads, reconciliation, cutover runbook
+  07_mapping_review.md            ★ Review of the actual Asana/Adaptive/ServiceNow field files
 mapping/                       ← field-level mapping specs (open these in Excel)
-  asana_to_servicenow.csv
-  adaptive_to_servicenow.csv
-  value_maps.csv                 state, health, priority and type translations
-  mapping_workbook.xlsx          all of the above in one workbook (generated)
+  mapping_workbook.xlsx          ★ all of the below in one workbook (generated)
+  decisions.csv                  open decisions D1-D16 that block the build
+  data_quality.csv               source/target issues DQ1-DQ18 to fix before cutover
+  asana_to_servicenow.csv        HR portfolio tracker + task-level plan fields
+  adaptive_to_servicenow.csv     Nordic IT PMO project fields (all 28 + required extras)
+  servicenow_form_fields.csv     every Project/Demand form field, its field name and its source
+  value_maps.csv                 state, health, category, sites, funding ... translations
 config/
   settings.example.yaml          API connection settings, source field lists
   classification.yaml            ordered rules: project, demand, skip or review
   target_mapping.yaml            canonical fields → ServiceNow columns
   overrides.example.csv          per-record manual decisions
+  asana_plan_links.example.csv   tracker item -> Asana plan project (detailed WBS)
+  user_crosswalk.example.csv     display names / nicknames -> sys_user email
 src/spm_migration/             ← pipeline: extract → normalize → classify → transform
 tests/                         ← sample data and an end-to-end test
 ```
