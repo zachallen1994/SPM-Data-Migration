@@ -37,7 +37,8 @@ targets:
         transform: html_strip
         append:
           Business sponsor(s): business_owner
-          Section / COE area: program
+          Section / COE area: portfolio
+          Entity / organization: impacted_business_units
           Project type: project_type
           Size / complexity: size
           I&T integrations needed: it_integrations
@@ -61,7 +62,7 @@ targets:
       u_funding_type:      {from: expense_type, value_map: funding_type}   # [form]
       u_funding_source:    {from: funding_source}                          # [form]
       expense_type:        {from: expense_type, value_map: expense_type}
-      u_business_category: {from: business_category, value_map: business_category_demand}  # [form]
+      u_business_category: {from: business_category, transform: first, value_map: business_category_demand}  # [form]
       u_sites:             {from: sites, transform: list, value_map: site}  # [form] list
       business_unit:       {from: [business_unit, impacted_business_units], transform: first, value_map: business_unit}
       impacted_business_units: {from: impacted_business_units, transform: list, value_map: business_unit}
@@ -91,7 +92,7 @@ targets:
         transform: html_strip
         append:
           Business sponsor(s): business_owner
-          Section / COE area: program
+          Entity / organization: impacted_business_units
           Size / complexity: size
           I&T integrations needed: it_integrations
           Strategy focus: strategy_focus
@@ -116,7 +117,7 @@ targets:
       u_funding_type:      {from: expense_type, value_map: funding_type}   # [form]
       u_funding_source:    {from: funding_source}                          # [form]
       expense_type:        {from: expense_type, value_map: expense_type}
-      u_business_category: {from: business_category, value_map: business_category_project}  # [form]
+      u_business_category: {from: business_category, transform: first, value_map: business_category_project}  # [form] Asana: Entity/Organization (D17)
       u_sites:             {from: sites, transform: list, value_map: site}  # [form] list
       business_unit:       {from: [business_unit, impacted_business_units], transform: first, value_map: business_unit}
       impacted_business_units: {from: impacted_business_units, transform: list, value_map: business_unit}

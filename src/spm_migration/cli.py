@@ -18,16 +18,25 @@ def _today(settings: dict) -> date:
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="spm_migration")
     p.add_argument("command", choices=["extract-asana", "extract-adaptive", "describe-adaptive", "normalize",
-                                       "classify", "transform", "run-all", "validate-fields", "reconcile", "build-workbook"])
+                                       "classify", "transform", "run-all", "validate-fields", "reconcile", "build-workbook",
+                                       "transform-map-spec", "push"])
     p.add_argument("--settings", default="config/settings.yaml")
     p.add_argument("--rules", default="config/classification.yaml")
     p.add_argument("--overrides", default="config/overrides.csv")
     p.add_argument("--mapping", default="config/target_mapping.yaml")
     p.add_argument("--value-maps", default="mapping/value_maps.csv")
+    p.add_argument("--execute", action="store_true", help="push: actually send rows (default is a dry run)")
+    p.add_argument("--only", nargs="*", help="push: limit to these target tables, e.g. pm_project")
+    p.add_argument("--limit", type=int, help="push: first N rows per file (for smoke tests)")
     args = p.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     log = logging.getLogger("spm_migration")
 
+    if args.command == "transform-map-spec":
+        from .servicenow import transform_map_spec
+        rows = transform_map_spec(args.mapping, "mapping/servicenow_transform_maps.csv")
+        log.info("Wrote mapping/servicenow_transform_maps.csv (%d field maps)", len(rows))
+        return 0
     if args.command == "build-workbook":
         from .workbook import build
         log.info("Wrote %s", build("mapping", "mapping/mapping_workbook.xlsx"))
@@ -56,6 +65,11 @@ def main(argv: list[str] | None = None) -> int:
                     "%s.%s: %s", i["table"], i["column"], i["issue"])
         log.info("%d errors, %d info (see data/staging/field_validation.csv)", len(errors), len(issues) - len(errors))
         return 1 if errors else 0
+    elif args.command == "push":
+        from .servicenow import push
+        summary = push(settings, args.mapping, args.only, args.execute, args.limit)
+        if not args.execute:
+            log.info("Dry run only - add --execute to send %d files to ServiceNow", len(summary))
     elif args.command == "reconcile":
         for row in reconcile.run(settings, args.mapping):
             log.info("%(table)s: expected=%(expected)s in_servicenow=%(in_servicenow)s "

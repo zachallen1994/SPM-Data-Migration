@@ -75,7 +75,11 @@ business_category_project,adaptive,Revenue Cycle (includes Ensemble requests),re
 business_category_project,adaptive,RSFH,rsfh,
 business_category_project,adaptive,Security,security,
 business_category_project,adaptive,Urgent Care,urgent care,SN stored value contains a space - fix before go-live (DQ13)
-business_category_demand,asana,,Human Resources,All Asana (HR) demands. Demand list stored values from Demand_Form_Fields
+business_category_demand,asana,,Human Resources,All Asana (HR) demands -> Human Resources on the demand list
+business_category_demand,asana,BSMH,Human Resources,Entity/Organization is not a demand category - HR demands stay Human Resources
+business_category_demand,asana,RSFH,Human Resources,Entity/Organization is not a demand category - HR demands stay Human Resources
+business_category_demand,asana,GBS,Human Resources,Entity/Organization is not a demand category - HR demands stay Human Resources
+business_category_demand,asana,External Partners,Human Resources,Entity/Organization is not a demand category - HR demands stay Human Resources
 business_category_demand,adaptive,Construction/Relocation,Construction Renovation Relocation,Demand list differs from project list (decision D1)
 business_category_demand,adaptive,Onboarding (new Provider group - no construction),Employed Physician Onboarding,Closest match - CONFIRM
 business_category_demand,adaptive,Epic,EHR,
@@ -119,8 +123,6 @@ estimate_type,adaptive,Detailed Estimate,detailed_estimate,Proposed new choice f
 estimate_type,adaptive,SAT - Detailed Estimate,sat_detailed_estimate,
 estimate_type,adaptive,Detailed Estimate- Straight to PM,detailed_estimate_straight_to_pm,
 estimate_type,adaptive,Packaging,packaging,Only on the Picklists sheet - confirm it is in use
-program_name,asana,Ireland Projects 2026 - 2027,Ireland Projects 2026 - 2027,Asana sections -> pm_program.name (decision D2). Other sections pass through unchanged
-portfolio_name,asana,,Human Resources,ASSUMPTION: every Asana item belongs to one HR portfolio (decision D2)
 priority,*,Critical,1,1 - Critical (task.priority) - neither source has priority today
 priority,*,High,2,
 priority,*,Medium,3,
@@ -131,3 +133,7 @@ dependency_type,adaptive,Start to Start,ss,
 dependency_type,adaptive,Finish to Finish,ff,
 dependency_type,adaptive,Start to Finish,sf,
 project_phase,*,,,Adaptive Phase passes through; map once SN phase choices are confirmed (decision D5)
+business_category_project,asana,RSFH,rsfh,"Entity/Organization -> parent.u_business_category (Asana task mapping). 'BSMH, RSFH' -> rsfh (first mappable value)"
+portfolio_name,asana,Benefits,Benefits & Well-Being,Task COE -> parent.portfolio; COE values aligned to section (portfolio) names. CONFIRM pm_portfolio names
+portfolio_name,asana,Learning,Culture & Learning,
+portfolio_name,asana,Compensation,Compensation,Other sections/COEs pass through unchanged and must match pm_portfolio.name

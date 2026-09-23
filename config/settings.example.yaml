@@ -10,8 +10,18 @@ paths:
 as_of_date: null
 
 servicenow:
-  # Unmatched / blank users are loaded as this user and reported in users_unmatched.csv
+  # Unmatched / blank users are loaded as this user and reported in users_referenced.csv
   placeholder_user_email: migration.unassigned@example.com
+  # Only needed for `push` (Import Set API). Manual file loads need none of this.
+  instance_url: https://yourinstance.service-now.com
+  username: ${SN_USER}                 # integration user with the import_transformer role
+  password: ${SN_PASSWORD}
+  import_tables:                       # staging tables the transform maps read from
+    dmn_demand: u_imp_spm_demand
+    pm_project: u_imp_spm_project
+    pm_project_task: u_imp_spm_task
+    planned_task_rel_planned_task: u_imp_spm_dependency
+    project_status: u_imp_spm_status
 
 # ---------------------------------------------------------------------------
 asana:
@@ -35,7 +45,9 @@ asana:
   # "HR_Project_Portfolio_2026" project, where sections are COE areas). Subtasks become
   # WBS tasks under that item. See docs/07_mapping_review.md, finding A1.
   tracker_project_gids: []
-  tracker_section_as: program          # canonical field that receives the section name
+  # Section (HR COE area) -> portfolio, per the Asana_Project_Task_Fields mapping
+  # ("COE -> parent.portfolio"). Use `program` instead to load sections as programs.
+  tracker_section_as: portfolio
 
   # Optional: separate Asana "plan" projects that hold the detailed WBS for a tracker
   # item (the task-level template). CSV columns: tracker_item_gid,plan_project_gid
@@ -61,6 +73,7 @@ asana:
     expense_type: Funding              # CapEx | OpEx
     cost_center: Cost Center
     impacted_business_units: Entity/Organization   # multi: BSMH, RSFH, GBS, External Partners
+    business_category: Entity/Organization         # -> u_business_category (Asana task mapping, D17)
     cross_impacts: HR Cross-Impacts
     coes_engaged: HR COEs Engaged
     phase: Stage
@@ -71,6 +84,14 @@ asana:
   task_custom_field_map:
     status: Task Status
     percent_complete: "% Complete"      # 0.5 or "50%" -> 50
+
+  # Task-level fields that set a field on the PARENT project ("parent.<field>" in the
+  # Asana_Project_Task_Fields mapping). The most common task value fills the project
+  # field only when the project has no value of its own; disagreements are written to
+  # data/staging/rollup_conflicts.csv.
+  task_rollups:
+    portfolio: COE                          # COE -> parent.portfolio
+    business_category: Entity/Organization  # Entity/Organization -> parent.u_business_category
 
 # ---------------------------------------------------------------------------
 adaptive:

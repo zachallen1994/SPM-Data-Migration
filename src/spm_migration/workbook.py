@@ -16,6 +16,7 @@ SHEETS = [
     ("Asana to ServiceNow", "asana_to_servicenow.csv"),
     ("Adaptive to ServiceNow", "adaptive_to_servicenow.csv"),
     ("ServiceNow Form Fields", "servicenow_form_fields.csv"),
+    ("Transform Maps", "servicenow_transform_maps.csv"),
     ("Value Maps", "value_maps.csv"),
 ]
 HEADER_FILL = PatternFill("solid", fgColor="1F4E78")
@@ -39,6 +40,7 @@ def build(mapping_dir: str | Path, out_path: str | Path) -> Path:
         "4. Value Maps holds the state/health/priority translations. target_value must be a stored",
         "   value from your instance's sys_choice export, not the display label.",
         "5. 'ServiceNow Form Fields' lists every form field with its (proposed) field name and which source feeds it.",
+        "   'Transform Maps' is the build sheet for the import set transform maps: one row per field map.",
         "6. Copy agreed changes back into the CSVs (the CSVs are the source of truth for the code).",
     ], 1):
         readme.cell(row=i, column=1, value=line)

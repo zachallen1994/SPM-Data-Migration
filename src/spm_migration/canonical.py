@@ -18,12 +18,13 @@ from __future__ import annotations
 
 import json
 import re
-from collections import defaultdict
+from collections import Counter, defaultdict
 from datetime import date
 from pathlib import Path
 from typing import Any
 
-from .common import iso_date, parse_date, parse_percent, read_csv, read_jsonl, repair_text, write_csv
+from .common import (iso_date, parse_date, parse_percent, read_csv, read_jsonl, repair_text,
+                     split_multi, write_csv)
 
 WORK_ITEM_COLUMNS = [
     "source_system", "source_type", "source_id", "source_key", "source_url",
@@ -278,8 +279,43 @@ def normalize_asana(raw_dir: Path, cfg: dict, today: date, plan_links: dict[str,
         w["task_count"], w["open_task_count"] = total, total - done
         if total and w.get("percent_complete") in (None, ""):
             w["percent_complete"] = round(100 * done / total)
+    rollup_conflicts = _rollup_task_fields(work_items, out_tasks, cfg.get("task_rollups") or {})
     return {"work_items": work_items, "tasks": out_tasks, "dependencies": deps,
-            "status_updates": statuses, "multi_homed_tasks": multi_homed}
+            "status_updates": statuses, "multi_homed_tasks": multi_homed,
+            "rollup_conflicts": rollup_conflicts}
+
+
+def _rollup_task_fields(work_items: list[dict], tasks: list[dict], rollups: dict) -> list[dict]:
+    """Fill project-level fields from task-level custom fields ('parent.<field>' mappings).
+
+    rollups = {canonical_field: task custom field name}. The most common task value wins,
+    but only when the project has no value of its own. Multi-select values count per item.
+    Projects whose tasks disagree are reported in rollup_conflicts.csv.
+    """
+    if not rollups:
+        return []
+    values: dict[tuple, Counter] = defaultdict(Counter)
+    for t in tasks:
+        custom = t.get("custom_fields") or {}
+        for canon, field in rollups.items():
+            for v in split_multi(custom.get(field, "")):
+                values[(t["project_source_id"], canon)][v] += 1
+    conflicts = []
+    for w in work_items:
+        for canon, field in rollups.items():
+            counts = values.get((w["source_id"], canon))
+            if not counts:
+                continue
+            winner = counts.most_common(1)[0][0]
+            existing = w.get(canon) or ""
+            if not existing:
+                w[canon] = winner
+            if len(counts) > 1 or (existing and existing != winner):
+                conflicts.append({"source_system": w["source_system"], "source_id": w["source_id"],
+                                  "name": w.get("name"), "field": canon, "task_field": field,
+                                  "project_value": existing, "task_values": dict(counts),
+                                  "used": existing or winner})
+    return conflicts
 
 
 # --------------------------------------------------------------------------- Adaptive
@@ -454,4 +490,7 @@ def normalize(settings: dict, today: date) -> dict[str, int]:
         "status_updates": write_csv(staging / "status_updates.csv", combined["status_updates"], STATUS_COLUMNS),
         "multi_homed_tasks": write_csv(staging / "multi_homed_tasks.csv", combined["multi_homed_tasks"],
                                        ["source_id", "name", "assigned_project", "all_projects"]),
+        "rollup_conflicts": write_csv(staging / "rollup_conflicts.csv", combined["rollup_conflicts"],
+                                      ["source_system", "source_id", "name", "field", "task_field",
+                                       "project_value", "task_values", "used"]),
     }

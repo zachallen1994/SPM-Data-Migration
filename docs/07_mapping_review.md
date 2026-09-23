@@ -1,6 +1,9 @@
 # 07: Mapping review of the source and target field files
 
-Reviewed on 2026-09-22 against five workbooks:
+Reviewed on 2026-09-22 against five workbooks. **Update 2026-09-23:** your Asana task-level
+mapping (Asana_Project_Task_Fields → Sheet1) is now implemented. The re-sent ServiceNow form
+workbooks had no new fields (DQ19). See doc 08 for how the load works and how each custom field
+is handled. Decisions D2 (now COE → portfolio), D17, D18 and D19 were added or updated.
 
 | File | What it is | Used for |
 |---|---|---|

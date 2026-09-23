@@ -120,7 +120,7 @@ def map_row(row: dict, columns: dict, vmaps: ValueMaps, users: UserResolver) -> 
         passthrough = spec.get("passthrough", False)
 
         if t in ("list", "first"):
-            items = split_multi(value)
+            items = split_multi(value) or ([""] if vm else [])   # blank still honours a blank-value map row
             if vm:
                 items = [vmaps.lookup(vm, system, i, passthrough) for i in items]
             items = list(dict.fromkeys(i for i in items if i))

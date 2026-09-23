@@ -82,7 +82,7 @@ def test_classification_hr_tracker(run_dir):
     assert rule["907"] == "cancelled_work_is_skipped"
     assert rule["911"] == "recently_completed_projects_header_only"
     assert rule["912"] == "asana_tracker_item_without_status_or_dates_needs_review"
-    assert rows[("asana", "901")]["program"] == "Benefits & Well-Being"   # section -> program
+    assert rows[("asana", "901")]["portfolio"] == "Benefits & Well-Being"   # section (COE) -> portfolio
 
 
 def test_classification_adaptive(run_dir):
@@ -125,8 +125,8 @@ def test_project_load_file(run_dir):
     assert hr["project_manager"] == "pat.lee@example.org"            # "Pat Lee" via crosswalk
     assert hr["description"].startswith("· Vendor RFP – in progress")  # mojibake repaired
     assert "HR COEs engaged: Talent & Culture, HRTS" in hr["description"]
-    assert hr["primary_program"] == "Benefits & Well-Being"
-    assert hr["primary_portfolio"] == "Human Resources"
+    assert hr["primary_portfolio"] == "Benefits & Well-Being"          # section / COE -> portfolio
+    assert hr["primary_program"] == ""
     assert hr["business_unit"] == "BSMH" and hr["impacted_business_units"] == "BSMH,RSFH"
     assert hr["expense_type"] == "opex" and hr["investment_class"] == "change"
     assert projects["ASANA:902"]["investment_class"] == "run"        # Annual Program
@@ -187,7 +187,8 @@ def test_dependencies_status_and_reports(run_dir):
     assert users["pat lee"]["resolved_email"] == "pat.lee@example.org"
     assert "tbd" not in users                                    # TBD / N/A treated as blank
     assert [m["source_id"] for m in read_csv(run_dir / "staging/multi_homed_tasks.csv")] == ["103"]
-    assert read_csv(run_dir / "load/unmapped_values.csv") == []
+    unmapped = {(u["map_name"], u["source_value"]) for u in read_csv(run_dir / "load/unmapped_values.csv")}
+    assert unmapped == {("business_category_project", "BSMH")}      # only the open D17 gap
 
 
 def test_validate_fields(run_dir):
@@ -237,3 +238,63 @@ def test_mapping_csvs_are_well_formed():
     for path in (ROOT / "mapping").glob("*.csv"):
         rows = list(csv.reader(path.open(encoding="utf-8")))
         assert all(len(r) == len(rows[0]) for r in rows), f"{path.name} has rows with the wrong column count"
+
+
+def test_task_rollups_to_parent_project(run_dir):
+    """Asana task mapping: COE -> parent.portfolio, Entity/Organization -> parent.u_business_category."""
+    projects = by(read_csv(run_dir / "load/02_pm_project.csv"))
+    # 700 has no portfolio of its own: its task's COE 'Learning' fills it (value-mapped)
+    assert projects["ASANA:700"]["primary_portfolio"] == "Culture & Learning"
+    # 901's section is its portfolio; task COEs disagree -> section wins, conflict reported
+    assert projects["ASANA:901"]["primary_portfolio"] == "Benefits & Well-Being"
+    assert projects["ASANA:901"]["u_business_category"] == "rsfh"        # 'BSMH, RSFH' -> first mappable
+    conflicts = {(c["source_id"], c["field"]): c for c in read_csv(run_dir / "staging/rollup_conflicts.csv")}
+    assert conflicts[("901", "portfolio")]["used"] == "Benefits & Well-Being"
+    assert ("700", "portfolio") not in conflicts
+    unmapped = {(u["map_name"], u["source_value"]) for u in read_csv(run_dir / "load/unmapped_values.csv")}
+    assert ("business_category_project", "BSMH") in unmapped                  # D17: no BSMH category
+
+
+def test_transform_map_spec(tmp_path):
+    from spm_migration.servicenow import transform_map_spec
+    rows = transform_map_spec(ROOT / "config/target_mapping.yaml", tmp_path / "spec.csv")
+    spec = {(r["target_table"], r["source_column"]): r for r in rows}
+    assert spec[("pm_project", "u_correlation_id")]["coalesce"] == "Yes"
+    owner = spec[("pm_project", "u_u_business_owner")]
+    assert (owner["field_kind"], owner["referenced_value_field"], owner["choice_action"],
+            owner["target_field_status"]) == ("Reference sys_user", "email", "ignore", "exists (custom)")
+    assert spec[("pm_project", "u_u_sites")]["field_kind"] == "List"
+    assert spec[("pm_project", "u_u_next_go_live_date")]["target_field_status"] == "PROPOSED - create before load"
+    assert spec[("pm_project_task", "u_u_parent_correlation_id")]["field_kind"] == "Helper"
+    assert spec[("planned_task_rel_planned_task", "u_u_predecessor_correlation_id")]["target_field"] == "parent"
+    assert spec[("pm_project", "u_state")]["choice_action"] == "reject"
+
+
+def test_push_dry_run_and_execute(run_dir, monkeypatch):
+    from spm_migration import servicenow
+    settings = yaml.safe_load((run_dir / "settings.yaml").read_text())
+    summary = servicenow.push(settings, ROOT / "config/target_mapping.yaml", only=["pm_project"])
+    assert summary[0]["dry_run"] == summary[0]["rows"] > 0
+
+    sent = []
+
+    class FakeResp:
+        status_code = 201
+        headers = {}
+
+        def json(self):
+            return {"result": [{"status": "inserted", "sys_id": "abc123"}]}
+
+    def fake_post(self, url, json=None, timeout=None):
+        sent.append((url, json))
+        return FakeResp()
+
+    monkeypatch.setattr("requests.Session.post", fake_post)
+    settings["servicenow"].update(instance_url="https://x.service-now.com", username="u", password="p")
+    summary = servicenow.push(settings, ROOT / "config/target_mapping.yaml", only=["pm_project"],
+                              execute=True, limit=2)
+    assert summary[0]["inserted"] == 2
+    assert sent[0][0] == "https://x.service-now.com/api/now/import/u_imp_spm_project"
+    assert "u_correlation_id" in sent[0][1] and "u_short_description" in sent[0][1]
+    results = read_csv(run_dir / "load/push_results.csv")
+    assert results[0]["target_sys_id"] == "abc123"

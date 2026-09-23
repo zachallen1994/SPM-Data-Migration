@@ -20,6 +20,7 @@ docs/
   05_servicenow_build.md          Import sets, transform maps, scripts to paste in
   06_testing_and_cutover.md       Mock loads, reconciliation, cutover runbook
   07_mapping_review.md            ★ Review of the actual Asana/Adaptive/ServiceNow field files
+  08_loading_into_servicenow.md   ★ How the import set / transform map load works; custom fields
 mapping/                       ← field-level mapping specs (open these in Excel)
   mapping_workbook.xlsx          ★ all of the below in one workbook (generated)
   decisions.csv                  open decisions D1-D16 that block the build
@@ -27,6 +28,7 @@ mapping/                       ← field-level mapping specs (open these in Exce
   asana_to_servicenow.csv        HR portfolio tracker + task-level plan fields
   adaptive_to_servicenow.csv     Nordic IT PMO project fields (all 28 + required extras)
   servicenow_form_fields.csv     every Project/Demand form field, its field name and its source
+  servicenow_transform_maps.csv  build sheet: one row per transform-map field map (generated)
   value_maps.csv                 state, health, category, sites, funding ... translations
 config/
   settings.example.yaml          API connection settings, source field lists
@@ -205,6 +207,8 @@ python -m spm_migration.cli extract-adaptive
 python -m spm_migration.cli run-all            # normalize → classify → transform
 python -m spm_migration.cli validate-fields    # once sys_dictionary.csv is exported
 python -m spm_migration.cli build-workbook     # refresh mapping_workbook.xlsx
+python -m spm_migration.cli transform-map-spec # refresh servicenow_transform_maps.csv
+python -m spm_migration.cli push               # optional Import Set API load (dry run; add --execute)
 python -m spm_migration.cli reconcile          # after a load, vs. ServiceNow exports
 
 pytest                                          # end-to-end test on sample data
