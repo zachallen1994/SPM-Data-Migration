@@ -25,6 +25,7 @@ docs/
   Migration_Standards.docx        ★ One-page shared rules to attach to the epic
   10_getting_the_data_out.md      ★ No Asana/Adaptive access? Export files route + request template
 mapping/                       ← field-level mapping specs (open these in Excel)
+  ServiceNow_SPM_Migration_Mapping.xlsx  ★ DEVELOPER REFERENCE: approved data model only (tools/build_migration_mapping.py)
   mapping_workbook.xlsx          ★ all of the below in one workbook (generated)
   decisions.csv                  open decisions D1-D16 that block the build
   data_quality.csv               source/target issues DQ1-DQ18 to fix before cutover
