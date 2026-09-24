@@ -36,8 +36,8 @@ Every table that extends `task` already has two fields you can use:
 | `correlation_id` | `ASANA:1204567890123456` or `ADAPTIVE:/Project/abc123` | **Coalesce key** in every transform map. Re-runs update records instead of inserting duplicates |
 | `correlation_display` | `Asana` or `Adaptive Work` | Lets you filter a list view by source |
 
-Add two custom fields (on `task` if possible, so projects, tasks and demands all get
-them):
+If the implementation team provides these two fields (ideally on `task`, so projects,
+tasks and demands all inherit them), the migration fills them:
 
 | Field | Type | Purpose |
 |---|---|---|

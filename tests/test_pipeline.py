@@ -268,7 +268,7 @@ def test_transform_map_spec(tmp_path):
     assert (owner["field_kind"], owner["referenced_value_field"], owner["choice_action"],
             owner["target_field_status"]) == ("Reference sys_user", "email", "ignore", "exists (custom)")
     assert spec[("adaptive", "pm_project", "u_sites")]["field_kind"] == "List"
-    assert spec[("adaptive", "pm_project", "u_next_go_live_date")]["target_field_status"] == "PROPOSED - create before load"
+    assert spec[("adaptive", "pm_project", "u_next_go_live_date")]["target_field_status"] == "custom - confirm exists (implementation team)"
     assert spec[("asana", "pm_project_task", "u_parent_correlation_id")]["field_kind"] == "Helper"
     assert spec[("adaptive", "planned_task_rel_planned_task", "u_predecessor_correlation_id")]["target_field"] == "parent"
     assert spec[("adaptive", "pm_project", "u_state")]["choice_action"] == "reject"
@@ -328,9 +328,12 @@ def test_user_stories_generation(tmp_path):
     assert wb.sheetnames == ["Read Me", "Epics", "Stories", "Field Maps", "Open Items"]
     stories = list(wb["Stories"].iter_rows(min_row=2, values_only=True))
     keys = [s[0] for s in stories]
-    assert keys[:4] == ["MIG-01", "MIG-02", "MIG-03", "MIG-04"] and "MIG-09" in keys
-    mig09 = next(s for s in stories if s[0] == "MIG-09")
-    assert "u_imp_adaptive_demand" in mig09[3] and "u_business_owner" in mig09[3]
+    assert keys == [f"MIG-{i:02d}" for i in range(1, 16)]
+    demand = next(s for s in stories if s[0] == "MIG-08")
+    assert "u_imp_adaptive_demand" in demand[3] and "u_business_owner" in demand[3]
+    all_text = " ".join(str(c) for r in stories for c in r).lower()
+    assert "update set" not in all_text                                # developer's own practice
+    assert "create the proposed" not in all_text                       # fields belong to the implementation team
     text = md.read_text()
     assert "`u_u_" not in text                                        # no double-prefixed columns
     fm = list(wb["Field Maps"].iter_rows(min_row=2, values_only=True))

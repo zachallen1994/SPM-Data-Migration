@@ -165,10 +165,20 @@ The full detail is in the *Asana to ServiceNow* and *Adaptive to ServiceNow* she
 
 ---
 
-## 4. ServiceNow build changes this implies
+## 4. What the migration needs from the implementation team
 
-| # | Change | Table | Why |
-|---|---|---|---|
+The implementation team builds fields, choices and reference data. The migration maps to
+whatever they deliver. These items decide how much of the source data lands in a field:
+
+| # | Item | Why |
+|---|---|---|
+| 1 | One **Business Category** list shared by demand and project, including a Human Resources value | A4, D1 |
+| 2 | Stored choice values for state, u_funding_type, u_demand_type, expense_type, investment_class and size (the `sys_choice` export) | The value maps must use stored values |
+| 3 | Whether the fields in doc 08 section 4b will exist (u_legacy_id/url, the Nordic lifecycle dates, u_next_go_live_date, u_estimate_type, u_cost_center, u_risk_health) | If a field doesn't exist, its column is dropped (A5) |
+| 4 | Portfolio, program, business unit and Sites records whose names match the load files | D2, D8, DQ14 |
+| 5 | What the u_sites list field references | D18 |
+
+---|---|---|---|
 | 1 | One unified **Business Category** list with snake_case stored values, including Human Resources | `u_business_category` on both tables | A4, D1 |
 | 2 | Fix the typos in labels and choices (DQ12) and the stored value `urgent care` (DQ13) | sys_choice | Much cheaper before data exists |
 | 3 | Add **Paducah** and **St Petersburg** to Sites, or confirm they map to Kentucky / retired | Sites table | DQ14 |

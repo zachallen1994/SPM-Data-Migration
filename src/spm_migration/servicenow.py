@@ -27,7 +27,8 @@ from .common import load_yaml, read_csv, staging_header, write_csv
 log = logging.getLogger(__name__)
 
 SOURCES = ("asana", "adaptive")
-# Custom fields that already exist on the ServiceNow forms (Project/Demand Form Fields workbooks)
+# Custom fields shown on the ServiceNow forms (Project/Demand Form Fields workbooks). All custom
+# fields and choices are built by the implementation team; the migration only maps to them.
 EXISTING_CUSTOM = {"u_business_owner", "u_executive_sponsor", "u_cn", "u_funding_type",
                    "u_funding_source", "u_business_category", "u_sites", "u_demand_type"}
 # Columns that only feed transform scripts (never a field map)
@@ -73,7 +74,7 @@ def _field_row(source: str, table: str, import_table: str, load_file: str, col: 
     if col.startswith("u_"):
         row["target_field_status"] = ("helper - no field map" if col in HELPER_COLUMNS
                                       else "exists (custom)" if col in EXISTING_CUSTOM
-                                      else "PROPOSED - create before load")
+                                      else "custom - confirm exists (implementation team)")
     else:
         row["target_field_status"] = "out-of-box - verify with validate-fields"
 

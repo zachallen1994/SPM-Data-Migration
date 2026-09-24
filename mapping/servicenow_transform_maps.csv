@@ -1,8 +1,8 @@
 source_system,import_set_table,load_file,source_column,target_table,target_field,field_kind,coalesce,referenced_value_field,choice_action,script,target_field_status,notes
 asana,u_imp_asana_demand,asana/01_dmn_demand.csv,u_correlation_id,dmn_demand,correlation_id,String,Yes,,,,out-of-box - verify with validate-fields,Coalesce key - re-loads update instead of duplicating
 asana,u_imp_asana_demand,asana/01_dmn_demand.csv,u_correlation_display,dmn_demand,correlation_display,String / text,,,,,out-of-box - verify with validate-fields,
-asana,u_imp_asana_demand,asana/01_dmn_demand.csv,u_legacy_id,dmn_demand,u_legacy_id,String / text,,,,,PROPOSED - create before load,
-asana,u_imp_asana_demand,asana/01_dmn_demand.csv,u_legacy_url,dmn_demand,u_legacy_url,String / text,,,,,PROPOSED - create before load,
+asana,u_imp_asana_demand,asana/01_dmn_demand.csv,u_legacy_id,dmn_demand,u_legacy_id,String / text,,,,,custom - confirm exists (implementation team),
+asana,u_imp_asana_demand,asana/01_dmn_demand.csv,u_legacy_url,dmn_demand,u_legacy_url,String / text,,,,,custom - confirm exists (implementation team),
 asana,u_imp_asana_demand,asana/01_dmn_demand.csv,u_short_description,dmn_demand,short_description,String / text,,,,,out-of-box - verify with validate-fields,
 asana,u_imp_asana_demand,asana/01_dmn_demand.csv,u_description,dmn_demand,description,String / text,,,,,out-of-box - verify with validate-fields,
 asana,u_imp_asana_demand,asana/01_dmn_demand.csv,u_type,dmn_demand,type,Choice,,,reject,,out-of-box - verify with validate-fields,Values from value map 'constant' - must be stored values
@@ -27,8 +27,8 @@ asana,u_imp_asana_demand,asana/01_dmn_demand.csv,u_priority,dmn_demand,priority,
 asana,u_imp_asana_demand,asana/01_dmn_demand.csv,u_business_case,dmn_demand,business_case,String / text,,,,,out-of-box - verify with validate-fields,
 asana,u_imp_asana_project,asana/02_pm_project.csv,u_correlation_id,pm_project,correlation_id,String,Yes,,,,out-of-box - verify with validate-fields,Coalesce key - re-loads update instead of duplicating
 asana,u_imp_asana_project,asana/02_pm_project.csv,u_correlation_display,pm_project,correlation_display,String / text,,,,,out-of-box - verify with validate-fields,
-asana,u_imp_asana_project,asana/02_pm_project.csv,u_legacy_id,pm_project,u_legacy_id,String / text,,,,,PROPOSED - create before load,
-asana,u_imp_asana_project,asana/02_pm_project.csv,u_legacy_url,pm_project,u_legacy_url,String / text,,,,,PROPOSED - create before load,
+asana,u_imp_asana_project,asana/02_pm_project.csv,u_legacy_id,pm_project,u_legacy_id,String / text,,,,,custom - confirm exists (implementation team),
+asana,u_imp_asana_project,asana/02_pm_project.csv,u_legacy_url,pm_project,u_legacy_url,String / text,,,,,custom - confirm exists (implementation team),
 asana,u_imp_asana_project,asana/02_pm_project.csv,u_short_description,pm_project,short_description,String / text,,,,,out-of-box - verify with validate-fields,
 asana,u_imp_asana_project,asana/02_pm_project.csv,u_description,pm_project,description,String / text,,,,,out-of-box - verify with validate-fields,
 asana,u_imp_asana_project,asana/02_pm_project.csv,u_project_manager,pm_project,project_manager,Reference sys_user,,email,ignore,,out-of-box - verify with validate-fields,Never 'create' - it would create users
@@ -54,8 +54,8 @@ asana,u_imp_asana_project,asana/02_pm_project.csv,u_demand_correlation_id,pm_pro
 asana,u_imp_asana_project,asana/02_pm_project.csv,u_include_tasks,pm_project,(none - read by onBefore script),Helper,,,,,helper - no field map,No field map; used by the onBefore script
 asana,u_imp_asana_task,asana/03_pm_project_task.csv,u_correlation_id,pm_project_task,correlation_id,String,Yes,,,,out-of-box - verify with validate-fields,Coalesce key - re-loads update instead of duplicating
 asana,u_imp_asana_task,asana/03_pm_project_task.csv,u_correlation_display,pm_project_task,correlation_display,String / text,,,,,out-of-box - verify with validate-fields,
-asana,u_imp_asana_task,asana/03_pm_project_task.csv,u_legacy_id,pm_project_task,u_legacy_id,String / text,,,,,PROPOSED - create before load,
-asana,u_imp_asana_task,asana/03_pm_project_task.csv,u_legacy_url,pm_project_task,u_legacy_url,String / text,,,,,PROPOSED - create before load,
+asana,u_imp_asana_task,asana/03_pm_project_task.csv,u_legacy_id,pm_project_task,u_legacy_id,String / text,,,,,custom - confirm exists (implementation team),
+asana,u_imp_asana_task,asana/03_pm_project_task.csv,u_legacy_url,pm_project_task,u_legacy_url,String / text,,,,,custom - confirm exists (implementation team),
 asana,u_imp_asana_task,asana/03_pm_project_task.csv,u_project_correlation_id,pm_project_task,(none - read by onBefore script),Helper,,,,,helper - no field map,No field map; used by the onBefore script
 asana,u_imp_asana_task,asana/03_pm_project_task.csv,u_parent_correlation_id,pm_project_task,(none - read by onBefore script),Helper,,,,,helper - no field map,No field map; used by the onBefore script
 asana,u_imp_asana_task,asana/03_pm_project_task.csv,u_level,pm_project_task,(none - read by onBefore script),Helper,,,,,helper - no field map,No field map; used by the onBefore script
@@ -82,8 +82,8 @@ asana,u_imp_asana_status,asana/05_project_status.csv,u_overall_health,project_st
 asana,u_imp_asana_status,asana/05_project_status.csv,u_comments,project_status,comments,String / text,,,,,out-of-box - verify with validate-fields,
 adaptive,u_imp_adaptive_demand,adaptive/01_dmn_demand.csv,u_correlation_id,dmn_demand,correlation_id,String,Yes,,,,out-of-box - verify with validate-fields,Coalesce key - re-loads update instead of duplicating
 adaptive,u_imp_adaptive_demand,adaptive/01_dmn_demand.csv,u_correlation_display,dmn_demand,correlation_display,String / text,,,,,out-of-box - verify with validate-fields,
-adaptive,u_imp_adaptive_demand,adaptive/01_dmn_demand.csv,u_legacy_id,dmn_demand,u_legacy_id,String / text,,,,,PROPOSED - create before load,
-adaptive,u_imp_adaptive_demand,adaptive/01_dmn_demand.csv,u_legacy_url,dmn_demand,u_legacy_url,String / text,,,,,PROPOSED - create before load,
+adaptive,u_imp_adaptive_demand,adaptive/01_dmn_demand.csv,u_legacy_id,dmn_demand,u_legacy_id,String / text,,,,,custom - confirm exists (implementation team),
+adaptive,u_imp_adaptive_demand,adaptive/01_dmn_demand.csv,u_legacy_url,dmn_demand,u_legacy_url,String / text,,,,,custom - confirm exists (implementation team),
 adaptive,u_imp_adaptive_demand,adaptive/01_dmn_demand.csv,u_short_description,dmn_demand,short_description,String / text,,,,,out-of-box - verify with validate-fields,
 adaptive,u_imp_adaptive_demand,adaptive/01_dmn_demand.csv,u_description,dmn_demand,description,String / text,,,,,out-of-box - verify with validate-fields,
 adaptive,u_imp_adaptive_demand,adaptive/01_dmn_demand.csv,u_type,dmn_demand,type,Choice,,,reject,,out-of-box - verify with validate-fields,Values from value map 'constant' - must be stored values
@@ -110,8 +110,8 @@ adaptive,u_imp_adaptive_demand,adaptive/01_dmn_demand.csv,u_priority,dmn_demand,
 adaptive,u_imp_adaptive_demand,adaptive/01_dmn_demand.csv,u_business_case,dmn_demand,business_case,String / text,,,,,out-of-box - verify with validate-fields,
 adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_correlation_id,pm_project,correlation_id,String,Yes,,,,out-of-box - verify with validate-fields,Coalesce key - re-loads update instead of duplicating
 adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_correlation_display,pm_project,correlation_display,String / text,,,,,out-of-box - verify with validate-fields,
-adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_legacy_id,pm_project,u_legacy_id,String / text,,,,,PROPOSED - create before load,
-adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_legacy_url,pm_project,u_legacy_url,String / text,,,,,PROPOSED - create before load,
+adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_legacy_id,pm_project,u_legacy_id,String / text,,,,,custom - confirm exists (implementation team),
+adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_legacy_url,pm_project,u_legacy_url,String / text,,,,,custom - confirm exists (implementation team),
 adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_short_description,pm_project,short_description,String / text,,,,,out-of-box - verify with validate-fields,
 adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_description,pm_project,description,String / text,,,,,out-of-box - verify with validate-fields,
 adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_project_manager,pm_project,project_manager,Reference sys_user,,email,ignore,,out-of-box - verify with validate-fields,Never 'create' - it would create users
@@ -134,22 +134,22 @@ adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_expense_type,pm_pro
 adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_business_category,pm_project,u_business_category,Choice,,,reject,,exists (custom),Values from value map 'business_category_project' - must be stored values
 adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_sites,pm_project,u_sites,List,,,,split names -> sys_ids of the referenced table,exists (custom),"Field map script (docs/05 section 4, list fields). Confirm what u_sites references (D18)"
 adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_business_unit,pm_project,business_unit,Reference business_unit,,name,reject (mock loads) / ignore (final),,out-of-box - verify with validate-fields,Records must exist before the load
-adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_cost_center,pm_project,u_cost_center,Reference cmn_cost_center,,code,ignore,,PROPOSED - create before load,
+adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_cost_center,pm_project,u_cost_center,Reference cmn_cost_center,,code,ignore,,custom - confirm exists (implementation team),
 adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_priority,pm_project,priority,Choice,,,reject,,out-of-box - verify with validate-fields,Values from value map 'priority' - must be stored values
 adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_time_constraint,pm_project,time_constraint,Choice,,,reject,,out-of-box - verify with validate-fields,Values from value map 'constant' - must be stored values
-adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_next_go_live_date,pm_project,u_next_go_live_date,Date,,,,,PROPOSED - create before load,Date format yyyy-MM-dd
-adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_estimate_type,pm_project,u_estimate_type,Choice,,,reject,,PROPOSED - create before load,Values from value map 'estimate_type' - must be stored values
-adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_request_received,pm_project,u_request_received,Date,,,,,PROPOSED - create before load,Date format yyyy-MM-dd
-adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_request_assigned,pm_project,u_request_assigned,Date,,,,,PROPOSED - create before load,Date format yyyy-MM-dd
-adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_estimate_complete,pm_project,u_estimate_complete,Date,,,,,PROPOSED - create before load,Date format yyyy-MM-dd
-adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_ready_for_delivery,pm_project,u_ready_for_delivery,Date,,,,,PROPOSED - create before load,Date format yyyy-MM-dd
-adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_project_assigned,pm_project,u_project_assigned,Date,,,,,PROPOSED - create before load,Date format yyyy-MM-dd
+adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_next_go_live_date,pm_project,u_next_go_live_date,Date,,,,,custom - confirm exists (implementation team),Date format yyyy-MM-dd
+adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_estimate_type,pm_project,u_estimate_type,Choice,,,reject,,custom - confirm exists (implementation team),Values from value map 'estimate_type' - must be stored values
+adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_request_received,pm_project,u_request_received,Date,,,,,custom - confirm exists (implementation team),Date format yyyy-MM-dd
+adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_request_assigned,pm_project,u_request_assigned,Date,,,,,custom - confirm exists (implementation team),Date format yyyy-MM-dd
+adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_estimate_complete,pm_project,u_estimate_complete,Date,,,,,custom - confirm exists (implementation team),Date format yyyy-MM-dd
+adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_ready_for_delivery,pm_project,u_ready_for_delivery,Date,,,,,custom - confirm exists (implementation team),Date format yyyy-MM-dd
+adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_project_assigned,pm_project,u_project_assigned,Date,,,,,custom - confirm exists (implementation team),Date format yyyy-MM-dd
 adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_demand_correlation_id,pm_project,(none - read by onBefore script),Helper,,,,,helper - no field map,No field map; used by the onBefore script
 adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_include_tasks,pm_project,(none - read by onBefore script),Helper,,,,,helper - no field map,No field map; used by the onBefore script
 adaptive,u_imp_adaptive_task,adaptive/03_pm_project_task.csv,u_correlation_id,pm_project_task,correlation_id,String,Yes,,,,out-of-box - verify with validate-fields,Coalesce key - re-loads update instead of duplicating
 adaptive,u_imp_adaptive_task,adaptive/03_pm_project_task.csv,u_correlation_display,pm_project_task,correlation_display,String / text,,,,,out-of-box - verify with validate-fields,
-adaptive,u_imp_adaptive_task,adaptive/03_pm_project_task.csv,u_legacy_id,pm_project_task,u_legacy_id,String / text,,,,,PROPOSED - create before load,
-adaptive,u_imp_adaptive_task,adaptive/03_pm_project_task.csv,u_legacy_url,pm_project_task,u_legacy_url,String / text,,,,,PROPOSED - create before load,
+adaptive,u_imp_adaptive_task,adaptive/03_pm_project_task.csv,u_legacy_id,pm_project_task,u_legacy_id,String / text,,,,,custom - confirm exists (implementation team),
+adaptive,u_imp_adaptive_task,adaptive/03_pm_project_task.csv,u_legacy_url,pm_project_task,u_legacy_url,String / text,,,,,custom - confirm exists (implementation team),
 adaptive,u_imp_adaptive_task,adaptive/03_pm_project_task.csv,u_project_correlation_id,pm_project_task,(none - read by onBefore script),Helper,,,,,helper - no field map,No field map; used by the onBefore script
 adaptive,u_imp_adaptive_task,adaptive/03_pm_project_task.csv,u_parent_correlation_id,pm_project_task,(none - read by onBefore script),Helper,,,,,helper - no field map,No field map; used by the onBefore script
 adaptive,u_imp_adaptive_task,adaptive/03_pm_project_task.csv,u_level,pm_project_task,(none - read by onBefore script),Helper,,,,,helper - no field map,No field map; used by the onBefore script
@@ -176,5 +176,5 @@ adaptive,u_imp_adaptive_status,adaptive/05_project_status.csv,u_schedule,project
 adaptive,u_imp_adaptive_status,adaptive/05_project_status.csv,u_cost,project_status,cost,Choice,,,reject,,out-of-box - verify with validate-fields,Values from value map 'health' - must be stored values
 adaptive,u_imp_adaptive_status,adaptive/05_project_status.csv,u_resources,project_status,resources,Choice,,,reject,,out-of-box - verify with validate-fields,Values from value map 'health' - must be stored values
 adaptive,u_imp_adaptive_status,adaptive/05_project_status.csv,u_scope,project_status,scope,Choice,,,reject,,out-of-box - verify with validate-fields,Values from value map 'health' - must be stored values
-adaptive,u_imp_adaptive_status,adaptive/05_project_status.csv,u_risk_health,project_status,u_risk_health,Choice,,,reject,,PROPOSED - create before load,Values from value map 'health' - must be stored values
+adaptive,u_imp_adaptive_status,adaptive/05_project_status.csv,u_risk_health,project_status,u_risk_health,Choice,,,reject,,custom - confirm exists (implementation team),Values from value map 'health' - must be stored values
 adaptive,u_imp_adaptive_status,adaptive/05_project_status.csv,u_comments,project_status,comments,String / text,,,,,out-of-box - verify with validate-fields,

@@ -47,16 +47,13 @@ python -m spm_migration.cli push                                   # dry run: co
 python -m spm_migration.cli push --execute --only pm_project --limit 5   # 5 rows into sub-prod
 ```
 
-## 3. Build steps in ServiceNow (in a single update set)
+## 3. Build steps in ServiceNow
 
-1. **Create the missing fields** first. See section 4: *proposed* fields don't exist yet.
-2. **Create reference data:**
-   - portfolios: one per HR COE section (see D2), plus IT PMO;
-   - programs;
-   - business units (BSMH, RSFH, GBS);
-   - Sites values;
-   - the placeholder user `migration.unassigned`.
-3. **Create the import set tables, one per source per target**:
+1. **Confirm the target is ready.** The implementation team owns fields, choices and reference
+   data (portfolios, programs, business units, sites). Check that everything the load files
+   use exists, using `validate-fields` and story MIG-02. Also create the placeholder user
+   `migration.unassigned`.
+2. **Create the import set tables, one per source per target**:
    - `u_imp_asana_project` and `u_imp_asana_task` (plus `_dependency`, and `_demand` only if needed);
    - `u_imp_adaptive_demand`, `_project`, `_task`, `_dependency` and `_status`.
 
@@ -65,7 +62,7 @@ python -m spm_migration.cli push --execute --only pm_project --limit 5   # 5 row
    column `u_cn` maps to custom field `u_cn`, and `u_short_description` maps to
    `short_description`. There is never a `u_u_` column, and *Auto Map Matching Fields* builds
    most of each map.
-4. **Create one transform map per staging table.** Use `mapping/servicenow_transform_maps.csv`,
+3. **Create one transform map per staging table.** Use `mapping/servicenow_transform_maps.csv`,
    also the *Transform Maps* sheet in the workbook, which has one row per field map:
    - **coalesce**: `Yes` on `correlation_id`, so re-loads update records instead of duplicating
      them.
@@ -77,8 +74,8 @@ python -m spm_migration.cli push --execute --only pm_project --limit 5   # 5 row
 
    The developer stories in `docs/09_servicenow_user_stories.md` (and the import-ready
    `mapping/servicenow_user_stories.xlsx`) walk through all of this, one story per transform map.
-5. **Add the script include `SPMMigrationUtil`** and the onBefore scripts from doc 05.
-6. **Load in order:** demands → projects → tasks → dependencies → status reports.
+4. **Add the script include `SPMMigrationUtil`** and the onBefore scripts from doc 05.
+5. **Load in order:** demands → projects → tasks → dependencies → status reports.
    Then run `reconcile`.
 
 ## 4. How each custom field is handled
@@ -96,14 +93,13 @@ python -m spm_migration.cli push --execute --only pm_project --limit 5   # 5 row
 | `u_sites` | List | Adaptive *Region* (multi-select) | **Script**: split names and resolve them to sys_ids (doc 05) | Confirm what the list references (D18). Paducah and St Petersburg are missing (DQ14) |
 | `u_demand_type` (demand) | Choice (New Application / New Project / HR) | Constant per source: Asana → HR, Adaptive → New Project | Direct; choice action = `reject` | Stored values are guessed (`hr`, `new_project`). Confirm them |
 
-### 4b. Fields the migration needs that were *not* in the updated workbooks
+### 4b. Fields the load files map to that are not on the form workbooks yet
 
-The updated project form workbooks (23 Sep) have the same content as the 16 Sep version (DQ19).
-None of the proposed fields appears yet. Until they exist, the transform map has nowhere to
-put these columns. The data stays in the import set row and is not lost, but it doesn't reach
-the record.
+These belong to the implementation team. The migration maps to them if they exist. If one
+doesn't exist, its column is dropped from the load files, and the value stays in the source
+export and, where noted, in the description block.
 
-| Field | Table | Type | Source | If not created |
+| Field | Table | Type | Source | If it doesn't exist |
 |---|---|---|---|---|
 | `u_legacy_id` | task (or pm_project and dmn_demand) | String 100 | Adaptive SYSID / Asana ID | Users can't find the old record. `correlation_id` still works for loading |
 | `u_legacy_url` | task | URL | Asana link | No click-through back to the source during hypercare |
@@ -125,10 +121,11 @@ the record.
 
 ## 5. Before mock load 1: checklist
 
-- [ ] Proposed fields created, or a decision made to drop them (4b).
+- [ ] Implementation team has confirmed the target fields in 4b, or the columns were dropped.
 - [ ] `sys_dictionary` and `sys_choice` exported to `data/reference/`, and `validate-fields`
       passes.
-- [ ] Portfolios, programs, business units, Sites values and the placeholder user exist.
+- [ ] Portfolios, programs, business units and Sites values used in the load files exist
+      (implementation team), and the placeholder user exists.
 - [ ] `user_crosswalk.csv` built from `users_referenced.csv`.
 - [ ] `asana_plan_links.csv` filled (tracker row → plan project).
 - [ ] Transform maps built from `servicenow_transform_maps.csv`, with coalesce on

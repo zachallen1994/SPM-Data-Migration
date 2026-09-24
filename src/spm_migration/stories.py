@@ -19,7 +19,7 @@ BOLD = Font(name="Arial", size=10, bold=True)
 HEAD = Font(name="Arial", size=10, bold=True, color="FFFFFF")
 FILL = PatternFill("solid", fgColor="1F4E78")
 WRAP = Alignment(wrap_text=True, vertical="top")
-OPEN_ITEMS = ("D1", "D2", "D8", "D11", "D12", "D13", "D17", "D18")
+OPEN_ITEMS = ("D1", "D2", "D8", "D17", "D18")
 
 
 def _settings(r: dict) -> str:
@@ -34,8 +34,8 @@ def _settings(r: dict) -> str:
         parts.append(f"choice action = {r['choice_action']}")
     if r["script"]:
         parts.append(f"script: {r['script']}")
-    if r["target_field_status"].startswith("PROPOSED"):
-        parts.append("field created in MIG-02")
+    if r["target_field_status"].startswith("custom - confirm"):
+        parts.append("confirm field exists (MIG-02)")
     return "; ".join(parts)
 
 
@@ -107,7 +107,7 @@ def build(stories_path: str | Path, spec_path: str | Path, decisions_path: str |
         ("1. Import the 'Epics' sheet into rm_epic (System Import Sets > Load Data; map short_description, description).", False),
         ("2. Import the 'Stories' sheet into rm_story. Map epic by name to rm_epic.short_description, and", False),
         ("   map short_description, description, acceptance_criteria, story_points and priority (1-4).", False),
-        ("3. Attach or link the 'Field Maps' sheet to stories MIG-05 to MIG-13. It lists every field map per import set table.", False),
+        ("3. Attach or link the 'Field Maps' sheet to stories MIG-04 to MIG-12. It lists every field map per import set table.", False),
         ("4. The 'key' column (MIG-xx) is a working reference; put it in the story title or a tag if you want to keep it.", False),
         ("", False),
         ("Sheets: Epics | Stories | Field Maps (build sheet per transform map) | Open Items (decisions that affect the build)", False),

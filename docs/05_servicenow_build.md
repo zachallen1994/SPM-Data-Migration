@@ -1,17 +1,12 @@
 # 05: ServiceNow build (import sets, transform maps, scripts)
 
-Everything here goes into **one update set** (for example, `SPM Migration - Build`)
-so you can move it from dev to test to prod unchanged.
+## 1. Target fields
 
-## 1. Custom fields (once)
-
-| Table | Field | Type | Notes |
-|---|---|---|---|
-| `task` | `u_legacy_id` | String 100 | Add it to the Project, Demand and Project Task forms and list views |
-| `task` | `u_legacy_url` | URL | |
-
-If your governance won't allow new fields on `task`, add them to `pm_project`,
-`dmn_demand` and `pm_project_task` separately.
+Custom fields, choice values and reference data are built by the **implementation team**.
+The migration only maps to them. Before building a transform map, confirm that its target
+fields exist and that the load files' values are valid choices (story MIG-02,
+`validate-fields`). If a target field is missing, the implementation team adds it, or the
+column is dropped from the load files. Do not create fields as part of the migration.
 
 ## 2. Import set tables and transform maps
 
