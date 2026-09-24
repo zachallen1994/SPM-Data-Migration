@@ -40,12 +40,10 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.command == "user-stories":
         from .stories import build as build_stories
-        from .servicenow import transform_map_spec
-        transform_map_spec(args.mapping, "mapping/servicenow_transform_maps.csv")
-        for out in build_stories("config/user_stories.yaml", "mapping/servicenow_transform_maps.csv",
-                                 "mapping/decisions.csv", "mapping/servicenow_user_stories.xlsx",
-                                 "docs/09_servicenow_user_stories.md"):
+        for out in build_stories("config/user_stories.yaml", "mapping/servicenow_user_stories.xlsx",
+                                 "docs/09_servicenow_user_stories.md", "docs/migration_standards.json"):
             log.info("Wrote %s", out)
+        log.info("Word version of the standards: node tools/standards_docx.js")
         return 0
     if args.command == "build-workbook":
         from .workbook import build

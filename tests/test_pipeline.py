@@ -318,27 +318,22 @@ def test_load_files_split_by_source_without_u_prefix(run_dir):
 
 
 def test_user_stories_generation(tmp_path):
+    import json
     import openpyxl
-    from spm_migration.servicenow import transform_map_spec
     from spm_migration.stories import build
-    transform_map_spec(ROOT / "config/target_mapping.yaml", tmp_path / "spec.csv")
-    xlsx, md = build(ROOT / "config/user_stories.yaml", tmp_path / "spec.csv", ROOT / "mapping/decisions.csv",
-                     tmp_path / "stories.xlsx", tmp_path / "stories.md")
+    xlsx, md, std = build(ROOT / "config/user_stories.yaml", tmp_path / "stories.xlsx",
+                          tmp_path / "stories.md", tmp_path / "standards.json")
     wb = openpyxl.load_workbook(xlsx)
-    assert wb.sheetnames == ["Read Me", "Epics", "Stories", "Field Maps", "Open Items"]
+    assert wb.sheetnames == ["Read Me", "Stories", "Migration Standards"]
     stories = list(wb["Stories"].iter_rows(min_row=2, values_only=True))
-    keys = [s[0] for s in stories]
-    assert keys == [f"MIG-{i:02d}" for i in range(1, 16)]
-    demand = next(s for s in stories if s[0] == "MIG-08")
-    assert "u_imp_adaptive_demand" in demand[3] and "u_business_owner" in demand[3]
+    assert [s[0] for s in stories] == [f"MIG-{i:02d}" for i in range(1, 10)]
+    tasks = next(s for s in stories if s[0] == "MIG-02")
+    assert "pm_project_task" in tasks[1] and "Task ID | correlation_id" in tasks[2]
+    assert "Loading the same file again creates 0 new records" in tasks[3]
     all_text = " ".join(str(c) for r in stories for c in r).lower()
-    assert "update set" not in all_text                                # developer's own practice
-    assert "create the proposed" not in all_text                       # fields belong to the implementation team
-    text = md.read_text()
-    assert "`u_u_" not in text                                        # no double-prefixed columns
-    fm = list(wb["Field Maps"].iter_rows(min_row=2, values_only=True))
-    assert fm and not any(str(r[4]).startswith("u_u_") for r in fm)
-    assert "`u_cn` | `u_cn`" in text
+    assert "update set" not in all_text and "u_u_" not in all_text
+    assert "migration standards" in all_text                          # every story points to the standards
+    assert json.loads(std.read_text())["sections"]
 
 
 def test_export_files_route(tmp_path):

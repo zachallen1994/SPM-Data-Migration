@@ -51,7 +51,7 @@ python -m spm_migration.cli push --execute --only pm_project --limit 5   # 5 row
 
 1. **Confirm the target is ready.** The implementation team owns fields, choices and reference
    data (portfolios, programs, business units, sites). Check that everything the load files
-   use exists, using `validate-fields` and story MIG-02. Also create the placeholder user
+   use exists, using `validate-fields` and the readiness check in the Migration Standards (section 1). Also create the placeholder user
    `migration.unassigned`.
 2. **Create the import set tables, one per source per target**:
    - `u_imp_asana_project` and `u_imp_asana_task` (plus `_dependency`, and `_demand` only if needed);

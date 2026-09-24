@@ -4,7 +4,7 @@
 
 Custom fields, choice values and reference data are built by the **implementation team**.
 The migration only maps to them. Before building a transform map, confirm that its target
-fields exist and that the load files' values are valid choices (story MIG-02,
+fields exist and that the load files' values are valid choices (Migration Standards section 1,
 `validate-fields`). If a target field is missing, the implementation team adds it, or the
 column is dropped from the load files. Do not create fields as part of the migration.
 

@@ -1,72 +1,55 @@
-"""Generate ServiceNow Agile user stories (rm_epic / rm_story) for the migration build.
+"""Generate the ServiceNow user stories (rm_story) and the Migration Standards page.
 
-Inputs:  config/user_stories.yaml, mapping/servicenow_transform_maps.csv, mapping/decisions.csv
-Outputs: mapping/servicenow_user_stories.xlsx  (sheets ready to import into rm_epic / rm_story)
-         docs/09_servicenow_user_stories.md    (readable version)
+Input:   config/user_stories.yaml (simple format: one story = one source file -> one target table)
+Outputs: mapping/servicenow_user_stories.xlsx  Stories sheet (import-ready for rm_story) + Migration Standards
+         docs/09_servicenow_user_stories.md    readable version
+         docs/migration_standards.json          feed for tools/standards_docx.js (Word attachment for the epic)
 """
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 
-from .common import load_yaml, read_csv
+from .common import load_yaml
 
 FONT = Font(name="Arial", size=10)
 BOLD = Font(name="Arial", size=10, bold=True)
+TITLE = Font(name="Arial", size=13, bold=True)
 HEAD = Font(name="Arial", size=10, bold=True, color="FFFFFF")
 FILL = PatternFill("solid", fgColor="1F4E78")
 WRAP = Alignment(wrap_text=True, vertical="top")
-OPEN_ITEMS = ("D1", "D2", "D8", "D17", "D18")
 
 
-def _settings(r: dict) -> str:
-    parts = []
-    if r["coalesce"] == "Yes":
-        parts.append("COALESCE")
-    if r["field_kind"] and r["field_kind"] not in ("String / text", "Helper"):
-        parts.append(r["field_kind"])
-    if r["referenced_value_field"]:
-        parts.append(f"referenced value field = {r['referenced_value_field']}")
-    if r["choice_action"]:
-        parts.append(f"choice action = {r['choice_action']}")
-    if r["script"]:
-        parts.append(f"script: {r['script']}")
-    if r["target_field_status"].startswith("custom - confirm"):
-        parts.append("confirm field exists (MIG-02)")
-    return "; ".join(parts)
+def _source_label(story: dict) -> str:
+    return "Adaptive" if "ADAPTIVE" in story.get("match_key", "") and "ASANA" not in story.get("match_key", "") else "Asana"
 
 
-def field_map_rows(spec: list[dict], import_table: str) -> list[dict]:
-    return [r for r in spec if r["import_set_table"] == import_table and r["field_kind"] != "Helper"]
-
-
-def helper_columns(spec: list[dict], import_table: str) -> list[str]:
-    return [r["source_column"] for r in spec if r["import_set_table"] == import_table and r["field_kind"] == "Helper"]
-
-
-def _field_map_text(spec: list[dict], import_table: str) -> str:
-    rows = field_map_rows(spec, import_table)
-    width = max((len(r["source_column"]) for r in rows), default=10)
-    lines = [f"FIELD MAPS for {import_table} ({len(rows)}). Source column -> target field | settings"]
-    lines += [f"  {r['source_column']:<{width}} -> {r['target_field']}"
-              + (f" | {_settings(r)}" if _settings(r) else "") for r in rows]
-    helpers = helper_columns(spec, import_table)
-    if helpers:
-        lines.append(f"  NO field map (read by scripts): {', '.join(helpers)}")
+def description_text(story: dict) -> str:
+    """Plain-text Detailed Description for rm_story.description."""
+    lines = [story["story"].strip(), ""]
+    for label, key in (("Source", "source"), ("Target", "target"), ("Match key", "match_key"),
+                       ("Prerequisite", "prerequisite")):
+        if story.get(key) and story[key] != "n/a":
+            lines.append(f"{label}: {story[key]}")
+    if story.get("mapping"):
+        lines += ["", "FIELD MAPPING (source | ServiceNow | rule)"]
+        lines += [f"- {s} | {t} | {r}" for s, t, r in story["mapping"]]
+    if story.get("description_block"):
+        lines += ["", "DESCRIPTION BLOCK (standards section 7): " + ", ".join(story["description_block"])]
+    if story.get("rules"):
+        lines += ["", "RULES"] + [f"- {r}" for r in story["rules"]]
+    if story.get("out_of_scope"):
+        lines += ["", "OUT OF SCOPE: " + "; ".join(story["out_of_scope"])]
+    lines += ["", "Standards: see 'Migration Standards' attached to the epic."]
     return "\n".join(lines)
 
 
-def _description(story: dict, spec: list[dict], conventions: str) -> str:
-    parts = [f"As a {story['as_a']}, I want {story['i_want']}, so that {story['so_that']}.",
-             "", "STEPS", story["steps"].rstrip()]
-    if story.get("field_maps"):
-        parts += ["", _field_map_text(spec, story["field_maps"]), "", conventions.rstrip()]
-    if story.get("depends_on"):
-        parts += ["", f"DEPENDS ON: {story['depends_on']}"]
-    return "\n".join(parts)
+def acceptance_text(story: dict) -> str:
+    return "\n".join(f"{i}. {a}" for i, a in enumerate(story["acceptance"], 1))
 
 
 def _priority_value(label: str) -> int | str:
@@ -89,97 +72,88 @@ def _sheet(wb: Workbook, title: str, headers: list[str], rows: list[list], width
     ws.auto_filter.ref = ws.dimensions
 
 
-def build(stories_path: str | Path, spec_path: str | Path, decisions_path: str | Path,
-          xlsx_out: str | Path, md_out: str | Path) -> tuple[Path, Path]:
+def build(stories_path: str | Path, xlsx_out: str | Path, md_out: str | Path,
+          standards_json_out: str | Path) -> tuple[Path, Path, Path]:
     cfg = load_yaml(stories_path)
-    spec = read_csv(spec_path)
-    decisions = [d for d in read_csv(decisions_path) if d["id"] in OPEN_ITEMS]
-    epics = {e["key"]: e for e in cfg["epics"]}
-    conventions = cfg["conventions"]
+    std = cfg["standards"]
+    stories = cfg["stories"]
 
     wb = Workbook()
     wb.remove(wb.active)
     readme = wb.create_sheet("Read Me")
-    lines = [
-        (f"{cfg['product']}: ServiceNow user stories", True),
-        ("", False),
-        ("How to load these into ServiceNow Agile Development:", True),
-        ("1. Import the 'Epics' sheet into rm_epic (System Import Sets > Load Data; map short_description, description).", False),
-        ("2. Import the 'Stories' sheet into rm_story. Map epic by name to rm_epic.short_description, and", False),
-        ("   map short_description, description, acceptance_criteria, story_points and priority (1-4).", False),
-        ("3. Attach or link the 'Field Maps' sheet to stories MIG-04 to MIG-12. It lists every field map per import set table.", False),
-        ("4. The 'key' column (MIG-xx) is a working reference; put it in the story title or a tag if you want to keep it.", False),
-        ("", False),
-        ("Sheets: Epics | Stories | Field Maps (build sheet per transform map) | Open Items (decisions that affect the build)", False),
-        ("Regenerate after mapping changes: python -m spm_migration.cli user-stories", False),
-        ("", False),
-        ("Conventions that apply to every import set / transform map story:", True),
-    ] + [(ln, False) for ln in conventions.strip().splitlines()]
-    for i, (text, bold) in enumerate(lines, 1):
-        c = readme.cell(row=i, column=1, value=text)
-        c.font = BOLD if bold else FONT
-    readme.column_dimensions["A"].width = 130
+    notes = [
+        (f"{cfg['epic']}: ServiceNow user stories ({len(stories)} stories, "
+         f"{sum(s['points'] for s in stories)} points)", TITLE),
+        ("", FONT),
+        ("How to load into ServiceNow Agile (rm_story):", BOLD),
+        ("1. Import the 'Stories' sheet into rm_story (System Import Sets > Load Data).", FONT),
+        ("2. Map: short_description, description, acceptance_criteria, story_points, priority (1-4).", FONT),
+        (f"   Set epic = '{cfg['epic']}', product = '{cfg['product']}' and assignment group = '{cfg['assignment_group']}'.", FONT),
+        ("3. Attach docs/Migration_Standards.docx (or the 'Migration Standards' sheet) to the epic.", FONT),
+        ("   Every story refers to it for the shared rules, so each story stays short.", FONT),
+        ("4. The 'key' column (MIG-xx) is a working reference; keep it in the title or as a tag if you want it.", FONT),
+        ("", FONT),
+        ("Load order: MIG-03 -> MIG-04 -> MIG-01 -> MIG-02 -> MIG-05 -> MIG-06 -> MIG-07; then MIG-08 (mocks) and MIG-09 (cutover).", FONT),
+    ]
+    for i, (text, font) in enumerate(notes, 1):
+        readme.cell(row=i, column=1, value=text).font = font
+    readme.column_dimensions["A"].width = 120
 
-    _sheet(wb, "Epics", ["key", "short_description", "description"],
-           [[e["key"], e["short_description"], e["description"].strip()] for e in cfg["epics"]],
-           {"key": 10, "short_description": 60, "description": 110})
+    _sheet(wb, "Stories",
+           ["key", "short_description", "description", "acceptance_criteria", "story_points", "priority",
+            "depends_on", "epic"],
+           [[s["key"], s["short_description"], description_text(s), acceptance_text(s), s["points"],
+             _priority_value(s["priority"]), s.get("depends_on", ""), cfg["epic"]] for s in stories],
+           {"key": 9, "short_description": 50, "description": 110, "acceptance_criteria": 70,
+            "story_points": 8, "priority": 8, "depends_on": 16, "epic": 20})
 
-    story_rows = []
-    for s in cfg["stories"]:
-        story_rows.append([s["key"], epics[s["epic"]]["short_description"], s["short_description"],
-                           _description(s, spec, conventions), s["acceptance"].strip(), s["points"],
-                           _priority_value(s["priority"]), s.get("depends_on", ""), s.get("field_maps", "")])
-    _sheet(wb, "Stories", ["key", "epic", "short_description", "description", "acceptance_criteria",
-                           "story_points", "priority", "depends_on", "import_set_table"],
-           story_rows, {"key": 9, "epic": 30, "short_description": 45, "description": 100,
-                        "acceptance_criteria": 60, "story_points": 8, "priority": 8, "depends_on": 18,
-                        "import_set_table": 24})
-
-    by_table = {s["field_maps"]: s["key"] for s in cfg["stories"] if s.get("field_maps")}
-    fm_headers = ["story", "source_system", "import_set_table", "load_file", "source_column", "target_table",
-                  "target_field", "field_kind", "coalesce", "referenced_value_field", "choice_action", "script",
-                  "target_field_status", "notes"]
-    fm_rows = [[by_table.get(r["import_set_table"], "")] + [r[h] for h in fm_headers[1:]]
-               for r in spec if r["import_set_table"] in by_table]
-    _sheet(wb, "Field Maps", fm_headers, fm_rows,
-           {"story": 8, "import_set_table": 24, "load_file": 34, "source_column": 30, "target_field": 30,
-            "field_kind": 22, "script": 45, "target_field_status": 28, "notes": 50})
-
-    _sheet(wb, "Open Items", ["id", "topic", "question", "recommendation", "status"],
-           [["DEMAND-RULE", "Adaptive demand condition",
-             "Which Adaptive records become demands? Provisional rule: State = Requested or Draft.",
-             "Applied upstream in config/classification.yaml. No ServiceNow change needed when it is finalised.",
-             "Open"]] + [[d["id"], d["topic"], d["question"], d["recommendation"], d["status"]] for d in decisions],
-           {"id": 12, "topic": 26, "question": 70, "recommendation": 70, "status": 20})
+    ws = wb.create_sheet("Migration Standards")
+    r = 1
+    ws.cell(row=r, column=1, value=std["title"]).font = TITLE
+    r += 1
+    ws.cell(row=r, column=1, value=std["intro"]).font = FONT
+    for sec in std["sections"]:
+        r += 2
+        ws.cell(row=r, column=1, value=sec["heading"]).font = BOLD
+        for b in sec["bullets"]:
+            r += 1
+            c = ws.cell(row=r, column=1, value=f"- {b}")
+            c.font, c.alignment = FONT, WRAP
+    ws.column_dimensions["A"].width = 130
 
     xlsx_out = Path(xlsx_out)
     wb.save(xlsx_out)
 
-    md = [f"# 09: ServiceNow user stories: {cfg['release']}", "",
-          "Generated from `config/user_stories.yaml` and `mapping/servicenow_transform_maps.csv`. The import-ready",
-          "version is `mapping/servicenow_user_stories.xlsx` (Epics and Stories sheets for rm_epic / rm_story).",
-          "", "## Conventions for every import set / transform map story", "", "```", conventions.strip(), "```", "",
-          "## Open items that affect the build", "",
-          "| ID | Topic | Recommendation | Status |", "|---|---|---|---|",
-          "| DEMAND-RULE | Adaptive demand condition | Applied upstream; provisional State = Requested/Draft | Open |"]
-    md += [f"| {d['id']} | {d['topic']} | {d['recommendation']} | {d['status']} |" for d in decisions]
-    for e in cfg["epics"]:
-        md += ["", f"## {e['key']}: {e['short_description']}", "", e["description"].strip()]
-        for s in [s for s in cfg["stories"] if s["epic"] == e["key"]]:
-            md += ["", f"### {s['key']}: {s['short_description']}",
-                   f"*Story points: {s['points']} · Priority: {s['priority']}"
-                   + (f" · Depends on: {s['depends_on']}*" if s.get("depends_on") else "*"), "",
-                   f"**As a** {s['as_a']}, **I want** {s['i_want']}, **so that** {s['so_that']}.", "",
-                   "**Steps**", "", "```", s["steps"].strip(), "```"]
-            if s.get("field_maps"):
-                rows = field_map_rows(spec, s["field_maps"])
-                md += ["", f"**Field maps: `{s['field_maps']}`** ({len(rows)})", "",
-                       "| Source column | Target field | Settings |", "|---|---|---|"]
-                md += [f"| `{r['source_column']}` | `{r['target_field']}` | {_settings(r) or 'direct'} |" for r in rows]
-                helpers = helper_columns(spec, s["field_maps"])
-                if helpers:
-                    md += ["", "No field map (read by scripts): " + ", ".join(f"`{h}`" for h in helpers)]
-            md += ["", "**Acceptance criteria**", "", s["acceptance"].strip()]
+    md = [f"# 09: ServiceNow user stories ({cfg['epic']})", "",
+          f"{len(stories)} stories, {sum(s['points'] for s in stories)} points. Each story covers one source file and one target table.",
+          "The shared rules are written once in **Migration Standards** (below, and in `docs/Migration_Standards.docx` for the epic).",
+          "The import-ready version is `mapping/servicenow_user_stories.xlsx`.", "",
+          "| Key | Story | Points | Depends on |", "|---|---|---|---|"]
+    md += [f"| {s['key']} | {s['short_description']} | {s['points']} | {s.get('depends_on') or '-'} |" for s in stories]
+    md += ["", f"## {std['title']}", "", std["intro"]]
+    for sec in std["sections"]:
+        md += ["", f"**{sec['heading']}**", ""] + [f"- {b}" for b in sec["bullets"]]
+    for s in stories:
+        md += ["", "---", "", f"## {s['key']}: {s['short_description']}",
+               f"*{s['points']} points · Priority {s['priority']}" + (f" · Depends on {s['depends_on']}*" if s.get("depends_on") else "*"),
+               "", s["story"].strip(), ""]
+        for label, key in (("Source", "source"), ("Target", "target"), ("Match key", "match_key"),
+                           ("Prerequisite", "prerequisite")):
+            if s.get(key) and s[key] != "n/a":
+                md.append(f"- **{label}:** {s[key]}")
+        if s.get("mapping"):
+            md += ["", "| Source | ServiceNow | Rule |", "|---|---|---|"]
+            md += [f"| {a} | `{b}` | {c} |" for a, b, c in s["mapping"]]
+        if s.get("description_block"):
+            md += ["", "**Description block:** " + ", ".join(s["description_block"])]
+        if s.get("rules"):
+            md += ["", "**Rules**", ""] + [f"- {x}" for x in s["rules"]]
+        if s.get("out_of_scope"):
+            md += ["", "**Out of scope:** " + "; ".join(s["out_of_scope"])]
+        md += ["", "**Acceptance criteria**", ""] + [f"{i}. {a}" for i, a in enumerate(s["acceptance"], 1)]
     md_out = Path(md_out)
     md_out.write_text("\n".join(md) + "\n", encoding="utf-8")
-    return xlsx_out, md_out
+
+    standards_json_out = Path(standards_json_out)
+    standards_json_out.write_text(json.dumps(std, indent=2), encoding="utf-8")
+    return xlsx_out, md_out, standards_json_out

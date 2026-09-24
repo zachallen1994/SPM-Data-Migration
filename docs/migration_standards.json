@@ -1,0 +1,78 @@
+{
+  "title": "SPM Data Migration - Migration Standards",
+  "intro": "These rules apply to every migration story. The stories only list what is specific to them. Scope: in-flight projects from Asana (HR) and Adaptive Work (Nordic IT PMO), plus Adaptive records that become Demands.",
+  "sections": [
+    {
+      "heading": "1. Ownership",
+      "bullets": [
+        "Fields, choice values and reference data (portfolios, business units, sites) are built by the implementation team. Do not create them during the migration.",
+        "Before building a story, confirm its target fields and choice values exist. Raise anything missing with the migration lead; don't work around it.",
+        "Choice values in the stories are ServiceNow defaults. Confirm the stored values with the implementation team (sys_choice) before the build."
+      ]
+    },
+    {
+      "heading": "2. Source files",
+      "bullets": [
+        "Source files are the system owners' exports: Asana HR portfolio CSV, Asana plan CSVs (one per project), Adaptive Projects, Adaptive Tasks/Milestones and Adaptive Dependencies (Excel).",
+        "The column layout is frozen after mock load 1. Nobody opens or re-saves the files in Excel, because Excel corrupts the long Asana IDs.",
+        "Create each staging table with Load Data from the sample file. ServiceNow names each column u_ + the header.",
+        "Optional column 'Migration Target' (Project / Demand / Skip), filled in by the PMO: when present, it overrides the story's routing rule."
+      ]
+    },
+    {
+      "heading": "3. Match key (every table)",
+      "bullets": [
+        "correlation_id = \"ASANA:\" + Task ID, or \"ADAPTIVE:\" + SYSID. It is the only coalesce field.",
+        "correlation_display = \"Asana\" or \"Adaptive Work\".",
+        "Re-loading a file must update records. It must never create duplicates."
+      ]
+    },
+    {
+      "heading": "4. Transform map settings",
+      "bullets": [
+        "Run business rules = true. Copy empty fields = false.",
+        "Enforce mandatory fields = false for mock loads, true for the final load.",
+        "Choice fields have choice action = reject. Reference fields have choice action = reject in mock loads and ignore in the final load. Never \"create\"."
+      ]
+    },
+    {
+      "heading": "5. People",
+      "bullets": [
+        "Match an active sys_user by email first, then by full name (sys_user.name). For a list of names, match each one.",
+        "If there is no match: project_manager gets the placeholder user 'Migration Unassigned' (provided by the implementation team); every other people field stays blank. Log the value and the correlation_id.",
+        "Never create users."
+      ]
+    },
+    {
+      "heading": "6. Dates, numbers and text",
+      "bullets": [
+        "Accept yyyy-MM-dd and Excel dates. If only one of start or end is present, use it for both.",
+        "time_constraint = start_on_specific_date on projects and tasks, so the ServiceNow schedule keeps the source dates.",
+        "% Complete: a value of 1 or less is a fraction (0.5 = 50).",
+        "short_description is at most 160 characters. Strip HTML from long text."
+      ]
+    },
+    {
+      "heading": "7. Description block (fields with no ServiceNow home)",
+      "bullets": [
+        "Keep the source description/notes first. Then add a line '--- Migrated from Asana ---' (or Adaptive Work), then one 'Label: value' line per listed field. Skip blank values."
+      ]
+    },
+    {
+      "heading": "8. Hierarchy and load order",
+      "bullets": [
+        "Load in this order: Adaptive projects, then Adaptive demands, then Asana projects, then Asana tasks, then Adaptive tasks, then dependencies, then status reports.",
+        "If a task's parent isn't found, put the task directly under its project and log it. Run each task transform twice; the second run fixes parents that loaded later."
+      ]
+    },
+    {
+      "heading": "9. Logging, testing and rollback",
+      "bullets": [
+        "Every fallback or skipped row writes log.warn with its correlation_id.",
+        "After each load, compare the row counts in the file with the ServiceNow records, and review the import log.",
+        "Every migrated record can be found by correlation_display, so the rollback deletes by it (children first).",
+        "Suppress email notifications during sub-production loads."
+      ]
+    }
+  ]
+}

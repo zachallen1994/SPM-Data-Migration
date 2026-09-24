@@ -16,7 +16,7 @@ into Dev, then Test, then Prod. There's no API setup and no connection between t
 | **Adaptive owner** (Nordic PMO / Adaptive admin) | Exports projects, tasks, milestones and dependencies from saved views | Adaptive (they have it) |
 | **You** | Put the files in `data/exports/`, run 3 commands, clear the check reports, and hand the load files over | Python on any Windows or Mac machine. **No** source-system access |
 | **You, in ServiceNow** | Export `sys_user` (users), `sys_dictionary` and `sys_choice` into `data/reference/` | ServiceNow (you have it) |
-| **ServiceNow developer** | Loads the files through the import sets and transform maps (stories MIG-04 to MIG-12) | ServiceNow |
+| **ServiceNow developer** | Loads the files through the import sets and transform maps (stories MIG-01 to MIG-07) | ServiceNow |
 
 > **If the owners would rather hand over access than export:** ask them for a **read-only
 > service-account token** (an Asana Personal Access Token, and an Adaptive API key). You then run
@@ -106,7 +106,7 @@ data/reference/user_crosswalk.csv                                   ← nickname
    | `data/load/unmapped_values.csv` | Empty, or each remaining gap accepted |
 
 4. **Hand over** `data/load/asana/` and `data/load/adaptive/` to the ServiceNow developer.
-   They load the files in the order in MIG-13: demands, projects, tasks, dependencies, status
+   They load the files in the order in the Migration Standards (section 8): demands, projects, tasks, dependencies, status
    reports.
 
 **No machine with Python?** Any colleague's laptop works, and so can the ServiceNow developer's.
