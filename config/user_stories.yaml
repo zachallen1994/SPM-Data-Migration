@@ -1,0 +1,532 @@
+# Source for the ServiceNow Agile user stories (rm_epic / rm_story).
+# Generate: python -m spm_migration.cli user-stories
+#   -> mapping/servicenow_user_stories.xlsx (import into ServiceNow)
+#   -> docs/09_servicenow_user_stories.md   (read / review)
+# `field_maps: <import set table>` inserts that table's field-map list from
+# mapping/servicenow_transform_maps.csv, so stories never drift from the mapping.
+
+product: SPM Data Migration
+release: Asana + Adaptive to ServiceNow SPM
+
+conventions: |
+  CONVENTIONS FOR EVERY IMPORT SET / TRANSFORM MAP STORY
+  - Load files come from the migration team: data/load/asana/*.csv and data/load/adaptive/*.csv.
+    Headers have NO "u_" prefix. ServiceNow adds it when it creates the import set table, so
+    staging column u_<name> maps to target field <name> (out-of-box) or u_<name> (custom).
+    There must never be a u_u_ column. If you see one, the file was edited by hand - ask for a
+    fresh file.
+  - One import set table + one transform map per source per target table
+    (u_imp_asana_* and u_imp_adaptive_*).
+  - Coalesce on correlation_id only (ASANA:<id> / ADAPTIVE:<id>). Re-loading the same file must
+    UPDATE, never duplicate.
+  - Transform map settings: Run business rules = true; Enforce mandatory fields = false for
+    mock loads, true for the final load; Copy empty fields = false; Order = 100.
+  - Reference fields to sys_user: Referenced value field name = email, Choice action = ignore.
+    NEVER "create" - it would create user records.
+  - Reference fields to portfolio / program / business unit / department: Referenced value
+    field name = name; Choice action = reject during mock loads (surfaces missing reference
+    data), ignore for the final load.
+  - Choice fields: Choice action = reject during mock loads (bad values fail loudly instead of
+    becoming new choices).
+  - Date fields: Date format = yyyy-MM-dd.
+  - Helper columns (project_correlation_id, parent_correlation_id, level, demand_correlation_id,
+    include_tasks, predecessor/successor_correlation_id) get NO field map; the scripts read them.
+  - Business rules, record ownership and demand/project classification are handled upstream by
+    the migration pipeline. Transform maps stay (almost) 1:1 - do not re-implement mapping
+    logic in ServiceNow.
+
+epics:
+  - key: EPIC-1
+    short_description: "SPM Migration - Foundation (fields, reference data, shared scripts)"
+    description: |
+      Prepare the instance so Asana and Adaptive data can be loaded repeatably: update set,
+      custom fields, reference data, choice values, load user and the shared script include.
+  - key: EPIC-2
+    short_description: "SPM Migration - Asana to ServiceNow (in-flight HR projects and tasks)"
+    description: |
+      Import sets and transform maps that load in-flight Asana HR portfolio items as
+      pm_project records, with their project tasks (WBS) and dependencies.
+      Asana facts the developer should know:
+      - Each Asana "project" in the HR portfolio tracker is really a task; the pipeline has
+        already turned each one into a project row.
+      - Sections (COE areas) become portfolios, and plan sections become phase tasks.
+      - Owners arrive as emails the pipeline resolved from names.
+      - The HR tracker has no Asana status updates, so no Asana status-report map is needed.
+        If asana/05_project_status.csv ever has rows, copy MIG-13.
+  - key: EPIC-3
+    short_description: "SPM Migration - Adaptive (Clarizen) to ServiceNow (projects, tasks, demands)"
+    description: |
+      Import sets and transform maps that load Adaptive Work (Nordic IT PMO) records into
+      ServiceNow. Most records become pm_project records (with tasks, dependencies and status
+      reports); some become dmn_demand records. The demand condition will be confirmed later.
+      It is applied upstream by the pipeline (config/classification.yaml), so the ServiceNow
+      build does not depend on it: demands arrive in adaptive/01_dmn_demand.csv, projects in
+      adaptive/02_pm_project.csv. Provisional rule: Adaptive State = Requested or Draft -> Demand.
+  - key: EPIC-4
+    short_description: "SPM Migration - Test, reconcile and cut over"
+    description: |
+      Mock loads, reconciliation, performance timing, rollback and the production cutover.
+
+stories:
+  # ------------------------------------------------------------------ EPIC-1
+  - key: MIG-01
+    epic: EPIC-1
+    short_description: "Migration update set, load user and load-safety settings"
+    points: 2
+    priority: 2 - High
+    as_a: ServiceNow developer
+    i_want: a dedicated update set and a safe load configuration
+    so_that: every migration artefact moves dev -> test -> prod unchanged and loads don't trigger side effects
+    steps: |
+      1. Create update set "SPM Migration - Build" and make it current for all migration work.
+      2. Create user migration.unassigned (active, no roles, email migration.unassigned@<domain>).
+         Unmatched people load as this user; the placeholder email is set in the pipeline's settings.yaml.
+      3. Create system property spm.migration.pass (string, default "2"). It is used by the
+         two-pass close in MIG-10.
+      4. In sub-production, turn outbound email off (glide.email.smtp.active = false) before any
+         load, or add a condition that suppresses notifications for records whose
+         correlation_display is 'Asana' or 'Adaptive Work'.
+      5. Only if loads will use the Import Set REST API (optional): create an integration user
+         with roles import_set_loader + import_transformer and give its credentials to the
+         migration team.
+    acceptance: |
+      - Update set exists, and all artefacts from MIG-02 to MIG-13 are captured in it.
+      - migration.unassigned exists and is active.
+      - A test load in sub-prod sends no email notifications.
+      - (If used) the integration user can POST to /api/now/import/<table> and nothing else.
+    depends_on: ""
+
+  - key: MIG-02
+    epic: EPIC-1
+    short_description: "Create and verify the custom fields the migration writes to"
+    points: 5
+    priority: 1 - Critical
+    as_a: ServiceNow developer
+    i_want: every target field in the transform maps to exist with the right type
+    so_that: no source data is dropped at load time
+    steps: |
+      A. VERIFY the existing custom fields (from the Project and Demand Form Fields workbooks).
+         They must exist on BOTH pm_project and dmn_demand unless noted:
+         - u_business_owner     Reference -> sys_user
+         - u_executive_sponsor  Reference -> sys_user
+         - u_cn                 String (40). Keep as text so leading zeros survive
+         - u_funding_type       Choice: Opex required / Capex required / Accrete Acceleration funds Requested / Other
+         - u_funding_source     String (100). Consider converting to a Choice of the 19 Adaptive capital pools
+         - u_business_category  Choice (see MIG-03: the demand and project lists must be unified)
+         - u_sites              List. Record which table it references (open item D18)
+         - u_demand_type        Choice on dmn_demand only: New Application / New Project / HR
+      B. CREATE the proposed fields (Demand stays out-of-box, so these go on pm_project only,
+         except the legacy fields):
+         - u_legacy_id          String (100), on TASK (inherited by project, project task, demand)
+         - u_legacy_url         URL, on TASK
+         - u_next_go_live_date  Date, pm_project
+         - u_estimate_type      Choice, pm_project (values in MIG-03)
+         - u_request_received   Date, pm_project
+         - u_request_assigned   Date, pm_project
+         - u_estimate_complete  Date, pm_project
+         - u_ready_for_delivery Date, pm_project
+         - u_project_assigned   Date, pm_project
+         - u_cost_center        Reference -> cmn_cost_center, pm_project (or map to department instead, decision D11)
+         - u_risk_health        Choice (green / yellow / red), project_status
+         If the business declines a field, tell the migration team; they will remove its column
+         from the load files so the transform map has nothing to map.
+      C. Add u_legacy_id and u_legacy_url to the Project, Project Task and Demand forms and list
+         views (read-only), and add the new pm_project fields to the Project form.
+      D. Export sys_dictionary (name, element, internal_type, reference) for task, planned_task,
+         pm_project, pm_project_task, dmn_demand, project_status and planned_task_rel_planned_task
+         to CSV, and send it to the migration team (it feeds `validate-fields`).
+    acceptance: |
+      - Every field listed in A and B exists with the stated type (check sys_dictionary).
+      - No field name starts with u_u_.
+      - The sys_dictionary export is delivered, and `validate-fields` reports 0 ERROR rows for missing fields.
+    depends_on: MIG-01
+
+  - key: MIG-03
+    epic: EPIC-1
+    short_description: "Reference data and choice values required before loading"
+    points: 5
+    priority: 1 - Critical
+    as_a: ServiceNow developer
+    i_want: all referenced records and choice values to exist before the first load
+    so_that: reference and choice fields resolve instead of loading blank or being rejected
+    steps: |
+      1. Portfolios (pm_portfolio): one per Asana HR section / COE area, plus the IT PMO
+         portfolio(s). Names must match the portfolio values in the load files exactly
+         (list in mapping/value_maps.csv -> portfolio_name). Consolidation is pending decision D2.
+      2. Programs (pm_program): only if decision D2 keeps programs.
+      3. Business units (business_unit): BSMH, RSFH, GBS (decision D8).
+      4. Sites: add Paducah and St Petersburg, or confirm Paducah -> Kentucky and that
+         St Petersburg is retired (DQ14).
+      5. Cost centers (cmn_cost_center) for Adaptive "Dept # for Expense" codes, if u_cost_center is kept.
+      6. Choice lists:
+         - u_business_category: ONE unified list for demand and project, with snake_case stored
+           values, including human_resources (decision D1). Fix the 'urgent care' stored value
+           (DQ13) and the typos (DQ12).
+         - u_estimate_type: detailed_estimate, sat_detailed_estimate, detailed_estimate_straight_to_pm, packaging.
+         - u_risk_health: green, yellow, red.
+      7. Export sys_choice (name, element, value, label) for the tables in MIG-02 and send it to
+         the migration team. The pipeline's value maps must use STORED values (state integers,
+         u_funding_type, u_demand_type, expense_type, investment_class, size).
+    acceptance: |
+      - Every portfolio, business unit and site value that appears in the load files exists
+        (the mock load shows 0 reference rejects).
+      - The sys_choice export is delivered, and `validate-fields` reports 0 "values not in sys_choice" errors.
+      - u_business_category uses one list on both tables.
+    depends_on: MIG-02
+
+  - key: MIG-04
+    epic: EPIC-1
+    short_description: "Shared script include SPMMigrationUtil"
+    points: 2
+    priority: 2 - High
+    as_a: ServiceNow developer
+    i_want: one script include for correlation, user and list lookups
+    so_that: every transform map resolves parents, projects, demands and list fields the same way
+    steps: |
+      1. System Definition > Script Includes > New. Name: SPMMigrationUtil. Client callable: false.
+         Accessible from: All application scopes.
+      2. Paste the code from docs/05_servicenow_build.md section 3. It has these methods:
+         - col(source, name): returns source.u_<name>
+         - byCorrelation(table, correlation_id): sys_id of the record with that correlation_id
+           (cached per transform)
+         - userByEmail(email): sys_id of the active sys_user with that email
+      3. Add unit tests in a background script: byCorrelation returns '' for an unknown ID and a
+         sys_id for a known one.
+    acceptance: |
+      - The script include is in the update set.
+      - Background-script checks pass.
+      - byCorrelation queries by correlation_id only, and works for pm_project, planned_task and dmn_demand.
+    depends_on: MIG-01
+
+  # ------------------------------------------------------------------ EPIC-2 Asana
+  - key: MIG-05
+    epic: EPIC-2
+    short_description: "Asana: import set + transform map for in-flight projects (u_imp_asana_project -> pm_project)"
+    points: 5
+    priority: 1 - Critical
+    as_a: PMO lead
+    i_want: in-flight Asana HR projects to load into pm_project
+    so_that: HR work is managed and reported in ServiceNow from go-live
+    steps: |
+      1. Create the import set table: System Import Sets > Load Data > Create table.
+         Label "Asana Project Import", name u_imp_asana_project. File: data/load/asana/02_pm_project.csv.
+         Header row 1. Check the columns: u_correlation_id, u_short_description,
+         u_business_owner, ... and NO u_u_ columns.
+      2. Create the transform map: System Import Sets > Administration > Transform Maps > New.
+         Name "Asana Project to pm_project". Source table u_imp_asana_project. Target table pm_project.
+         Apply the settings from CONVENTIONS.
+      3. Click "Auto Map Matching Fields", then check each field map against the list below.
+         Delete any field map on a helper column (demand_correlation_id, include_tasks).
+      4. Set coalesce = true on u_correlation_id -> correlation_id (the only coalesce field).
+      5. For reference and choice fields, set Referenced value field name and Choice action as listed.
+      6. u_sites / impacted_business_units: add the list-field script from docs/05 section 4.
+         impacted_business_units applies to Asana; u_sites is Adaptive-only.
+      7. Add the onBefore script "u_imp_<source>_project -> pm_project" from docs/05 section 4
+         (demand link + optional two-pass close).
+      8. Transform a 5-row sample and check the records on the Project form.
+    field_maps: u_imp_asana_project
+    acceptance: |
+      - Loading asana/02_pm_project.csv creates one pm_project per row, and correlation_id
+        starts with "ASANA:".
+      - Re-loading the same file gives 0 inserts and N updates (idempotent).
+      - project_manager, u_business_owner and assigned_to resolve by email; no new sys_user
+        records are created. Unmatched people load as migration.unassigned or blank.
+      - primary_portfolio resolves for every row whose portfolio exists (MIG-03).
+      - state holds stored integers; no new choice values are created.
+      - start_date and end_date match the file (time_constraint = start_on_specific_date).
+      - The description ends with the "--- Migrated from Asana ---" attribute block.
+    depends_on: MIG-02, MIG-03, MIG-04
+
+  - key: MIG-06
+    epic: EPIC-2
+    short_description: "Asana: import set + transform map for project tasks (u_imp_asana_task -> pm_project_task)"
+    points: 5
+    priority: 1 - Critical
+    as_a: project manager
+    i_want: my Asana plan (phases, milestones, tasks, subtasks) under my project in ServiceNow
+    so_that: I can keep running the in-flight project without rebuilding the plan
+    steps: |
+      1. Create the import set table u_imp_asana_task from data/load/asana/03_pm_project_task.csv.
+      2. Create the transform map "Asana Task to pm_project_task" (target pm_project_task).
+         Apply the CONVENTIONS settings. Run business rules MUST be true (top_task, WBS, rollups).
+      3. Auto Map Matching Fields, then check against the list below. Delete the field maps on
+         helper columns (project_correlation_id, parent_correlation_id, level).
+      4. Coalesce on u_correlation_id only.
+      5. Add the onBefore script "u_imp_<source>_task -> pm_project_task" from docs/05 section 4.
+         It sets:
+         - target.top_task = the project, found by project_correlation_id
+         - target.parent = the parent task, found by parent_correlation_id (or the project if
+           the two IDs are equal)
+         If either is not found, it sets error = true and logs it.
+      6. additional_assignee_list: add a field map script that splits the emails and calls
+         SPMMigrationUtil.userByEmail(), returning a comma-separated list of sys_ids.
+      7. The file is sorted by level (phases first, then tasks, then subtasks). Load it in ONE
+         import so parents are inserted before their children. For very large files, split by
+         the level column and load level 1, then 2, then 3.
+      8. After the load, open 3 projects in Planning Console / Gantt and compare them with Asana.
+    field_maps: u_imp_asana_task
+    acceptance: |
+      - Every task row has parent and top_task populated; 0 rows end in error for a missing parent.
+      - Phase rows (Asana sections such as Project Initiation, Build, Test) appear as level-1
+        tasks, with their tasks nested underneath.
+      - Tasks with "Milestone" in the name load with milestone = true.
+      - % Complete of 0.5 in Asana shows as 50.
+      - Planned dates are unchanged after load (the schedule engine does not move them).
+      - Re-loading gives 0 inserts.
+    depends_on: MIG-05
+
+  - key: MIG-07
+    epic: EPIC-2
+    short_description: "Asana: import set + transform map for task dependencies (u_imp_asana_dependency)"
+    points: 2
+    priority: 3 - Moderate
+    as_a: project manager
+    i_want: Asana "blocked by" links to become ServiceNow dependencies
+    so_that: the critical path is preserved
+    steps: |
+      1. Create the import set table u_imp_asana_dependency from data/load/asana/04_planned_task_rel_planned_task.csv.
+      2. Create the transform map to planned_task_rel_planned_task.
+      3. Create two scripted field maps, BOTH coalesce = true:
+         - parent = byCorrelation('planned_task', source.u_predecessor_correlation_id)
+         - child = byCorrelation('planned_task', source.u_successor_correlation_id)
+      4. Map type (fs) and lag directly.
+      5. Add an onBefore script that sets ignore = true when parent or child cannot be found.
+      6. Load AFTER MIG-06, then spot-check that successor dates did not move. If they did,
+         record the project for a date review.
+    field_maps: u_imp_asana_dependency
+    acceptance: |
+      - One planned_task_rel_planned_task row per file row.
+      - Re-loading creates no duplicates.
+      - Rows with unknown tasks are ignored and logged, not half-created.
+    depends_on: MIG-06
+
+  - key: MIG-08
+    epic: EPIC-2
+    short_description: "(Optional) Asana: import set + transform map for demands (u_imp_asana_demand -> dmn_demand)"
+    points: 2
+    priority: 4 - Low
+    as_a: HR PMO lead
+    i_want: Asana items that the business re-classifies as demands to load as dmn_demand
+    so_that: nothing on the review list is lost
+    steps: |
+      Build only if asana/01_dmn_demand.csv has rows after the classification review (today it
+      has 0). Otherwise it follows the same steps and field list as MIG-09, using source table
+      u_imp_asana_demand and file data/load/asana/01_dmn_demand.csv. u_demand_type arrives as
+      the HR stored value.
+    field_maps: u_imp_asana_demand
+    acceptance: |
+      - Same criteria as MIG-09, for Asana rows.
+    depends_on: MIG-09
+
+  # ------------------------------------------------------------------ EPIC-3 Adaptive
+  - key: MIG-09
+    epic: EPIC-3
+    short_description: "Adaptive: import set + transform map for demands (u_imp_adaptive_demand -> dmn_demand)"
+    points: 5
+    priority: 1 - Critical
+    as_a: Nordic PMO lead
+    i_want: Adaptive requests that are still in intake or estimation to load as demands
+    so_that: they continue through ServiceNow demand management instead of being forced into projects
+    steps: |
+      CONTEXT
+      - Which Adaptive records are demands is decided upstream. The condition is to be
+        confirmed; provisionally State = Requested or Draft. Every row in
+        adaptive/01_dmn_demand.csv is a demand, so no routing logic is needed in ServiceNow.
+      - dmn_demand stays OUT-OF-BOX apart from the custom fields on the Demand form:
+        u_demand_type, u_business_owner, u_executive_sponsor, u_cn, u_funding_type,
+        u_funding_source, u_business_category and u_sites. Adaptive attributes with no demand
+        field (estimate type, lifecycle dates, cost center) are already written into the
+        description by the pipeline.
+      - The demand and project tables share most field names, but a few differ:
+        - end date: due_date on demand, end_date on project
+        - portfolio: portfolio on demand, primary_portfolio on project
+        - owner: assigned_to (Demand manager) on demand, project_manager on project
+      STEPS
+      1. Create the import set table u_imp_adaptive_demand from data/load/adaptive/01_dmn_demand.csv.
+      2. Create the transform map "Adaptive Demand to dmn_demand" (target dmn_demand) with the
+         CONVENTIONS settings.
+      3. Auto Map Matching Fields, then check against the list below. Coalesce on u_correlation_id.
+      4. state: the file carries stored demand states (e.g. submitted, draft). Loading directly
+         into approved/completed can start approval flows. Test with 2 rows first; if a flow
+         starts, add the load condition from MIG-01 step 4 to that flow.
+      5. u_sites: add the list-field script (docs/05 section 4).
+      6. Confirm that the demand-to-project conversion carries the custom fields (u_cn,
+         u_funding_*, u_business_*, u_sites) onto the new project. That way migrated demands
+         convert cleanly later.
+    field_maps: u_imp_adaptive_demand
+    acceptance: |
+      - One dmn_demand per row. correlation_id starts with "ADAPTIVE:", and u_legacy_id holds
+        the Adaptive SYSID (if the field was created in MIG-02).
+      - type = project, u_demand_type = the New Project stored value, and
+        category = strategic unless the file says otherwise.
+      - u_business_owner resolves by email; opened_by resolves or is migration.unassigned.
+      - No approval or notification fires on load.
+      - Re-loading gives 0 inserts.
+      - A migrated demand converts to a project with its custom fields intact.
+    depends_on: MIG-02, MIG-03, MIG-04
+
+  - key: MIG-10
+    epic: EPIC-3
+    short_description: "Adaptive: import set + transform map for projects (u_imp_adaptive_project -> pm_project)"
+    points: 5
+    priority: 1 - Critical
+    as_a: Nordic PMO lead
+    i_want: active and recently completed Adaptive projects in pm_project, with every Nordic field
+    so_that: delivery, go-live and cycle-time reporting continue in ServiceNow
+    steps: |
+      1. Create the import set table u_imp_adaptive_project from data/load/adaptive/02_pm_project.csv.
+      2. Create the transform map "Adaptive Project to pm_project".
+         TIP: build it like MIG-05. It has the same target and mostly the same fields, plus the
+         Adaptive-only fields: u_cn, u_funding_source, u_sites, u_cost_center,
+         u_next_go_live_date, u_estimate_type, the 5 lifecycle dates, and phase.
+      3. Auto Map Matching Fields, then check against the list below. Coalesce on u_correlation_id.
+      4. Reuse the onBefore script "u_imp_<source>_project -> pm_project" (docs/05 section 4):
+         - Demand link: if demand_correlation_id is set, target.demand = that demand's sys_id.
+         - Two-pass close: when spm.migration.pass = 1, closed projects are inserted as
+           Work in Progress, and the second pass sets the final state after tasks are loaded.
+      5. u_sites: list-field script. u_cost_center: Referenced value field name = code.
+      6. Header-only projects (completed in the last 2 years) have no rows in the task file.
+         That is expected.
+    field_maps: u_imp_adaptive_project
+    acceptance: |
+      - One pm_project per row. The Adaptive SYSID shows in u_legacy_id.
+      - u_cn, u_funding_type, u_funding_source, u_business_category, u_sites and the lifecycle
+        dates are populated wherever the file has values.
+      - Completed projects end in Closed Complete after pass 2, with no errors from
+        "open child task" rules.
+      - Projects whose demand_correlation_id is set are linked to the demand from MIG-09.
+      - Re-loading gives 0 inserts.
+    depends_on: MIG-02, MIG-03, MIG-04, MIG-09
+
+  - key: MIG-11
+    epic: EPIC-3
+    short_description: "Adaptive: import set + transform map for project tasks (u_imp_adaptive_task -> pm_project_task)"
+    points: 3
+    priority: 2 - High
+    as_a: project manager
+    i_want: my Adaptive work breakdown (tasks, milestones, hierarchy) under my ServiceNow project
+    so_that: in-flight IT projects keep their plan
+    steps: |
+      Same build as MIG-06: import set table u_imp_adaptive_task from
+      data/load/adaptive/03_pm_project_task.csv, the same onBefore script, and coalesce on
+      u_correlation_id. Adaptive has no collaborators, so there is no
+      additional_assignee_list field map. Adaptive milestones already arrive with
+      milestone = true.
+    field_maps: u_imp_adaptive_task
+    acceptance: |
+      - Same criteria as MIG-06, for Adaptive rows.
+      - The Adaptive parent/child hierarchy matches in the Gantt for 3 sampled projects.
+    depends_on: MIG-10
+
+  - key: MIG-12
+    epic: EPIC-3
+    short_description: "Adaptive: import set + transform map for dependencies (u_imp_adaptive_dependency)"
+    points: 2
+    priority: 3 - Moderate
+    as_a: project manager
+    i_want: Adaptive predecessor links, including type and lag, to become ServiceNow dependencies
+    so_that: schedules keep their logic
+    steps: |
+      Same build as MIG-07: import set table u_imp_adaptive_dependency from
+      data/load/adaptive/04_planned_task_rel_planned_task.csv. The type arrives as fs / ss / ff / sf,
+      and lag is in days.
+    field_maps: u_imp_adaptive_dependency
+    acceptance: |
+      - Same criteria as MIG-07.
+      - Type and lag match Adaptive for 5 sampled links.
+    depends_on: MIG-11
+
+  - key: MIG-13
+    epic: EPIC-3
+    short_description: "Adaptive: import set + transform map for status reports (u_imp_adaptive_status -> project_status)"
+    points: 3
+    priority: 2 - High
+    as_a: PMO lead
+    i_want: each project's last Adaptive health (6 indicators + update notes) as a ServiceNow status report
+    so_that: RAG reporting is continuous on day one
+    steps: |
+      1. Create the import set table u_imp_adaptive_status from data/load/adaptive/05_project_status.csv.
+      2. Create the transform map to project_status with these two coalesce fields:
+         - project: scripted field map, byCorrelation('pm_project', source.u_project_correlation_id)
+         - as_on: mapped directly
+      3. Map overall_health, schedule, cost, resources, scope and u_risk_health. The values are
+         green / yellow / red, and the choice action is reject.
+      4. Map comments (Adaptive Update Notes).
+      5. Load after MIG-10.
+    field_maps: u_imp_adaptive_status
+    acceptance: |
+      - One status report per migrated project that had health or notes in Adaptive.
+      - The Project status tab shows the RAG indicators.
+      - Re-loading does not duplicate reports.
+    depends_on: MIG-10
+
+  # ------------------------------------------------------------------ EPIC-4
+  - key: MIG-14
+    epic: EPIC-4
+    short_description: "Mock load 1: smoke test with hand-picked records"
+    points: 3
+    priority: 1 - Critical
+    as_a: migration lead
+    i_want: about 10 hand-picked records per transform map loaded end to end
+    so_that: we find mapping and script defects before a full-volume load
+    steps: |
+      1. The migration team provides sample files covering these cases:
+         - deep subtasks, milestones and dependencies
+         - a closed project
+         - an unmatched user and a multi-name sponsor
+         - a multi-site Adaptive project
+         - an Adaptive demand
+      2. Load them in this order: Adaptive demands, Asana projects, Adaptive projects, Asana
+         tasks, Adaptive tasks, dependencies, status reports.
+      3. Log every transform error and reject in the story, and fix them in the transform maps
+         or report them to the migration team (mapping/value issues).
+      4. Load the same files again to prove idempotency.
+    acceptance: |
+      - 0 transform errors on the second run.
+      - Re-running inserts 0 records.
+      - No sys_user records are created.
+      - The business signs off the sample records.
+    depends_on: MIG-05, MIG-06, MIG-07, MIG-09, MIG-10, MIG-11, MIG-12, MIG-13
+
+  - key: MIG-15
+    epic: EPIC-4
+    short_description: "Full-volume mock loads, reconciliation, timing and rollback"
+    points: 5
+    priority: 1 - Critical
+    as_a: migration lead
+    i_want: full-volume loads that reconcile and a tested rollback
+    so_that: cutover is predictable
+    steps: |
+      1. Load all files in the MIG-14 order and record the duration of each load.
+      2. Export pm_project, dmn_demand and pm_project_task with correlation_id to CSV, and hand
+         them to the migration team for `reconcile`.
+      3. Write a fix script that deletes the migration records by correlation_display
+         (Asana / Adaptive Work). Children go first: dependencies, status reports, tasks,
+         projects, then demands. Test it in sub-prod.
+      4. Repeat the load once to rehearse it (mock 3).
+    acceptance: |
+      - The reconcile report shows 0 missing and 0 unexpected records per table.
+      - Load timings are documented.
+      - The rollback script removes all migrated records and nothing else.
+    depends_on: MIG-14
+
+  - key: MIG-16
+    epic: EPIC-4
+    short_description: "Production cutover"
+    points: 3
+    priority: 1 - Critical
+    as_a: migration lead
+    i_want: the build promoted and the final data loaded into production
+    so_that: Asana and Adaptive can be frozen and decommissioned
+    steps: |
+      1. Promote the update set to prod. Create the reference data (MIG-03) in prod.
+      2. The source tools are frozen, and the migration team delivers the final files.
+      3. Set Enforce mandatory fields = true and reference choice action = ignore. Load in the
+         MIG-14 order, then run pass 2.
+      4. Run reconcile and the business spot-check. Go or no-go decision.
+      5. Re-enable notifications, and keep u_legacy_url visible for hypercare.
+    acceptance: |
+      - Production reconciles 100% against the final files.
+      - The business signs off.
+      - The rollback script is available but not needed.
+    depends_on: MIG-15

@@ -108,6 +108,13 @@ def iso_date(value: Any) -> str:
     return d.isoformat() if d else ""
 
 
+def staging_header(target_field: str) -> str:
+    """CSV header for a load-file column. ServiceNow prefixes every import-set column with
+    'u_', so headers carry NO prefix: 'short_description' -> staging u_short_description,
+    'business_owner' -> staging u_business_owner -> target custom field u_business_owner."""
+    return target_field[2:] if target_field.startswith("u_") else target_field
+
+
 def correlation_id(source_system: str, source_id: str) -> str:
     return f"{SYSTEM_PREFIX[source_system]}:{source_id}" if source_id else ""
 

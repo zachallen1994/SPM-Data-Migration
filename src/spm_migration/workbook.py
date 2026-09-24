@@ -20,6 +20,7 @@ SHEETS = [
     ("Value Maps", "value_maps.csv"),
 ]
 HEADER_FILL = PatternFill("solid", fgColor="1F4E78")
+BODY_FONT = Font(name="Arial", size=10)
 STATUS_VALUES = '"Proposed,Confirmed,Deferred,Not migrating,Open question,Open,Fixed in code,Fixed in config,Partly fixed"'
 
 
@@ -43,8 +44,8 @@ def build(mapping_dir: str | Path, out_path: str | Path) -> Path:
         "   'Transform Maps' is the build sheet for the import set transform maps: one row per field map.",
         "6. Copy agreed changes back into the CSVs (the CSVs are the source of truth for the code).",
     ], 1):
-        readme.cell(row=i, column=1, value=line)
-    readme["A1"].font = Font(bold=True, size=13)
+        readme.cell(row=i, column=1, value=line).font = BODY_FONT
+    readme["A1"].font = Font(name="Arial", bold=True, size=13)
     readme.column_dimensions["A"].width = 110
 
     for title, filename in SHEETS:
@@ -56,8 +57,11 @@ def build(mapping_dir: str | Path, out_path: str | Path) -> Path:
         ws.append(headers)
         for r in rows:
             ws.append([r.get(h, "") for h in headers])
+        for row in ws.iter_rows(min_row=2):
+            for cell in row:
+                cell.font = BODY_FONT
         for cell in ws[1]:
-            cell.font = Font(bold=True, color="FFFFFF")
+            cell.font = Font(name="Arial", size=10, bold=True, color="FFFFFF")
             cell.fill = HEADER_FILL
             cell.alignment = Alignment(wrap_text=True, vertical="top")
         for idx, h in enumerate(headers, 1):

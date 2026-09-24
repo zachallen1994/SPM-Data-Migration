@@ -16,12 +16,19 @@ servicenow:
   instance_url: https://yourinstance.service-now.com
   username: ${SN_USER}                 # integration user with the import_transformer role
   password: ${SN_PASSWORD}
-  import_tables:                       # staging tables the transform maps read from
-    dmn_demand: u_imp_spm_demand
-    pm_project: u_imp_spm_project
-    pm_project_task: u_imp_spm_task
-    planned_task_rel_planned_task: u_imp_spm_dependency
-    project_status: u_imp_spm_status
+  import_tables:                       # staging tables the transform maps read from (per source)
+    asana:
+      dmn_demand: u_imp_asana_demand
+      pm_project: u_imp_asana_project
+      pm_project_task: u_imp_asana_task
+      planned_task_rel_planned_task: u_imp_asana_dependency
+      project_status: u_imp_asana_status
+    adaptive:
+      dmn_demand: u_imp_adaptive_demand
+      pm_project: u_imp_adaptive_project
+      pm_project_task: u_imp_adaptive_task
+      planned_task_rel_planned_task: u_imp_adaptive_dependency
+      project_status: u_imp_adaptive_status
 
 # ---------------------------------------------------------------------------
 asana:

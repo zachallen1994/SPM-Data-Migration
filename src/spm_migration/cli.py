@@ -19,7 +19,7 @@ def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="spm_migration")
     p.add_argument("command", choices=["extract-asana", "extract-adaptive", "describe-adaptive", "normalize",
                                        "classify", "transform", "run-all", "validate-fields", "reconcile", "build-workbook",
-                                       "transform-map-spec", "push"])
+                                       "transform-map-spec", "push", "user-stories"])
     p.add_argument("--settings", default="config/settings.yaml")
     p.add_argument("--rules", default="config/classification.yaml")
     p.add_argument("--overrides", default="config/overrides.csv")
@@ -36,6 +36,15 @@ def main(argv: list[str] | None = None) -> int:
         from .servicenow import transform_map_spec
         rows = transform_map_spec(args.mapping, "mapping/servicenow_transform_maps.csv")
         log.info("Wrote mapping/servicenow_transform_maps.csv (%d field maps)", len(rows))
+        return 0
+    if args.command == "user-stories":
+        from .stories import build as build_stories
+        from .servicenow import transform_map_spec
+        transform_map_spec(args.mapping, "mapping/servicenow_transform_maps.csv")
+        for out in build_stories("config/user_stories.yaml", "mapping/servicenow_transform_maps.csv",
+                                 "mapping/decisions.csv", "mapping/servicenow_user_stories.xlsx",
+                                 "docs/09_servicenow_user_stories.md"):
+            log.info("Wrote %s", out)
         return 0
     if args.command == "build-workbook":
         from .workbook import build

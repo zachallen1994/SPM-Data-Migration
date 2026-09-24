@@ -1,107 +1,180 @@
-import_set_table,load_file,source_column,target_table,target_field,field_kind,coalesce,referenced_value_field,choice_action,script,target_field_status,notes
-u_imp_spm_demand,01_dmn_demand.csv,u_correlation_id,dmn_demand,correlation_id,String,Yes,,,,out-of-box - verify with validate-fields,Coalesce key - re-loads update instead of duplicating
-u_imp_spm_demand,01_dmn_demand.csv,u_correlation_display,dmn_demand,correlation_display,String / text,,,,,out-of-box - verify with validate-fields,
-u_imp_spm_demand,01_dmn_demand.csv,u_u_legacy_id,dmn_demand,u_legacy_id,String / text,,,,,PROPOSED - create before load,
-u_imp_spm_demand,01_dmn_demand.csv,u_u_legacy_url,dmn_demand,u_legacy_url,String / text,,,,,PROPOSED - create before load,
-u_imp_spm_demand,01_dmn_demand.csv,u_short_description,dmn_demand,short_description,String / text,,,,,out-of-box - verify with validate-fields,
-u_imp_spm_demand,01_dmn_demand.csv,u_description,dmn_demand,description,String / text,,,,,out-of-box - verify with validate-fields,
-u_imp_spm_demand,01_dmn_demand.csv,u_type,dmn_demand,type,Choice,,,reject,,out-of-box - verify with validate-fields,Values from value map 'constant' - must be stored values
-u_imp_spm_demand,01_dmn_demand.csv,u_u_demand_type,dmn_demand,u_demand_type,Choice,,,reject,,exists (custom),Values from value map 'demand_type' - must be stored values
-u_imp_spm_demand,01_dmn_demand.csv,u_category,dmn_demand,category,Choice,,,reject,,out-of-box - verify with validate-fields,Values from value map 'demand_category' - must be stored values
-u_imp_spm_demand,01_dmn_demand.csv,u_state,dmn_demand,state,Choice,,,reject,,out-of-box - verify with validate-fields,Values from value map 'demand_state' - must be stored values
-u_imp_spm_demand,01_dmn_demand.csv,u_assigned_to,dmn_demand,assigned_to,Reference sys_user,,email,ignore,,out-of-box - verify with validate-fields,Never 'create' - it would create users
-u_imp_spm_demand,01_dmn_demand.csv,u_opened_by,dmn_demand,opened_by,Reference sys_user,,email,ignore,,out-of-box - verify with validate-fields,Never 'create' - it would create users
-u_imp_spm_demand,01_dmn_demand.csv,u_u_business_owner,dmn_demand,u_business_owner,Reference sys_user,,email,ignore,,exists (custom),Never 'create' - it would create users
-u_imp_spm_demand,01_dmn_demand.csv,u_u_executive_sponsor,dmn_demand,u_executive_sponsor,Reference sys_user,,email,ignore,,exists (custom),Never 'create' - it would create users
-u_imp_spm_demand,01_dmn_demand.csv,u_portfolio,dmn_demand,portfolio,Reference pm_portfolio,,name,reject (mock loads) / ignore (final),,out-of-box - verify with validate-fields,Records must exist before the load
-u_imp_spm_demand,01_dmn_demand.csv,u_primary_program,dmn_demand,primary_program,Reference pm_program,,name,reject (mock loads) / ignore (final),,out-of-box - verify with validate-fields,Records must exist before the load
-u_imp_spm_demand,01_dmn_demand.csv,u_u_cn,dmn_demand,u_cn,String / text,,,,,exists (custom),
-u_imp_spm_demand,01_dmn_demand.csv,u_u_funding_type,dmn_demand,u_funding_type,Choice,,,reject,,exists (custom),Values from value map 'funding_type' - must be stored values
-u_imp_spm_demand,01_dmn_demand.csv,u_u_funding_source,dmn_demand,u_funding_source,String / text,,,,,exists (custom),
-u_imp_spm_demand,01_dmn_demand.csv,u_expense_type,dmn_demand,expense_type,Choice,,,reject,,out-of-box - verify with validate-fields,Values from value map 'expense_type' - must be stored values
-u_imp_spm_demand,01_dmn_demand.csv,u_u_business_category,dmn_demand,u_business_category,Choice,,,reject,,exists (custom),Values from value map 'business_category_demand' - must be stored values
-u_imp_spm_demand,01_dmn_demand.csv,u_u_sites,dmn_demand,u_sites,List,,,,split names -> sys_ids of the referenced table,exists (custom),docs/05 section 4 (list fields). Confirm what u_sites references (D18)
-u_imp_spm_demand,01_dmn_demand.csv,u_business_unit,dmn_demand,business_unit,Reference business_unit,,name,reject (mock loads) / ignore (final),,out-of-box - verify with validate-fields,Records must exist before the load
-u_imp_spm_demand,01_dmn_demand.csv,u_impacted_business_units,dmn_demand,impacted_business_units,List,,,,split names -> sys_ids of the referenced table,out-of-box - verify with validate-fields,docs/05 section 4 (list fields). Confirm what u_sites references (D18)
-u_imp_spm_demand,01_dmn_demand.csv,u_u_cost_center,dmn_demand,u_cost_center,Reference cmn_cost_center,,code,ignore,,PROPOSED - create before load,
-u_imp_spm_demand,01_dmn_demand.csv,u_size,dmn_demand,size,Choice,,,reject,,out-of-box - verify with validate-fields,Values from value map 'tshirt_size' - must be stored values
-u_imp_spm_demand,01_dmn_demand.csv,u_start_date,dmn_demand,start_date,Date,,,,,out-of-box - verify with validate-fields,Date format yyyy-MM-dd
-u_imp_spm_demand,01_dmn_demand.csv,u_due_date,dmn_demand,due_date,Date,,,,,out-of-box - verify with validate-fields,Date format yyyy-MM-dd
-u_imp_spm_demand,01_dmn_demand.csv,u_priority,dmn_demand,priority,Choice,,,reject,,out-of-box - verify with validate-fields,Values from value map 'priority' - must be stored values
-u_imp_spm_demand,01_dmn_demand.csv,u_business_case,dmn_demand,business_case,String / text,,,,,out-of-box - verify with validate-fields,
-u_imp_spm_demand,01_dmn_demand.csv,u_u_request_received,dmn_demand,u_request_received,Date,,,,,PROPOSED - create before load,Date format yyyy-MM-dd
-u_imp_spm_demand,01_dmn_demand.csv,u_u_request_assigned,dmn_demand,u_request_assigned,Date,,,,,PROPOSED - create before load,Date format yyyy-MM-dd
-u_imp_spm_demand,01_dmn_demand.csv,u_u_estimate_complete,dmn_demand,u_estimate_complete,Date,,,,,PROPOSED - create before load,Date format yyyy-MM-dd
-u_imp_spm_demand,01_dmn_demand.csv,u_u_estimate_type,dmn_demand,u_estimate_type,Choice,,,reject,,PROPOSED - create before load,Values from value map 'estimate_type' - must be stored values
-u_imp_spm_project,02_pm_project.csv,u_correlation_id,pm_project,correlation_id,String,Yes,,,,out-of-box - verify with validate-fields,Coalesce key - re-loads update instead of duplicating
-u_imp_spm_project,02_pm_project.csv,u_correlation_display,pm_project,correlation_display,String / text,,,,,out-of-box - verify with validate-fields,
-u_imp_spm_project,02_pm_project.csv,u_u_legacy_id,pm_project,u_legacy_id,String / text,,,,,PROPOSED - create before load,
-u_imp_spm_project,02_pm_project.csv,u_u_legacy_url,pm_project,u_legacy_url,String / text,,,,,PROPOSED - create before load,
-u_imp_spm_project,02_pm_project.csv,u_short_description,pm_project,short_description,String / text,,,,,out-of-box - verify with validate-fields,
-u_imp_spm_project,02_pm_project.csv,u_description,pm_project,description,String / text,,,,,out-of-box - verify with validate-fields,
-u_imp_spm_project,02_pm_project.csv,u_project_manager,pm_project,project_manager,Reference sys_user,,email,ignore,,out-of-box - verify with validate-fields,Never 'create' - it would create users
-u_imp_spm_project,02_pm_project.csv,u_u_business_owner,pm_project,u_business_owner,Reference sys_user,,email,ignore,,exists (custom),Never 'create' - it would create users
-u_imp_spm_project,02_pm_project.csv,u_u_executive_sponsor,pm_project,u_executive_sponsor,Reference sys_user,,email,ignore,,exists (custom),Never 'create' - it would create users
-u_imp_spm_project,02_pm_project.csv,u_state,pm_project,state,Choice,,,reject,,out-of-box - verify with validate-fields,Values from value map 'project_state' - must be stored values
-u_imp_spm_project,02_pm_project.csv,u_phase,pm_project,phase,Choice,,,reject,,out-of-box - verify with validate-fields,Values from value map 'project_phase' - must be stored values
-u_imp_spm_project,02_pm_project.csv,u_start_date,pm_project,start_date,Date,,,,,out-of-box - verify with validate-fields,Date format yyyy-MM-dd
-u_imp_spm_project,02_pm_project.csv,u_end_date,pm_project,end_date,Date,,,,,out-of-box - verify with validate-fields,Date format yyyy-MM-dd
-u_imp_spm_project,02_pm_project.csv,u_work_start,pm_project,work_start,Date,,,,,out-of-box - verify with validate-fields,Date format yyyy-MM-dd
-u_imp_spm_project,02_pm_project.csv,u_work_end,pm_project,work_end,Date,,,,,out-of-box - verify with validate-fields,Date format yyyy-MM-dd
-u_imp_spm_project,02_pm_project.csv,u_percent_complete,pm_project,percent_complete,Number,,,,,out-of-box - verify with validate-fields,
-u_imp_spm_project,02_pm_project.csv,u_primary_portfolio,pm_project,primary_portfolio,Reference pm_portfolio,,name,reject (mock loads) / ignore (final),,out-of-box - verify with validate-fields,Records must exist before the load
-u_imp_spm_project,02_pm_project.csv,u_primary_program,pm_project,primary_program,Reference pm_program,,name,reject (mock loads) / ignore (final),,out-of-box - verify with validate-fields,Records must exist before the load
-u_imp_spm_project,02_pm_project.csv,u_investment_class,pm_project,investment_class,Choice,,,reject,,out-of-box - verify with validate-fields,Values from value map 'investment_class' - must be stored values
-u_imp_spm_project,02_pm_project.csv,u_u_cn,pm_project,u_cn,String / text,,,,,exists (custom),
-u_imp_spm_project,02_pm_project.csv,u_u_funding_type,pm_project,u_funding_type,Choice,,,reject,,exists (custom),Values from value map 'funding_type' - must be stored values
-u_imp_spm_project,02_pm_project.csv,u_u_funding_source,pm_project,u_funding_source,String / text,,,,,exists (custom),
-u_imp_spm_project,02_pm_project.csv,u_expense_type,pm_project,expense_type,Choice,,,reject,,out-of-box - verify with validate-fields,Values from value map 'expense_type' - must be stored values
-u_imp_spm_project,02_pm_project.csv,u_u_business_category,pm_project,u_business_category,Choice,,,reject,,exists (custom),Values from value map 'business_category_project' - must be stored values
-u_imp_spm_project,02_pm_project.csv,u_u_sites,pm_project,u_sites,List,,,,split names -> sys_ids of the referenced table,exists (custom),docs/05 section 4 (list fields). Confirm what u_sites references (D18)
-u_imp_spm_project,02_pm_project.csv,u_business_unit,pm_project,business_unit,Reference business_unit,,name,reject (mock loads) / ignore (final),,out-of-box - verify with validate-fields,Records must exist before the load
-u_imp_spm_project,02_pm_project.csv,u_impacted_business_units,pm_project,impacted_business_units,List,,,,split names -> sys_ids of the referenced table,out-of-box - verify with validate-fields,docs/05 section 4 (list fields). Confirm what u_sites references (D18)
-u_imp_spm_project,02_pm_project.csv,u_u_cost_center,pm_project,u_cost_center,Reference cmn_cost_center,,code,ignore,,PROPOSED - create before load,
-u_imp_spm_project,02_pm_project.csv,u_priority,pm_project,priority,Choice,,,reject,,out-of-box - verify with validate-fields,Values from value map 'priority' - must be stored values
-u_imp_spm_project,02_pm_project.csv,u_time_constraint,pm_project,time_constraint,Choice,,,reject,,out-of-box - verify with validate-fields,Values from value map 'constant' - must be stored values
-u_imp_spm_project,02_pm_project.csv,u_u_next_go_live_date,pm_project,u_next_go_live_date,Date,,,,,PROPOSED - create before load,Date format yyyy-MM-dd
-u_imp_spm_project,02_pm_project.csv,u_u_estimate_type,pm_project,u_estimate_type,Choice,,,reject,,PROPOSED - create before load,Values from value map 'estimate_type' - must be stored values
-u_imp_spm_project,02_pm_project.csv,u_u_request_received,pm_project,u_request_received,Date,,,,,PROPOSED - create before load,Date format yyyy-MM-dd
-u_imp_spm_project,02_pm_project.csv,u_u_request_assigned,pm_project,u_request_assigned,Date,,,,,PROPOSED - create before load,Date format yyyy-MM-dd
-u_imp_spm_project,02_pm_project.csv,u_u_estimate_complete,pm_project,u_estimate_complete,Date,,,,,PROPOSED - create before load,Date format yyyy-MM-dd
-u_imp_spm_project,02_pm_project.csv,u_u_ready_for_delivery,pm_project,u_ready_for_delivery,Date,,,,,PROPOSED - create before load,Date format yyyy-MM-dd
-u_imp_spm_project,02_pm_project.csv,u_u_project_assigned,pm_project,u_project_assigned,Date,,,,,PROPOSED - create before load,Date format yyyy-MM-dd
-u_imp_spm_project,02_pm_project.csv,u_u_demand_correlation_id,pm_project,(none),Helper,,,,,helper - no field map,Read by the onBefore script (docs/05 section 4)
-u_imp_spm_project,02_pm_project.csv,u_u_include_tasks,pm_project,(none),Helper,,,,,helper - no field map,Read by the onBefore script (docs/05 section 4)
-u_imp_spm_task,03_pm_project_task.csv,u_correlation_id,pm_project_task,correlation_id,String,Yes,,,,out-of-box - verify with validate-fields,Coalesce key - re-loads update instead of duplicating
-u_imp_spm_task,03_pm_project_task.csv,u_correlation_display,pm_project_task,correlation_display,String / text,,,,,out-of-box - verify with validate-fields,
-u_imp_spm_task,03_pm_project_task.csv,u_u_legacy_id,pm_project_task,u_legacy_id,String / text,,,,,PROPOSED - create before load,
-u_imp_spm_task,03_pm_project_task.csv,u_u_legacy_url,pm_project_task,u_legacy_url,String / text,,,,,PROPOSED - create before load,
-u_imp_spm_task,03_pm_project_task.csv,u_u_project_correlation_id,pm_project_task,(none),Helper,,,,,helper - no field map,Read by the onBefore script (docs/05 section 4)
-u_imp_spm_task,03_pm_project_task.csv,u_u_parent_correlation_id,pm_project_task,(none),Helper,,,,,helper - no field map,Read by the onBefore script (docs/05 section 4)
-u_imp_spm_task,03_pm_project_task.csv,u_u_level,pm_project_task,(none),Helper,,,,,helper - no field map,Read by the onBefore script (docs/05 section 4)
-u_imp_spm_task,03_pm_project_task.csv,u_wbs_order,pm_project_task,wbs_order,String / text,,,,,out-of-box - verify with validate-fields,
-u_imp_spm_task,03_pm_project_task.csv,u_short_description,pm_project_task,short_description,String / text,,,,,out-of-box - verify with validate-fields,
-u_imp_spm_task,03_pm_project_task.csv,u_description,pm_project_task,description,String / text,,,,,out-of-box - verify with validate-fields,
-u_imp_spm_task,03_pm_project_task.csv,u_assigned_to,pm_project_task,assigned_to,Reference sys_user,,email,ignore,,out-of-box - verify with validate-fields,Never 'create' - it would create users
-u_imp_spm_task,03_pm_project_task.csv,u_additional_assignee_list,pm_project_task,additional_assignee_list,List of sys_user,,,,split emails -> SPMMigrationUtil.userByEmail(),out-of-box - verify with validate-fields,docs/05 section 4 (list fields)
-u_imp_spm_task,03_pm_project_task.csv,u_state,pm_project_task,state,Choice,,,reject,,out-of-box - verify with validate-fields,Values from value map 'task_state' - must be stored values
-u_imp_spm_task,03_pm_project_task.csv,u_milestone,pm_project_task,milestone,True/False,,,,,out-of-box - verify with validate-fields,
-u_imp_spm_task,03_pm_project_task.csv,u_start_date,pm_project_task,start_date,Date,,,,,out-of-box - verify with validate-fields,Date format yyyy-MM-dd
-u_imp_spm_task,03_pm_project_task.csv,u_end_date,pm_project_task,end_date,Date,,,,,out-of-box - verify with validate-fields,Date format yyyy-MM-dd
-u_imp_spm_task,03_pm_project_task.csv,u_work_start,pm_project_task,work_start,Date,,,,,out-of-box - verify with validate-fields,Date format yyyy-MM-dd
-u_imp_spm_task,03_pm_project_task.csv,u_work_end,pm_project_task,work_end,Date,,,,,out-of-box - verify with validate-fields,Date format yyyy-MM-dd
-u_imp_spm_task,03_pm_project_task.csv,u_percent_complete,pm_project_task,percent_complete,Number,,,,,out-of-box - verify with validate-fields,
-u_imp_spm_task,03_pm_project_task.csv,u_time_constraint,pm_project_task,time_constraint,Choice,,,reject,,out-of-box - verify with validate-fields,Values from value map 'constant' - must be stored values
-u_imp_spm_dependency,04_planned_task_rel_planned_task.csv,u_u_predecessor_correlation_id,planned_task_rel_planned_task,parent,Reference (scripted),Yes,,,"answer = new SPMMigrationUtil().byCorrelation(..., source.u_u_predecessor_correlation_id)",out-of-box,docs/05 section 4
-u_imp_spm_dependency,04_planned_task_rel_planned_task.csv,u_u_successor_correlation_id,planned_task_rel_planned_task,child,Reference (scripted),Yes,,,"answer = new SPMMigrationUtil().byCorrelation(..., source.u_u_successor_correlation_id)",out-of-box,docs/05 section 4
-u_imp_spm_dependency,04_planned_task_rel_planned_task.csv,u_type,planned_task_rel_planned_task,type,Choice,,,reject,,out-of-box - verify with validate-fields,Values from value map 'dependency_type' - must be stored values
-u_imp_spm_dependency,04_planned_task_rel_planned_task.csv,u_lag,planned_task_rel_planned_task,lag,Number,,,,,out-of-box - verify with validate-fields,
-u_imp_spm_status,05_project_status.csv,u_u_project_correlation_id,project_status,project,Reference (scripted),Yes,,,"answer = new SPMMigrationUtil().byCorrelation(..., source.u_u_project_correlation_id)",out-of-box,docs/05 section 4
-u_imp_spm_status,05_project_status.csv,u_as_on,project_status,as_on,Date,,,,,out-of-box - verify with validate-fields,Date format yyyy-MM-dd
-u_imp_spm_status,05_project_status.csv,u_overall_health,project_status,overall_health,Choice,,,reject,,out-of-box - verify with validate-fields,Values from value map 'health' - must be stored values
-u_imp_spm_status,05_project_status.csv,u_schedule,project_status,schedule,Choice,,,reject,,out-of-box - verify with validate-fields,Values from value map 'health' - must be stored values
-u_imp_spm_status,05_project_status.csv,u_cost,project_status,cost,Choice,,,reject,,out-of-box - verify with validate-fields,Values from value map 'health' - must be stored values
-u_imp_spm_status,05_project_status.csv,u_resources,project_status,resources,Choice,,,reject,,out-of-box - verify with validate-fields,Values from value map 'health' - must be stored values
-u_imp_spm_status,05_project_status.csv,u_scope,project_status,scope,Choice,,,reject,,out-of-box - verify with validate-fields,Values from value map 'health' - must be stored values
-u_imp_spm_status,05_project_status.csv,u_u_risk_health,project_status,u_risk_health,Choice,,,reject,,PROPOSED - create before load,Values from value map 'health' - must be stored values
-u_imp_spm_status,05_project_status.csv,u_comments,project_status,comments,String / text,,,,,out-of-box - verify with validate-fields,
+source_system,import_set_table,load_file,source_column,target_table,target_field,field_kind,coalesce,referenced_value_field,choice_action,script,target_field_status,notes
+asana,u_imp_asana_demand,asana/01_dmn_demand.csv,u_correlation_id,dmn_demand,correlation_id,String,Yes,,,,out-of-box - verify with validate-fields,Coalesce key - re-loads update instead of duplicating
+asana,u_imp_asana_demand,asana/01_dmn_demand.csv,u_correlation_display,dmn_demand,correlation_display,String / text,,,,,out-of-box - verify with validate-fields,
+asana,u_imp_asana_demand,asana/01_dmn_demand.csv,u_legacy_id,dmn_demand,u_legacy_id,String / text,,,,,PROPOSED - create before load,
+asana,u_imp_asana_demand,asana/01_dmn_demand.csv,u_legacy_url,dmn_demand,u_legacy_url,String / text,,,,,PROPOSED - create before load,
+asana,u_imp_asana_demand,asana/01_dmn_demand.csv,u_short_description,dmn_demand,short_description,String / text,,,,,out-of-box - verify with validate-fields,
+asana,u_imp_asana_demand,asana/01_dmn_demand.csv,u_description,dmn_demand,description,String / text,,,,,out-of-box - verify with validate-fields,
+asana,u_imp_asana_demand,asana/01_dmn_demand.csv,u_type,dmn_demand,type,Choice,,,reject,,out-of-box - verify with validate-fields,Values from value map 'constant' - must be stored values
+asana,u_imp_asana_demand,asana/01_dmn_demand.csv,u_demand_type,dmn_demand,u_demand_type,Choice,,,reject,,exists (custom),Values from value map 'demand_type' - must be stored values
+asana,u_imp_asana_demand,asana/01_dmn_demand.csv,u_category,dmn_demand,category,Choice,,,reject,,out-of-box - verify with validate-fields,Values from value map 'demand_category' - must be stored values
+asana,u_imp_asana_demand,asana/01_dmn_demand.csv,u_state,dmn_demand,state,Choice,,,reject,,out-of-box - verify with validate-fields,Values from value map 'demand_state' - must be stored values
+asana,u_imp_asana_demand,asana/01_dmn_demand.csv,u_assigned_to,dmn_demand,assigned_to,Reference sys_user,,email,ignore,,out-of-box - verify with validate-fields,Never 'create' - it would create users
+asana,u_imp_asana_demand,asana/01_dmn_demand.csv,u_opened_by,dmn_demand,opened_by,Reference sys_user,,email,ignore,,out-of-box - verify with validate-fields,Never 'create' - it would create users
+asana,u_imp_asana_demand,asana/01_dmn_demand.csv,u_business_owner,dmn_demand,u_business_owner,Reference sys_user,,email,ignore,,exists (custom),Never 'create' - it would create users
+asana,u_imp_asana_demand,asana/01_dmn_demand.csv,u_executive_sponsor,dmn_demand,u_executive_sponsor,Reference sys_user,,email,ignore,,exists (custom),Never 'create' - it would create users
+asana,u_imp_asana_demand,asana/01_dmn_demand.csv,u_portfolio,dmn_demand,portfolio,Reference pm_portfolio,,name,reject (mock loads) / ignore (final),,out-of-box - verify with validate-fields,Records must exist before the load
+asana,u_imp_asana_demand,asana/01_dmn_demand.csv,u_primary_program,dmn_demand,primary_program,Reference pm_program,,name,reject (mock loads) / ignore (final),,out-of-box - verify with validate-fields,Records must exist before the load
+asana,u_imp_asana_demand,asana/01_dmn_demand.csv,u_funding_type,dmn_demand,u_funding_type,Choice,,,reject,,exists (custom),Values from value map 'funding_type' - must be stored values
+asana,u_imp_asana_demand,asana/01_dmn_demand.csv,u_expense_type,dmn_demand,expense_type,Choice,,,reject,,out-of-box - verify with validate-fields,Values from value map 'expense_type' - must be stored values
+asana,u_imp_asana_demand,asana/01_dmn_demand.csv,u_business_category,dmn_demand,u_business_category,Choice,,,reject,,exists (custom),Values from value map 'business_category_demand' - must be stored values
+asana,u_imp_asana_demand,asana/01_dmn_demand.csv,u_business_unit,dmn_demand,business_unit,Reference business_unit,,name,reject (mock loads) / ignore (final),,out-of-box - verify with validate-fields,Records must exist before the load
+asana,u_imp_asana_demand,asana/01_dmn_demand.csv,u_impacted_business_units,dmn_demand,impacted_business_units,List,,,,split names -> sys_ids of the referenced table,out-of-box - verify with validate-fields,"Field map script (docs/05 section 4, list fields). Confirm what u_sites references (D18)"
+asana,u_imp_asana_demand,asana/01_dmn_demand.csv,u_size,dmn_demand,size,Choice,,,reject,,out-of-box - verify with validate-fields,Values from value map 'tshirt_size' - must be stored values
+asana,u_imp_asana_demand,asana/01_dmn_demand.csv,u_start_date,dmn_demand,start_date,Date,,,,,out-of-box - verify with validate-fields,Date format yyyy-MM-dd
+asana,u_imp_asana_demand,asana/01_dmn_demand.csv,u_due_date,dmn_demand,due_date,Date,,,,,out-of-box - verify with validate-fields,Date format yyyy-MM-dd
+asana,u_imp_asana_demand,asana/01_dmn_demand.csv,u_priority,dmn_demand,priority,Choice,,,reject,,out-of-box - verify with validate-fields,Values from value map 'priority' - must be stored values
+asana,u_imp_asana_demand,asana/01_dmn_demand.csv,u_business_case,dmn_demand,business_case,String / text,,,,,out-of-box - verify with validate-fields,
+asana,u_imp_asana_project,asana/02_pm_project.csv,u_correlation_id,pm_project,correlation_id,String,Yes,,,,out-of-box - verify with validate-fields,Coalesce key - re-loads update instead of duplicating
+asana,u_imp_asana_project,asana/02_pm_project.csv,u_correlation_display,pm_project,correlation_display,String / text,,,,,out-of-box - verify with validate-fields,
+asana,u_imp_asana_project,asana/02_pm_project.csv,u_legacy_id,pm_project,u_legacy_id,String / text,,,,,PROPOSED - create before load,
+asana,u_imp_asana_project,asana/02_pm_project.csv,u_legacy_url,pm_project,u_legacy_url,String / text,,,,,PROPOSED - create before load,
+asana,u_imp_asana_project,asana/02_pm_project.csv,u_short_description,pm_project,short_description,String / text,,,,,out-of-box - verify with validate-fields,
+asana,u_imp_asana_project,asana/02_pm_project.csv,u_description,pm_project,description,String / text,,,,,out-of-box - verify with validate-fields,
+asana,u_imp_asana_project,asana/02_pm_project.csv,u_project_manager,pm_project,project_manager,Reference sys_user,,email,ignore,,out-of-box - verify with validate-fields,Never 'create' - it would create users
+asana,u_imp_asana_project,asana/02_pm_project.csv,u_business_owner,pm_project,u_business_owner,Reference sys_user,,email,ignore,,exists (custom),Never 'create' - it would create users
+asana,u_imp_asana_project,asana/02_pm_project.csv,u_executive_sponsor,pm_project,u_executive_sponsor,Reference sys_user,,email,ignore,,exists (custom),Never 'create' - it would create users
+asana,u_imp_asana_project,asana/02_pm_project.csv,u_state,pm_project,state,Choice,,,reject,,out-of-box - verify with validate-fields,Values from value map 'project_state' - must be stored values
+asana,u_imp_asana_project,asana/02_pm_project.csv,u_start_date,pm_project,start_date,Date,,,,,out-of-box - verify with validate-fields,Date format yyyy-MM-dd
+asana,u_imp_asana_project,asana/02_pm_project.csv,u_end_date,pm_project,end_date,Date,,,,,out-of-box - verify with validate-fields,Date format yyyy-MM-dd
+asana,u_imp_asana_project,asana/02_pm_project.csv,u_work_start,pm_project,work_start,Date,,,,,out-of-box - verify with validate-fields,Date format yyyy-MM-dd
+asana,u_imp_asana_project,asana/02_pm_project.csv,u_work_end,pm_project,work_end,Date,,,,,out-of-box - verify with validate-fields,Date format yyyy-MM-dd
+asana,u_imp_asana_project,asana/02_pm_project.csv,u_percent_complete,pm_project,percent_complete,Number,,,,,out-of-box - verify with validate-fields,
+asana,u_imp_asana_project,asana/02_pm_project.csv,u_primary_portfolio,pm_project,primary_portfolio,Reference pm_portfolio,,name,reject (mock loads) / ignore (final),,out-of-box - verify with validate-fields,Records must exist before the load
+asana,u_imp_asana_project,asana/02_pm_project.csv,u_primary_program,pm_project,primary_program,Reference pm_program,,name,reject (mock loads) / ignore (final),,out-of-box - verify with validate-fields,Records must exist before the load
+asana,u_imp_asana_project,asana/02_pm_project.csv,u_investment_class,pm_project,investment_class,Choice,,,reject,,out-of-box - verify with validate-fields,Values from value map 'investment_class' - must be stored values
+asana,u_imp_asana_project,asana/02_pm_project.csv,u_funding_type,pm_project,u_funding_type,Choice,,,reject,,exists (custom),Values from value map 'funding_type' - must be stored values
+asana,u_imp_asana_project,asana/02_pm_project.csv,u_expense_type,pm_project,expense_type,Choice,,,reject,,out-of-box - verify with validate-fields,Values from value map 'expense_type' - must be stored values
+asana,u_imp_asana_project,asana/02_pm_project.csv,u_business_category,pm_project,u_business_category,Choice,,,reject,,exists (custom),Values from value map 'business_category_project' - must be stored values
+asana,u_imp_asana_project,asana/02_pm_project.csv,u_business_unit,pm_project,business_unit,Reference business_unit,,name,reject (mock loads) / ignore (final),,out-of-box - verify with validate-fields,Records must exist before the load
+asana,u_imp_asana_project,asana/02_pm_project.csv,u_impacted_business_units,pm_project,impacted_business_units,List,,,,split names -> sys_ids of the referenced table,out-of-box - verify with validate-fields,"Field map script (docs/05 section 4, list fields). Confirm what u_sites references (D18)"
+asana,u_imp_asana_project,asana/02_pm_project.csv,u_priority,pm_project,priority,Choice,,,reject,,out-of-box - verify with validate-fields,Values from value map 'priority' - must be stored values
+asana,u_imp_asana_project,asana/02_pm_project.csv,u_time_constraint,pm_project,time_constraint,Choice,,,reject,,out-of-box - verify with validate-fields,Values from value map 'constant' - must be stored values
+asana,u_imp_asana_project,asana/02_pm_project.csv,u_demand_correlation_id,pm_project,(none - read by onBefore script),Helper,,,,,helper - no field map,No field map; used by the onBefore script
+asana,u_imp_asana_project,asana/02_pm_project.csv,u_include_tasks,pm_project,(none - read by onBefore script),Helper,,,,,helper - no field map,No field map; used by the onBefore script
+asana,u_imp_asana_task,asana/03_pm_project_task.csv,u_correlation_id,pm_project_task,correlation_id,String,Yes,,,,out-of-box - verify with validate-fields,Coalesce key - re-loads update instead of duplicating
+asana,u_imp_asana_task,asana/03_pm_project_task.csv,u_correlation_display,pm_project_task,correlation_display,String / text,,,,,out-of-box - verify with validate-fields,
+asana,u_imp_asana_task,asana/03_pm_project_task.csv,u_legacy_id,pm_project_task,u_legacy_id,String / text,,,,,PROPOSED - create before load,
+asana,u_imp_asana_task,asana/03_pm_project_task.csv,u_legacy_url,pm_project_task,u_legacy_url,String / text,,,,,PROPOSED - create before load,
+asana,u_imp_asana_task,asana/03_pm_project_task.csv,u_project_correlation_id,pm_project_task,(none - read by onBefore script),Helper,,,,,helper - no field map,No field map; used by the onBefore script
+asana,u_imp_asana_task,asana/03_pm_project_task.csv,u_parent_correlation_id,pm_project_task,(none - read by onBefore script),Helper,,,,,helper - no field map,No field map; used by the onBefore script
+asana,u_imp_asana_task,asana/03_pm_project_task.csv,u_level,pm_project_task,(none - read by onBefore script),Helper,,,,,helper - no field map,No field map; used by the onBefore script
+asana,u_imp_asana_task,asana/03_pm_project_task.csv,u_wbs_order,pm_project_task,wbs_order,String / text,,,,,out-of-box - verify with validate-fields,
+asana,u_imp_asana_task,asana/03_pm_project_task.csv,u_short_description,pm_project_task,short_description,String / text,,,,,out-of-box - verify with validate-fields,
+asana,u_imp_asana_task,asana/03_pm_project_task.csv,u_description,pm_project_task,description,String / text,,,,,out-of-box - verify with validate-fields,
+asana,u_imp_asana_task,asana/03_pm_project_task.csv,u_assigned_to,pm_project_task,assigned_to,Reference sys_user,,email,ignore,,out-of-box - verify with validate-fields,Never 'create' - it would create users
+asana,u_imp_asana_task,asana/03_pm_project_task.csv,u_additional_assignee_list,pm_project_task,additional_assignee_list,List of sys_user,,,,split emails -> SPMMigrationUtil.userByEmail(),out-of-box - verify with validate-fields,"Field map script (docs/05 section 4, list fields)"
+asana,u_imp_asana_task,asana/03_pm_project_task.csv,u_state,pm_project_task,state,Choice,,,reject,,out-of-box - verify with validate-fields,Values from value map 'task_state' - must be stored values
+asana,u_imp_asana_task,asana/03_pm_project_task.csv,u_milestone,pm_project_task,milestone,True/False,,,,,out-of-box - verify with validate-fields,
+asana,u_imp_asana_task,asana/03_pm_project_task.csv,u_start_date,pm_project_task,start_date,Date,,,,,out-of-box - verify with validate-fields,Date format yyyy-MM-dd
+asana,u_imp_asana_task,asana/03_pm_project_task.csv,u_end_date,pm_project_task,end_date,Date,,,,,out-of-box - verify with validate-fields,Date format yyyy-MM-dd
+asana,u_imp_asana_task,asana/03_pm_project_task.csv,u_work_start,pm_project_task,work_start,Date,,,,,out-of-box - verify with validate-fields,Date format yyyy-MM-dd
+asana,u_imp_asana_task,asana/03_pm_project_task.csv,u_work_end,pm_project_task,work_end,Date,,,,,out-of-box - verify with validate-fields,Date format yyyy-MM-dd
+asana,u_imp_asana_task,asana/03_pm_project_task.csv,u_percent_complete,pm_project_task,percent_complete,Number,,,,,out-of-box - verify with validate-fields,
+asana,u_imp_asana_task,asana/03_pm_project_task.csv,u_time_constraint,pm_project_task,time_constraint,Choice,,,reject,,out-of-box - verify with validate-fields,Values from value map 'constant' - must be stored values
+asana,u_imp_asana_dependency,asana/04_planned_task_rel_planned_task.csv,u_predecessor_correlation_id,planned_task_rel_planned_task,parent,Reference (scripted),Yes,,,"answer = new SPMMigrationUtil().byCorrelation('planned_task', source.u_predecessor_correlation_id);",out-of-box,Field map script (docs/05 section 4)
+asana,u_imp_asana_dependency,asana/04_planned_task_rel_planned_task.csv,u_successor_correlation_id,planned_task_rel_planned_task,child,Reference (scripted),Yes,,,"answer = new SPMMigrationUtil().byCorrelation('planned_task', source.u_successor_correlation_id);",out-of-box,Field map script (docs/05 section 4)
+asana,u_imp_asana_dependency,asana/04_planned_task_rel_planned_task.csv,u_type,planned_task_rel_planned_task,type,Choice,,,reject,,out-of-box - verify with validate-fields,Values from value map 'dependency_type' - must be stored values
+asana,u_imp_asana_dependency,asana/04_planned_task_rel_planned_task.csv,u_lag,planned_task_rel_planned_task,lag,Number,,,,,out-of-box - verify with validate-fields,
+asana,u_imp_asana_status,asana/05_project_status.csv,u_project_correlation_id,project_status,project,Reference (scripted),Yes,,,"answer = new SPMMigrationUtil().byCorrelation('pm_project', source.u_project_correlation_id);",out-of-box,Field map script (docs/05 section 4)
+asana,u_imp_asana_status,asana/05_project_status.csv,u_as_on,project_status,as_on,Date,,,,,out-of-box - verify with validate-fields,Date format yyyy-MM-dd
+asana,u_imp_asana_status,asana/05_project_status.csv,u_overall_health,project_status,overall_health,Choice,,,reject,,out-of-box - verify with validate-fields,Values from value map 'health' - must be stored values
+asana,u_imp_asana_status,asana/05_project_status.csv,u_comments,project_status,comments,String / text,,,,,out-of-box - verify with validate-fields,
+adaptive,u_imp_adaptive_demand,adaptive/01_dmn_demand.csv,u_correlation_id,dmn_demand,correlation_id,String,Yes,,,,out-of-box - verify with validate-fields,Coalesce key - re-loads update instead of duplicating
+adaptive,u_imp_adaptive_demand,adaptive/01_dmn_demand.csv,u_correlation_display,dmn_demand,correlation_display,String / text,,,,,out-of-box - verify with validate-fields,
+adaptive,u_imp_adaptive_demand,adaptive/01_dmn_demand.csv,u_legacy_id,dmn_demand,u_legacy_id,String / text,,,,,PROPOSED - create before load,
+adaptive,u_imp_adaptive_demand,adaptive/01_dmn_demand.csv,u_legacy_url,dmn_demand,u_legacy_url,String / text,,,,,PROPOSED - create before load,
+adaptive,u_imp_adaptive_demand,adaptive/01_dmn_demand.csv,u_short_description,dmn_demand,short_description,String / text,,,,,out-of-box - verify with validate-fields,
+adaptive,u_imp_adaptive_demand,adaptive/01_dmn_demand.csv,u_description,dmn_demand,description,String / text,,,,,out-of-box - verify with validate-fields,
+adaptive,u_imp_adaptive_demand,adaptive/01_dmn_demand.csv,u_type,dmn_demand,type,Choice,,,reject,,out-of-box - verify with validate-fields,Values from value map 'constant' - must be stored values
+adaptive,u_imp_adaptive_demand,adaptive/01_dmn_demand.csv,u_demand_type,dmn_demand,u_demand_type,Choice,,,reject,,exists (custom),Values from value map 'demand_type' - must be stored values
+adaptive,u_imp_adaptive_demand,adaptive/01_dmn_demand.csv,u_category,dmn_demand,category,Choice,,,reject,,out-of-box - verify with validate-fields,Values from value map 'demand_category' - must be stored values
+adaptive,u_imp_adaptive_demand,adaptive/01_dmn_demand.csv,u_state,dmn_demand,state,Choice,,,reject,,out-of-box - verify with validate-fields,Values from value map 'demand_state' - must be stored values
+adaptive,u_imp_adaptive_demand,adaptive/01_dmn_demand.csv,u_assigned_to,dmn_demand,assigned_to,Reference sys_user,,email,ignore,,out-of-box - verify with validate-fields,Never 'create' - it would create users
+adaptive,u_imp_adaptive_demand,adaptive/01_dmn_demand.csv,u_opened_by,dmn_demand,opened_by,Reference sys_user,,email,ignore,,out-of-box - verify with validate-fields,Never 'create' - it would create users
+adaptive,u_imp_adaptive_demand,adaptive/01_dmn_demand.csv,u_business_owner,dmn_demand,u_business_owner,Reference sys_user,,email,ignore,,exists (custom),Never 'create' - it would create users
+adaptive,u_imp_adaptive_demand,adaptive/01_dmn_demand.csv,u_executive_sponsor,dmn_demand,u_executive_sponsor,Reference sys_user,,email,ignore,,exists (custom),Never 'create' - it would create users
+adaptive,u_imp_adaptive_demand,adaptive/01_dmn_demand.csv,u_portfolio,dmn_demand,portfolio,Reference pm_portfolio,,name,reject (mock loads) / ignore (final),,out-of-box - verify with validate-fields,Records must exist before the load
+adaptive,u_imp_adaptive_demand,adaptive/01_dmn_demand.csv,u_primary_program,dmn_demand,primary_program,Reference pm_program,,name,reject (mock loads) / ignore (final),,out-of-box - verify with validate-fields,Records must exist before the load
+adaptive,u_imp_adaptive_demand,adaptive/01_dmn_demand.csv,u_cn,dmn_demand,u_cn,String / text,,,,,exists (custom),
+adaptive,u_imp_adaptive_demand,adaptive/01_dmn_demand.csv,u_funding_type,dmn_demand,u_funding_type,Choice,,,reject,,exists (custom),Values from value map 'funding_type' - must be stored values
+adaptive,u_imp_adaptive_demand,adaptive/01_dmn_demand.csv,u_funding_source,dmn_demand,u_funding_source,String / text,,,,,exists (custom),
+adaptive,u_imp_adaptive_demand,adaptive/01_dmn_demand.csv,u_expense_type,dmn_demand,expense_type,Choice,,,reject,,out-of-box - verify with validate-fields,Values from value map 'expense_type' - must be stored values
+adaptive,u_imp_adaptive_demand,adaptive/01_dmn_demand.csv,u_business_category,dmn_demand,u_business_category,Choice,,,reject,,exists (custom),Values from value map 'business_category_demand' - must be stored values
+adaptive,u_imp_adaptive_demand,adaptive/01_dmn_demand.csv,u_sites,dmn_demand,u_sites,List,,,,split names -> sys_ids of the referenced table,exists (custom),"Field map script (docs/05 section 4, list fields). Confirm what u_sites references (D18)"
+adaptive,u_imp_adaptive_demand,adaptive/01_dmn_demand.csv,u_business_unit,dmn_demand,business_unit,Reference business_unit,,name,reject (mock loads) / ignore (final),,out-of-box - verify with validate-fields,Records must exist before the load
+adaptive,u_imp_adaptive_demand,adaptive/01_dmn_demand.csv,u_size,dmn_demand,size,Choice,,,reject,,out-of-box - verify with validate-fields,Values from value map 'tshirt_size' - must be stored values
+adaptive,u_imp_adaptive_demand,adaptive/01_dmn_demand.csv,u_start_date,dmn_demand,start_date,Date,,,,,out-of-box - verify with validate-fields,Date format yyyy-MM-dd
+adaptive,u_imp_adaptive_demand,adaptive/01_dmn_demand.csv,u_due_date,dmn_demand,due_date,Date,,,,,out-of-box - verify with validate-fields,Date format yyyy-MM-dd
+adaptive,u_imp_adaptive_demand,adaptive/01_dmn_demand.csv,u_priority,dmn_demand,priority,Choice,,,reject,,out-of-box - verify with validate-fields,Values from value map 'priority' - must be stored values
+adaptive,u_imp_adaptive_demand,adaptive/01_dmn_demand.csv,u_business_case,dmn_demand,business_case,String / text,,,,,out-of-box - verify with validate-fields,
+adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_correlation_id,pm_project,correlation_id,String,Yes,,,,out-of-box - verify with validate-fields,Coalesce key - re-loads update instead of duplicating
+adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_correlation_display,pm_project,correlation_display,String / text,,,,,out-of-box - verify with validate-fields,
+adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_legacy_id,pm_project,u_legacy_id,String / text,,,,,PROPOSED - create before load,
+adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_legacy_url,pm_project,u_legacy_url,String / text,,,,,PROPOSED - create before load,
+adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_short_description,pm_project,short_description,String / text,,,,,out-of-box - verify with validate-fields,
+adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_description,pm_project,description,String / text,,,,,out-of-box - verify with validate-fields,
+adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_project_manager,pm_project,project_manager,Reference sys_user,,email,ignore,,out-of-box - verify with validate-fields,Never 'create' - it would create users
+adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_business_owner,pm_project,u_business_owner,Reference sys_user,,email,ignore,,exists (custom),Never 'create' - it would create users
+adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_executive_sponsor,pm_project,u_executive_sponsor,Reference sys_user,,email,ignore,,exists (custom),Never 'create' - it would create users
+adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_state,pm_project,state,Choice,,,reject,,out-of-box - verify with validate-fields,Values from value map 'project_state' - must be stored values
+adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_phase,pm_project,phase,Choice,,,reject,,out-of-box - verify with validate-fields,Values from value map 'project_phase' - must be stored values
+adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_start_date,pm_project,start_date,Date,,,,,out-of-box - verify with validate-fields,Date format yyyy-MM-dd
+adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_end_date,pm_project,end_date,Date,,,,,out-of-box - verify with validate-fields,Date format yyyy-MM-dd
+adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_work_start,pm_project,work_start,Date,,,,,out-of-box - verify with validate-fields,Date format yyyy-MM-dd
+adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_work_end,pm_project,work_end,Date,,,,,out-of-box - verify with validate-fields,Date format yyyy-MM-dd
+adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_percent_complete,pm_project,percent_complete,Number,,,,,out-of-box - verify with validate-fields,
+adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_primary_portfolio,pm_project,primary_portfolio,Reference pm_portfolio,,name,reject (mock loads) / ignore (final),,out-of-box - verify with validate-fields,Records must exist before the load
+adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_primary_program,pm_project,primary_program,Reference pm_program,,name,reject (mock loads) / ignore (final),,out-of-box - verify with validate-fields,Records must exist before the load
+adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_investment_class,pm_project,investment_class,Choice,,,reject,,out-of-box - verify with validate-fields,Values from value map 'investment_class' - must be stored values
+adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_cn,pm_project,u_cn,String / text,,,,,exists (custom),
+adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_funding_type,pm_project,u_funding_type,Choice,,,reject,,exists (custom),Values from value map 'funding_type' - must be stored values
+adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_funding_source,pm_project,u_funding_source,String / text,,,,,exists (custom),
+adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_expense_type,pm_project,expense_type,Choice,,,reject,,out-of-box - verify with validate-fields,Values from value map 'expense_type' - must be stored values
+adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_business_category,pm_project,u_business_category,Choice,,,reject,,exists (custom),Values from value map 'business_category_project' - must be stored values
+adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_sites,pm_project,u_sites,List,,,,split names -> sys_ids of the referenced table,exists (custom),"Field map script (docs/05 section 4, list fields). Confirm what u_sites references (D18)"
+adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_business_unit,pm_project,business_unit,Reference business_unit,,name,reject (mock loads) / ignore (final),,out-of-box - verify with validate-fields,Records must exist before the load
+adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_cost_center,pm_project,u_cost_center,Reference cmn_cost_center,,code,ignore,,PROPOSED - create before load,
+adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_priority,pm_project,priority,Choice,,,reject,,out-of-box - verify with validate-fields,Values from value map 'priority' - must be stored values
+adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_time_constraint,pm_project,time_constraint,Choice,,,reject,,out-of-box - verify with validate-fields,Values from value map 'constant' - must be stored values
+adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_next_go_live_date,pm_project,u_next_go_live_date,Date,,,,,PROPOSED - create before load,Date format yyyy-MM-dd
+adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_estimate_type,pm_project,u_estimate_type,Choice,,,reject,,PROPOSED - create before load,Values from value map 'estimate_type' - must be stored values
+adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_request_received,pm_project,u_request_received,Date,,,,,PROPOSED - create before load,Date format yyyy-MM-dd
+adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_request_assigned,pm_project,u_request_assigned,Date,,,,,PROPOSED - create before load,Date format yyyy-MM-dd
+adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_estimate_complete,pm_project,u_estimate_complete,Date,,,,,PROPOSED - create before load,Date format yyyy-MM-dd
+adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_ready_for_delivery,pm_project,u_ready_for_delivery,Date,,,,,PROPOSED - create before load,Date format yyyy-MM-dd
+adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_project_assigned,pm_project,u_project_assigned,Date,,,,,PROPOSED - create before load,Date format yyyy-MM-dd
+adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_demand_correlation_id,pm_project,(none - read by onBefore script),Helper,,,,,helper - no field map,No field map; used by the onBefore script
+adaptive,u_imp_adaptive_project,adaptive/02_pm_project.csv,u_include_tasks,pm_project,(none - read by onBefore script),Helper,,,,,helper - no field map,No field map; used by the onBefore script
+adaptive,u_imp_adaptive_task,adaptive/03_pm_project_task.csv,u_correlation_id,pm_project_task,correlation_id,String,Yes,,,,out-of-box - verify with validate-fields,Coalesce key - re-loads update instead of duplicating
+adaptive,u_imp_adaptive_task,adaptive/03_pm_project_task.csv,u_correlation_display,pm_project_task,correlation_display,String / text,,,,,out-of-box - verify with validate-fields,
+adaptive,u_imp_adaptive_task,adaptive/03_pm_project_task.csv,u_legacy_id,pm_project_task,u_legacy_id,String / text,,,,,PROPOSED - create before load,
+adaptive,u_imp_adaptive_task,adaptive/03_pm_project_task.csv,u_legacy_url,pm_project_task,u_legacy_url,String / text,,,,,PROPOSED - create before load,
+adaptive,u_imp_adaptive_task,adaptive/03_pm_project_task.csv,u_project_correlation_id,pm_project_task,(none - read by onBefore script),Helper,,,,,helper - no field map,No field map; used by the onBefore script
+adaptive,u_imp_adaptive_task,adaptive/03_pm_project_task.csv,u_parent_correlation_id,pm_project_task,(none - read by onBefore script),Helper,,,,,helper - no field map,No field map; used by the onBefore script
+adaptive,u_imp_adaptive_task,adaptive/03_pm_project_task.csv,u_level,pm_project_task,(none - read by onBefore script),Helper,,,,,helper - no field map,No field map; used by the onBefore script
+adaptive,u_imp_adaptive_task,adaptive/03_pm_project_task.csv,u_wbs_order,pm_project_task,wbs_order,String / text,,,,,out-of-box - verify with validate-fields,
+adaptive,u_imp_adaptive_task,adaptive/03_pm_project_task.csv,u_short_description,pm_project_task,short_description,String / text,,,,,out-of-box - verify with validate-fields,
+adaptive,u_imp_adaptive_task,adaptive/03_pm_project_task.csv,u_description,pm_project_task,description,String / text,,,,,out-of-box - verify with validate-fields,
+adaptive,u_imp_adaptive_task,adaptive/03_pm_project_task.csv,u_assigned_to,pm_project_task,assigned_to,Reference sys_user,,email,ignore,,out-of-box - verify with validate-fields,Never 'create' - it would create users
+adaptive,u_imp_adaptive_task,adaptive/03_pm_project_task.csv,u_state,pm_project_task,state,Choice,,,reject,,out-of-box - verify with validate-fields,Values from value map 'task_state' - must be stored values
+adaptive,u_imp_adaptive_task,adaptive/03_pm_project_task.csv,u_milestone,pm_project_task,milestone,True/False,,,,,out-of-box - verify with validate-fields,
+adaptive,u_imp_adaptive_task,adaptive/03_pm_project_task.csv,u_start_date,pm_project_task,start_date,Date,,,,,out-of-box - verify with validate-fields,Date format yyyy-MM-dd
+adaptive,u_imp_adaptive_task,adaptive/03_pm_project_task.csv,u_end_date,pm_project_task,end_date,Date,,,,,out-of-box - verify with validate-fields,Date format yyyy-MM-dd
+adaptive,u_imp_adaptive_task,adaptive/03_pm_project_task.csv,u_work_start,pm_project_task,work_start,Date,,,,,out-of-box - verify with validate-fields,Date format yyyy-MM-dd
+adaptive,u_imp_adaptive_task,adaptive/03_pm_project_task.csv,u_work_end,pm_project_task,work_end,Date,,,,,out-of-box - verify with validate-fields,Date format yyyy-MM-dd
+adaptive,u_imp_adaptive_task,adaptive/03_pm_project_task.csv,u_percent_complete,pm_project_task,percent_complete,Number,,,,,out-of-box - verify with validate-fields,
+adaptive,u_imp_adaptive_task,adaptive/03_pm_project_task.csv,u_time_constraint,pm_project_task,time_constraint,Choice,,,reject,,out-of-box - verify with validate-fields,Values from value map 'constant' - must be stored values
+adaptive,u_imp_adaptive_dependency,adaptive/04_planned_task_rel_planned_task.csv,u_predecessor_correlation_id,planned_task_rel_planned_task,parent,Reference (scripted),Yes,,,"answer = new SPMMigrationUtil().byCorrelation('planned_task', source.u_predecessor_correlation_id);",out-of-box,Field map script (docs/05 section 4)
+adaptive,u_imp_adaptive_dependency,adaptive/04_planned_task_rel_planned_task.csv,u_successor_correlation_id,planned_task_rel_planned_task,child,Reference (scripted),Yes,,,"answer = new SPMMigrationUtil().byCorrelation('planned_task', source.u_successor_correlation_id);",out-of-box,Field map script (docs/05 section 4)
+adaptive,u_imp_adaptive_dependency,adaptive/04_planned_task_rel_planned_task.csv,u_type,planned_task_rel_planned_task,type,Choice,,,reject,,out-of-box - verify with validate-fields,Values from value map 'dependency_type' - must be stored values
+adaptive,u_imp_adaptive_dependency,adaptive/04_planned_task_rel_planned_task.csv,u_lag,planned_task_rel_planned_task,lag,Number,,,,,out-of-box - verify with validate-fields,
+adaptive,u_imp_adaptive_status,adaptive/05_project_status.csv,u_project_correlation_id,project_status,project,Reference (scripted),Yes,,,"answer = new SPMMigrationUtil().byCorrelation('pm_project', source.u_project_correlation_id);",out-of-box,Field map script (docs/05 section 4)
+adaptive,u_imp_adaptive_status,adaptive/05_project_status.csv,u_as_on,project_status,as_on,Date,,,,,out-of-box - verify with validate-fields,Date format yyyy-MM-dd
+adaptive,u_imp_adaptive_status,adaptive/05_project_status.csv,u_overall_health,project_status,overall_health,Choice,,,reject,,out-of-box - verify with validate-fields,Values from value map 'health' - must be stored values
+adaptive,u_imp_adaptive_status,adaptive/05_project_status.csv,u_schedule,project_status,schedule,Choice,,,reject,,out-of-box - verify with validate-fields,Values from value map 'health' - must be stored values
+adaptive,u_imp_adaptive_status,adaptive/05_project_status.csv,u_cost,project_status,cost,Choice,,,reject,,out-of-box - verify with validate-fields,Values from value map 'health' - must be stored values
+adaptive,u_imp_adaptive_status,adaptive/05_project_status.csv,u_resources,project_status,resources,Choice,,,reject,,out-of-box - verify with validate-fields,Values from value map 'health' - must be stored values
+adaptive,u_imp_adaptive_status,adaptive/05_project_status.csv,u_scope,project_status,scope,Choice,,,reject,,out-of-box - verify with validate-fields,Values from value map 'health' - must be stored values
+adaptive,u_imp_adaptive_status,adaptive/05_project_status.csv,u_risk_health,project_status,u_risk_health,Choice,,,reject,,PROPOSED - create before load,Values from value map 'health' - must be stored values
+adaptive,u_imp_adaptive_status,adaptive/05_project_status.csv,u_comments,project_status,comments,String / text,,,,,out-of-box - verify with validate-fields,

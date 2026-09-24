@@ -56,8 +56,15 @@ python -m spm_migration.cli push --execute --only pm_project --limit 5   # 5 row
    - business units (BSMH, RSFH, GBS);
    - Sites values;
    - the placeholder user `migration.unassigned`.
-3. **Create the five import set tables** by loading each file from `data/load/` once
-   (option A). Use the names in `settings.yaml → servicenow.import_tables`.
+3. **Create the import set tables, one per source per target**:
+   - `u_imp_asana_project` and `u_imp_asana_task` (plus `_dependency`, and `_demand` only if needed);
+   - `u_imp_adaptive_demand`, `_project`, `_task`, `_dependency` and `_status`.
+
+   Create each one by loading its file from `data/load/asana/` or `data/load/adaptive/` once
+   (option A). The file headers have **no `u_` prefix**, because ServiceNow adds it. So staging
+   column `u_cn` maps to custom field `u_cn`, and `u_short_description` maps to
+   `short_description`. There is never a `u_u_` column, and *Auto Map Matching Fields* builds
+   most of each map.
 4. **Create one transform map per staging table.** Use `mapping/servicenow_transform_maps.csv`,
    also the *Transform Maps* sheet in the workbook, which has one row per field map:
    - **coalesce**: `Yes` on `correlation_id`, so re-loads update records instead of duplicating
@@ -67,6 +74,9 @@ python -m spm_migration.cli push --execute --only pm_project --limit 5   # 5 row
    - **choice action**: `ignore` for people. **Never `create`**, which would create users.
      `reject` for choice fields during mock loads, so bad values fail loudly.
    - **script**: for list fields and parent/project lookups (the snippets are in doc 05).
+
+   The developer stories in `docs/09_servicenow_user_stories.md` (and the import-ready
+   `mapping/servicenow_user_stories.xlsx`) walk through all of this, one story per transform map.
 5. **Add the script include `SPMMigrationUtil`** and the onBefore scripts from doc 05.
 6. **Load in order:** demands → projects → tasks → dependencies → status reports.
    Then run `reconcile`.

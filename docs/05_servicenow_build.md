@@ -21,16 +21,17 @@ suggestions.
 
 | Load file | Import set table | Target table | Coalesce |
 |---|---|---|---|
-| `01_dmn_demand.csv` | `u_imp_spm_demand` | `dmn_demand` | `correlation_id` |
-| `02_pm_project.csv` | `u_imp_spm_project` | `pm_project` | `correlation_id` |
-| `03_pm_project_task.csv` | `u_imp_spm_task` | `pm_project_task` | `correlation_id` |
-| `04_planned_task_rel_planned_task.csv` | `u_imp_spm_dependency` | `planned_task_rel_planned_task` | `parent` + `child` (scripted) |
-| `05_project_status.csv` | `u_imp_spm_status` | `project_status` | `project` + `as_on` (scripted) |
+| `<source>/01_dmn_demand.csv` | `u_imp_<source>_demand` | `dmn_demand` | `correlation_id` |
+| `<source>/02_pm_project.csv` | `u_imp_<source>_project` | `pm_project` | `correlation_id` |
+| `<source>/03_pm_project_task.csv` | `u_imp_<source>_task` | `pm_project_task` | `correlation_id` |
+| `<source>/04_planned_task_rel_planned_task.csv` | `u_imp_<source>_dependency` | `planned_task_rel_planned_task` | `parent` + `child` (scripted) |
+| `<source>/05_project_status.csv` | `u_imp_<source>_status` | `project_status` | `project` + `as_on` (scripted) |
 
-**Column names.** ServiceNow adds `u_` to every CSV header, so `correlation_id`
-becomes `u_correlation_id`. A header that already starts with `u_` may become
-`u_u_...`. The script include below tries both spellings, so the scripts work either
-way.
+**Column names.** ServiceNow adds `u_` to every CSV header, so the load files carry
+**no** `u_` prefix. `correlation_id` becomes staging column `u_correlation_id` → target
+`correlation_id`, and `cn` becomes `u_cn` → custom target `u_cn`. There is never a `u_u_`
+column. Because staging names line up with target names, *Auto Map Matching Fields* creates
+most field maps for you.
 
 ### Field map settings that matter
 
@@ -57,10 +58,9 @@ SPMMigrationUtil.prototype = {
         this._cache = {};
     },
 
-    /** Read an import-set column whether it was created as u_<name> or <name>. */
+    /** Read import-set column u_<name> (load-file headers have no u_ prefix). */
     col: function (source, name) {
         var v = source.getValue('u_' + name);
-        if (JSUtil.nil(v)) v = source.getValue(name);
         return JSUtil.nil(v) ? '' : String(v);
     },
 
@@ -94,11 +94,11 @@ SPMMigrationUtil.prototype = {
 
 ## 4. Transform scripts
 
-### `u_imp_spm_project` → `pm_project`: onBefore
+### `u_imp_<source>_project` → `pm_project`: onBefore (both sources)
 ```javascript
 (function runTransformScript(source, map, log, target) {
     var u = new SPMMigrationUtil();
-    var demandCorr = u.col(source, 'u_demand_correlation_id');
+    var demandCorr = u.col(source, 'demand_correlation_id');
     if (demandCorr) {
         var demandId = u.byCorrelation('dmn_demand', demandCorr);
         if (demandId) target.demand = demandId;
@@ -112,13 +112,13 @@ SPMMigrationUtil.prototype = {
 })(source, map, log, target);
 ```
 
-### `u_imp_spm_task` → `pm_project_task`: onBefore
+### `u_imp_<source>_task` → `pm_project_task`: onBefore (both sources)
 ```javascript
 (function runTransformScript(source, map, log, target) {
     var u = new SPMMigrationUtil();
     var corr = u.col(source, 'correlation_id');
-    var projCorr = u.col(source, 'u_project_correlation_id');
-    var parentCorr = u.col(source, 'u_parent_correlation_id');
+    var projCorr = u.col(source, 'project_correlation_id');
+    var parentCorr = u.col(source, 'parent_correlation_id');
 
     var projectId = u.byCorrelation('pm_project', projCorr);
     if (!projectId) {
@@ -142,7 +142,7 @@ table and name field to wherever your Sites choices live:
 ```javascript
 answer = (function transformEntry(source) {
     var u = new SPMMigrationUtil();
-    var names = u.col(source, 'u_sites').split(',');
+    var names = u.col(source, 'sites').split(',');
     var ids = [];
     for (var i = 0; i < names.length; i++) {
         var gr = new GlideRecord('cmn_location');          // <- your Sites table
@@ -155,29 +155,29 @@ answer = (function transformEntry(source) {
 Use the same pattern with `business_unit` (match on `name`) for `impacted_business_units`, and
 with `u.userByEmail()` for `additional_assignee_list`.
 
-### `u_imp_spm_dependency` → `planned_task_rel_planned_task`: field maps
+### `u_imp_<source>_dependency` → `planned_task_rel_planned_task`: field maps (both sources)
 Create two **scripted field maps** and set both to *Coalesce*.
 
 `parent` (the predecessor):
 ```javascript
 answer = (function transformEntry(source) {
     var u = new SPMMigrationUtil();
-    return u.byCorrelation('planned_task', u.col(source, 'u_predecessor_correlation_id'));
+    return u.byCorrelation('planned_task', u.col(source, 'predecessor_correlation_id'));
 })(source);
 ```
 `child` (the successor):
 ```javascript
 answer = (function transformEntry(source) {
     var u = new SPMMigrationUtil();
-    return u.byCorrelation('planned_task', u.col(source, 'u_successor_correlation_id'));
+    return u.byCorrelation('planned_task', u.col(source, 'successor_correlation_id'));
 })(source);
 ```
 Also add an onBefore that sets `ignore = true` when either value is empty, so orphan
 links are skipped rather than half-created.
 
-### `u_imp_spm_status` → `project_status`: field maps
+### `u_imp_<source>_status` → `project_status`: field maps
 Add a scripted `project` field map (*Coalesce*) that returns
-`u.byCorrelation('pm_project', u.col(source, 'u_project_correlation_id'))`, and map
+`u.byCorrelation('pm_project', u.col(source, 'project_correlation_id'))`, and map
 `as_on` directly (*Coalesce*).
 
 ## 5. Load order (every mock load and the final load)
@@ -202,7 +202,7 @@ MID Server SFTP) with the transform maps attached. Or push rows through the Impo
 API:
 
 ```
-POST https://<instance>.service-now.com/api/now/import/u_imp_spm_project/insertMultiple
+POST https://<instance>.service-now.com/api/now/import/u_imp_adaptive_project/insertMultiple
 Authorization: Basic ... (integration user with import_transformer role)
 Content-Type: application/json
 {"records": [ { "correlation_id": "ASANA:100", "short_description": "ERP Upgrade", ... } ]}

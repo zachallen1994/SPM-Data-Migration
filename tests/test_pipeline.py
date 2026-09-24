@@ -100,19 +100,20 @@ def test_classification_adaptive(run_dir):
 def test_demand_load_file(run_dir):
     demands = by(read_csv(run_dir / "load/01_dmn_demand.csv"))
     crm = demands["ASANA:301"]
-    assert crm["state"] == "submitted" and crm["u_demand_type"] == "hr"
+    assert crm["state"] == "submitted" and crm["demand_type"] == "hr"
     assert crm["opened_by"] == "migration.unassigned@example.com"   # requester not in sys_user
     assert crm["business_case"] == "Save $1M" and crm["priority"] == "3"
-    assert crm["u_business_category"] == "Human Resources"
+    assert crm["business_category"] == "Human Resources"
     a2 = demands["ADAPTIVE:/Project/A2"]
-    assert a2["u_demand_type"] == "new_project" and a2["state"] == "submitted"
-    assert a2["u_business_category"] == "Construction Renovation Relocation"   # demand choice list
-    assert a2["u_sites"] == "Lorain,Lima"
+    assert a2["demand_type"] == "new_project" and a2["state"] == "submitted"
+    assert a2["business_category"] == "Construction Renovation Relocation"   # demand choice list
+    assert a2["sites"] == "Lorain,Lima"
     assert a2["opened_by"] == "casey.s@example.org"                   # falls back to business sponsor
-    assert a2["u_business_owner"] == "casey.s@example.org"            # first resolvable of "A, B"
+    assert a2["business_owner"] == "casey.s@example.org"            # first resolvable of "A, B"
     assert "Business sponsor(s): Unknown Person, Casey Sponsor" in a2["description"]
-    assert a2["u_estimate_type"] == "sat_detailed_estimate"
+    assert "estimate_type" not in a2                               # demand stays out-of-box + form custom fields
     assert "Estimate type: SAT - Detailed Estimate" in a2["description"]
+    assert "Request received: 2026-07-01" in a2["description"]
 
 
 def test_project_load_file(run_dir):
@@ -133,36 +134,36 @@ def test_project_load_file(run_dir):
     assert projects["ASANA:902"]["state"] == "-5"                    # Not Started -> Pending
 
     a1 = projects["ADAPTIVE:/Project/A1"]
-    assert a1["u_legacy_id"] == "P-00001" and a1["u_cn"] == "48213"
-    assert a1["u_business_owner"] == "casey.s@example.org"
-    assert a1["u_business_category"] == "infrastructure"
-    assert a1["u_sites"] == "Cincinnati,Toledo,Kentucky"
-    assert a1["u_funding_source"] == "CIN (Cincinnati) Capital" and a1["expense_type"] == "capex"
-    assert a1["u_ready_for_delivery"] == "2025-10-01" and a1["u_next_go_live_date"] == "2026-11-15"
+    assert a1["legacy_id"] == "P-00001" and a1["cn"] == "48213"
+    assert a1["business_owner"] == "casey.s@example.org"
+    assert a1["business_category"] == "infrastructure"
+    assert a1["sites"] == "Cincinnati,Toledo,Kentucky"
+    assert a1["funding_source"] == "CIN (Cincinnati) Capital" and a1["expense_type"] == "capex"
+    assert a1["ready_for_delivery"] == "2025-10-01" and a1["next_go_live_date"] == "2026-11-15"
     assert projects["ADAPTIVE:/Project/A5"]["state"] == "3"
 
 
 def test_task_load_file(run_dir):
     tasks = read_csv(run_dir / "load/03_pm_project_task.csv")
     t = by(tasks)
-    assert t["ASANA:101"]["u_parent_correlation_id"] == "ASANA:section-s1"   # sections as phases
-    assert t["ASANA:102"]["u_parent_correlation_id"] == "ASANA:101" and t["ASANA:102"]["u_level"] == "3"
+    assert t["ASANA:101"]["parent_correlation_id"] == "ASANA:section-s1"   # sections as phases
+    assert t["ASANA:102"]["parent_correlation_id"] == "ASANA:101" and t["ASANA:102"]["level"] == "3"
     assert t["ASANA:102"]["start_date"] == "2026-01-29"                     # due-only task -> start = due
     assert t["ASANA:104"]["milestone"] == "true"
     # HR tracker subtasks -> WBS of the tracker item
-    assert t["ASANA:903"]["u_project_correlation_id"] == "ASANA:902"
-    assert t["ASANA:903"]["u_parent_correlation_id"] == "ASANA:902"
+    assert t["ASANA:903"]["project_correlation_id"] == "ASANA:902"
+    assert t["ASANA:903"]["parent_correlation_id"] == "ASANA:902"
     # plan project 950 -> WBS of tracker item 901
     m1 = t["ASANA:951"]
-    assert m1["u_project_correlation_id"] == "ASANA:901" and m1["u_parent_correlation_id"] == "ASANA:901"
+    assert m1["project_correlation_id"] == "ASANA:901" and m1["parent_correlation_id"] == "ASANA:901"
     assert m1["milestone"] == "true" and m1["percent_complete"] == "50.0" and m1["state"] == "2"
     assert m1["additional_assignee_list"] == "dev@example.com"   # assignee + unknown followers dropped
     assert "ASANA:section-u1" not in t                           # 'Untitled section' is not a phase
-    assert t["ASANA:954"]["u_parent_correlation_id"] == "ASANA:section-p2"
-    assert t["ADAPTIVE:/Task/T2"]["u_parent_correlation_id"] == "ADAPTIVE:/Task/T1"
+    assert t["ASANA:954"]["parent_correlation_id"] == "ASANA:section-p2"
+    assert t["ADAPTIVE:/Task/T2"]["parent_correlation_id"] == "ADAPTIVE:/Task/T1"
     assert t["ADAPTIVE:/Milestone/M1"]["milestone"] == "true"
     assert "ASANA:701" not in t                                   # header-only project
-    levels = [int(r["u_level"]) for r in tasks]
+    levels = [int(r["level"]) for r in tasks]
     assert levels == sorted(levels)                               # parents before children
     excluded = {r["source_id"]: r["exclusion_reason"] for r in read_csv(run_dir / "load/excluded_tasks.csv")}
     assert excluded["701"] == "project loaded header-only"
@@ -170,15 +171,15 @@ def test_task_load_file(run_dir):
 
 def test_dependencies_status_and_reports(run_dir):
     deps = read_csv(run_dir / "load/04_planned_task_rel_planned_task.csv")
-    pairs = {(d["u_predecessor_correlation_id"], d["u_successor_correlation_id"]): d for d in deps}
+    pairs = {(d["predecessor_correlation_id"], d["successor_correlation_id"]): d for d in deps}
     assert ("ASANA:101", "ASANA:103") in pairs and ("ASANA:951", "ASANA:954") in pairs
     assert pairs[("ADAPTIVE:/Task/T1", "ADAPTIVE:/Milestone/M1")]["lag"] == "2.0"
     assert len(read_csv(run_dir / "load/excluded_dependencies.csv")) == 1   # 999 not extracted
 
-    status = {(s["u_project_correlation_id"], s["as_on"]): s for s in read_csv(run_dir / "load/05_project_status.csv")}
+    status = {(s["project_correlation_id"], s["as_on"]): s for s in read_csv(run_dir / "load/05_project_status.csv")}
     assert status[("ASANA:100", "2026-09-01")]["overall_health"] == "yellow"
     a1 = status[("ADAPTIVE:/Project/A1", "2026-09-10")]                     # six Adaptive health fields
-    assert (a1["overall_health"], a1["schedule"], a1["cost"], a1["resources"], a1["scope"], a1["u_risk_health"]) == \
+    assert (a1["overall_health"], a1["schedule"], a1["cost"], a1["resources"], a1["scope"], a1["risk_health"]) == \
         ("yellow", "yellow", "green", "green", "green", "red")
     assert a1["comments"] == "Wave 1 complete; vendor delay on wave 2"
 
@@ -247,7 +248,7 @@ def test_task_rollups_to_parent_project(run_dir):
     assert projects["ASANA:700"]["primary_portfolio"] == "Culture & Learning"
     # 901's section is its portfolio; task COEs disagree -> section wins, conflict reported
     assert projects["ASANA:901"]["primary_portfolio"] == "Benefits & Well-Being"
-    assert projects["ASANA:901"]["u_business_category"] == "rsfh"        # 'BSMH, RSFH' -> first mappable
+    assert projects["ASANA:901"]["business_category"] == "rsfh"        # 'BSMH, RSFH' -> first mappable
     conflicts = {(c["source_id"], c["field"]): c for c in read_csv(run_dir / "staging/rollup_conflicts.csv")}
     assert conflicts[("901", "portfolio")]["used"] == "Benefits & Well-Being"
     assert ("700", "portfolio") not in conflicts
@@ -258,23 +259,27 @@ def test_task_rollups_to_parent_project(run_dir):
 def test_transform_map_spec(tmp_path):
     from spm_migration.servicenow import transform_map_spec
     rows = transform_map_spec(ROOT / "config/target_mapping.yaml", tmp_path / "spec.csv")
-    spec = {(r["target_table"], r["source_column"]): r for r in rows}
-    assert spec[("pm_project", "u_correlation_id")]["coalesce"] == "Yes"
-    owner = spec[("pm_project", "u_u_business_owner")]
+    assert all("u_u_" not in r["source_column"] for r in rows)                # no double prefix
+    spec = {(r["source_system"], r["target_table"], r["source_column"]): r for r in rows}
+    assert spec[("asana", "pm_project", "u_correlation_id")]["coalesce"] == "Yes"
+    assert spec[("adaptive", "pm_project", "u_cn")]["import_set_table"] == "u_imp_adaptive_project"
+    assert ("asana", "pm_project", "u_cn") not in spec                        # Adaptive-only field
+    owner = spec[("asana", "pm_project", "u_business_owner")]
     assert (owner["field_kind"], owner["referenced_value_field"], owner["choice_action"],
             owner["target_field_status"]) == ("Reference sys_user", "email", "ignore", "exists (custom)")
-    assert spec[("pm_project", "u_u_sites")]["field_kind"] == "List"
-    assert spec[("pm_project", "u_u_next_go_live_date")]["target_field_status"] == "PROPOSED - create before load"
-    assert spec[("pm_project_task", "u_u_parent_correlation_id")]["field_kind"] == "Helper"
-    assert spec[("planned_task_rel_planned_task", "u_u_predecessor_correlation_id")]["target_field"] == "parent"
-    assert spec[("pm_project", "u_state")]["choice_action"] == "reject"
+    assert spec[("adaptive", "pm_project", "u_sites")]["field_kind"] == "List"
+    assert spec[("adaptive", "pm_project", "u_next_go_live_date")]["target_field_status"] == "PROPOSED - create before load"
+    assert spec[("asana", "pm_project_task", "u_parent_correlation_id")]["field_kind"] == "Helper"
+    assert spec[("adaptive", "planned_task_rel_planned_task", "u_predecessor_correlation_id")]["target_field"] == "parent"
+    assert spec[("adaptive", "pm_project", "u_state")]["choice_action"] == "reject"
 
 
 def test_push_dry_run_and_execute(run_dir, monkeypatch):
     from spm_migration import servicenow
     settings = yaml.safe_load((run_dir / "settings.yaml").read_text())
     summary = servicenow.push(settings, ROOT / "config/target_mapping.yaml", only=["pm_project"])
-    assert summary[0]["dry_run"] == summary[0]["rows"] > 0
+    assert [s["import_set_table"] for s in summary] == ["u_imp_asana_project", "u_imp_adaptive_project"]
+    assert all(s["dry_run"] == s["rows"] > 0 for s in summary)
 
     sent = []
 
@@ -292,9 +297,42 @@ def test_push_dry_run_and_execute(run_dir, monkeypatch):
     monkeypatch.setattr("requests.Session.post", fake_post)
     settings["servicenow"].update(instance_url="https://x.service-now.com", username="u", password="p")
     summary = servicenow.push(settings, ROOT / "config/target_mapping.yaml", only=["pm_project"],
-                              execute=True, limit=2)
+                              execute=True, limit=2, sources=("adaptive",))
     assert summary[0]["inserted"] == 2
-    assert sent[0][0] == "https://x.service-now.com/api/now/import/u_imp_spm_project"
+    assert sent[0][0] == "https://x.service-now.com/api/now/import/u_imp_adaptive_project"
     assert "u_correlation_id" in sent[0][1] and "u_short_description" in sent[0][1]
+    assert "u_cn" in sent[0][1] and not any(k.startswith("u_u_") for k in sent[0][1])
     results = read_csv(run_dir / "load/push_results.csv")
     assert results[0]["target_sys_id"] == "abc123"
+
+
+def test_load_files_split_by_source_without_u_prefix(run_dir):
+    header = (run_dir / "load/adaptive/02_pm_project.csv").read_text().splitlines()[0].split(",")
+    assert "cn" in header and "business_owner" in header and "short_description" in header
+    assert not any(h.startswith("u_") for h in header)
+    asana = read_csv(run_dir / "load/asana/02_pm_project.csv")
+    adaptive = read_csv(run_dir / "load/adaptive/02_pm_project.csv")
+    assert asana and all(r["correlation_id"].startswith("ASANA:") for r in asana)
+    assert adaptive and all(r["correlation_id"].startswith("ADAPTIVE:") for r in adaptive)
+    assert len(asana) + len(adaptive) == len(read_csv(run_dir / "load/02_pm_project.csv"))
+
+
+def test_user_stories_generation(tmp_path):
+    import openpyxl
+    from spm_migration.servicenow import transform_map_spec
+    from spm_migration.stories import build
+    transform_map_spec(ROOT / "config/target_mapping.yaml", tmp_path / "spec.csv")
+    xlsx, md = build(ROOT / "config/user_stories.yaml", tmp_path / "spec.csv", ROOT / "mapping/decisions.csv",
+                     tmp_path / "stories.xlsx", tmp_path / "stories.md")
+    wb = openpyxl.load_workbook(xlsx)
+    assert wb.sheetnames == ["Read Me", "Epics", "Stories", "Field Maps", "Open Items"]
+    stories = list(wb["Stories"].iter_rows(min_row=2, values_only=True))
+    keys = [s[0] for s in stories]
+    assert keys[:4] == ["MIG-01", "MIG-02", "MIG-03", "MIG-04"] and "MIG-09" in keys
+    mig09 = next(s for s in stories if s[0] == "MIG-09")
+    assert "u_imp_adaptive_demand" in mig09[3] and "u_business_owner" in mig09[3]
+    text = md.read_text()
+    assert "`u_u_" not in text                                        # no double-prefixed columns
+    fm = list(wb["Field Maps"].iter_rows(min_row=2, values_only=True))
+    assert fm and not any(str(r[4]).startswith("u_u_") for r in fm)
+    assert "`u_cn` | `u_cn`" in text

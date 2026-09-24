@@ -2,6 +2,12 @@
 
 Outputs (data/load/):
   01_dmn_demand.csv ... 05_project_status.csv   one per target in config/target_mapping.yaml
+                           (both sources; used by reconcile and for review)
+  asana/0N_*.csv, adaptive/0N_*.csv
+                           the same files split by source - these are what gets loaded, one
+                           import set + transform map per source and target table
+  Headers carry no 'u_' prefix (see common.staging_header): ServiceNow adds it when it builds
+  the import set table, so a custom target field u_cn arrives from staging column u_cn.
   excluded_tasks.csv       tasks not loaded (parent classified demand/skip/review, or header-only)
   excluded_dependencies.csv links whose predecessor or successor is not being loaded
   unmapped_values.csv      source values with no value_map entry -> fill mapping/value_maps.csv
@@ -17,7 +23,9 @@ from pathlib import Path
 from typing import Any
 
 from .common import (SYSTEM_DISPLAY, correlation_id, iso_date, load_yaml, parse_percent,
-                     read_csv, repair_text, split_multi, truthy, write_csv)
+                     read_csv, repair_text, split_multi, staging_header, truthy, write_csv)
+
+SOURCES = ("asana", "adaptive")
 
 BLANK_USER_TOKENS = {"", "n/a", "na", "tbd", "none", "-", "unassigned", "unknown"}
 
@@ -237,8 +245,15 @@ def run(settings: dict, mapping_path: str | Path, value_maps_path: str | Path) -
         rows = sources[spec["source"]]
         if spec.get("target_class"):
             rows = [r for r in rows if r.get("target_class") == spec["target_class"]]
-        mapped = [map_row(r, spec["columns"], vmaps, users) for r in rows]
-        counts[table] = write_csv(load / spec["file"], mapped, list(spec["columns"].keys()))
+        headers = [staging_header(c) for c in spec["columns"]]
+        if len(set(headers)) != len(headers):
+            raise ValueError(f"{table}: two columns share a staging header after removing 'u_': {headers}")
+        mapped = [(r.get("source_system", ""),
+                   {staging_header(k): v for k, v in map_row(r, spec["columns"], vmaps, users).items()})
+                  for r in rows]
+        counts[table] = write_csv(load / spec["file"], [m for _, m in mapped], headers)
+        for src in SOURCES:
+            write_csv(load / src / spec["file"], [m for s_, m in mapped if s_ == src], headers)
 
     write_csv(load / "excluded_tasks.csv", excluded_tasks)
     write_csv(load / "excluded_dependencies.csv", excluded_deps)

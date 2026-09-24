@@ -26,6 +26,10 @@ targets:
     file: 01_dmn_demand.csv
     source: work_items
     target_class: demand
+    # Demand stays out-of-box except the custom fields on the Demand form (u_demand_type,
+    # u_business_owner, u_executive_sponsor, u_cn, u_funding_type, u_funding_source,
+    # u_business_category, u_sites). Attributes with no demand field go to the description.
+    # u_legacy_id / u_legacy_url load only if they are created on `task` (inherited).
     columns:
       correlation_id:      {from: correlation_id}
       correlation_display: {from: correlation_display}
@@ -47,6 +51,10 @@ targets:
           HR COEs engaged: coes_engaged
           HR cross-impacts: cross_impacts
           Estimate type: estimate_type
+          "Cost center (Dept No. for Expense)": cost_center
+          Request received: request_received
+          Request assigned: request_assigned
+          Estimate complete: estimate_complete
           Tags: tags
       type:                {const: project}
       u_demand_type:       {from: source_system, value_map: demand_type}   # [form] New Application | New Project | HR
@@ -66,16 +74,11 @@ targets:
       u_sites:             {from: sites, transform: list, value_map: site}  # [form] list
       business_unit:       {from: [business_unit, impacted_business_units], transform: first, value_map: business_unit}
       impacted_business_units: {from: impacted_business_units, transform: list, value_map: business_unit}
-      u_cost_center:       {from: cost_center}                             # [proposed] ref cmn_cost_center
       size:                {from: size, value_map: tshirt_size}
       start_date:          {from: start_date, transform: date}
       due_date:            {from: end_date, transform: date}
       priority:            {from: priority, value_map: priority}
       business_case:       {from: [custom.C_BusinessCase, custom.Business Case]}
-      u_request_received:  {from: request_received, transform: date}       # [proposed]
-      u_request_assigned:  {from: request_assigned, transform: date}       # [proposed]
-      u_estimate_complete: {from: estimate_complete, transform: date}      # [proposed]
-      u_estimate_type:     {from: estimate_type, value_map: estimate_type} # [proposed]
 
   pm_project:
     file: 02_pm_project.csv
