@@ -19,7 +19,8 @@ def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="spm_migration")
     p.add_argument("command", choices=["extract-asana", "extract-adaptive", "describe-adaptive", "normalize",
                                        "classify", "transform", "run-all", "validate-fields", "reconcile", "build-workbook",
-                                       "transform-map-spec", "push", "user-stories"])
+                                       "transform-map-spec", "push", "user-stories",
+                                       "import-asana-exports", "import-adaptive-exports"])
     p.add_argument("--settings", default="config/settings.yaml")
     p.add_argument("--rules", default="config/classification.yaml")
     p.add_argument("--overrides", default="config/overrides.csv")
@@ -61,6 +62,15 @@ def main(argv: list[str] | None = None) -> int:
     elif args.command == "extract-adaptive":
         from .adaptive_extract import extract
         log.info("Adaptive extract: %s", extract(settings, raw / "adaptive"))
+    elif args.command in ("import-asana-exports", "import-adaptive-exports"):
+        from . import exports
+        source = "asana" if args.command == "import-asana-exports" else "adaptive"
+        export_dir = Path(settings["paths"].get("exports", "data/exports")) / source
+        fn = exports.import_asana if source == "asana" else exports.import_adaptive
+        result = fn(settings[source], export_dir, raw / source)
+        log.info("%s exports -> %s: %s", source, raw / source, result)
+        if result.get("warnings"):
+            log.warning("Review %s before continuing", raw / source / "export_warnings.csv")
     elif args.command == "describe-adaptive":
         from .adaptive_extract import describe
         out = Path(settings["paths"]["reference"]) / "adaptive_metadata.json"

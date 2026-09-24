@@ -164,6 +164,9 @@ def normalize_asana(raw_dir: Path, cfg: dict, today: date, plan_links: dict[str,
         portfolio_of.setdefault(item["item_gid"], item["portfolio_name"])
     intake = {str(g) for g in cfg.get("intake_project_gids") or []}
     trackers = {str(g) for g in cfg.get("tracker_project_gids") or []}
+    # Projects built from export files carry their role (see exports.py)
+    intake |= {p["gid"] for p in projects if p.get("_role") == "intake"}
+    trackers |= {p["gid"] for p in projects if p.get("_role") == "tracker"}
 
     tasks: dict[str, dict] = {}
     multi_homed = []
@@ -476,6 +479,7 @@ def normalize(settings: dict, today: date) -> dict[str, int]:
     combined: dict[str, list[dict]] = defaultdict(list)
     if (raw / "asana").exists() and "asana" in settings:
         links = load_plan_links(settings["asana"].get("plan_links_file", "config/asana_plan_links.csv"))
+        links.update(load_plan_links(raw / "asana" / "plan_links_from_exports.csv"))
         for k, v in normalize_asana(raw / "asana", settings["asana"], today, links).items():
             combined[k].extend(v)
     if (raw / "adaptive").exists() and "adaptive" in settings:

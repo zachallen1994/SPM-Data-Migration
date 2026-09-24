@@ -22,6 +22,7 @@ docs/
   07_mapping_review.md            ★ Review of the actual Asana/Adaptive/ServiceNow field files
   08_loading_into_servicenow.md   ★ How the import set / transform map load works; custom fields
   09_servicenow_user_stories.md   ★ Developer user stories (generated; import-ready xlsx in mapping/)
+  10_getting_the_data_out.md      ★ No Asana/Adaptive access? Export files route + request template
 mapping/                       ← field-level mapping specs (open these in Excel)
   mapping_workbook.xlsx          ★ all of the below in one workbook (generated)
   decisions.csv                  open decisions D1-D16 that block the build
@@ -204,7 +205,9 @@ cp config/overrides.example.csv config/overrides.csv
 export ASANA_PAT=...            # Asana personal access token
 export ADAPTIVE_API_KEY=...     # Adaptive Work API key
 
-python -m spm_migration.cli extract-asana
+python -m spm_migration.cli extract-asana            # API route, or with export files instead:
+python -m spm_migration.cli import-asana-exports     #   (docs/10_getting_the_data_out.md)
+python -m spm_migration.cli import-adaptive-exports
 python -m spm_migration.cli describe-adaptive  # field API names -> data/reference/
 python -m spm_migration.cli extract-adaptive
 python -m spm_migration.cli run-all            # normalize → classify → transform

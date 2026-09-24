@@ -5,6 +5,7 @@ paths:
   staging: data/staging
   load: data/load
   reference: data/reference   # sys_dictionary.csv, sys_choice.csv, sys_user.csv exports
+  exports: data/exports       # export files from system owners (no API access needed)
 
 # Fix "today" for reproducible classification runs (age-based rules). null = real today.
 as_of_date: null
@@ -87,6 +88,14 @@ asana:
     priority: Priority
     requester_email: Requester Email
 
+  # ---- NO API ACCESS? Use export files instead (docs/10_getting_the_data_out.md) ----
+  # One entry per Asana CSV/Excel export in data/exports/asana/.
+  # role: tracker (each top-level row is a project), plan (a project plan whose tasks
+  # belong to one tracker row), standard (the file IS one project), intake (rows are requests)
+  exports:
+    - {file: HR_Project_Portfolio_2026.csv, role: tracker, project_name: HR Project Portfolio 2026}
+    # - {file: Business_Segmentation_Plan.csv, role: plan, tracker_item: "Business Segmentation Project"}
+
   # Task-level custom fields (Asana task-level template)
   task_custom_field_map:
     status: Task Status
@@ -108,6 +117,79 @@ adaptive:
   # username: ${ADAPTIVE_USER}      # alternative to api_key
   # password: ${ADAPTIVE_PASSWORD}
   page_size: 1000
+
+  # ---- NO API ACCESS? Use export files instead (docs/10_getting_the_data_out.md) ----
+  # Excel/CSV exports in data/exports/adaptive/. `columns` maps the API field names used in
+  # field_map below to the export's column headers (defaults = labels from the Nordic
+  # Proj_Data_Mapping sheet). Reference columns must contain IDs (SYSID), not names.
+  exports:
+    Project:
+      file: Adaptive_Projects.xlsx
+      id_column: SYSID
+      columns:
+        Name: Name
+        SYSID: SYSID
+        Description: Project Description
+        ProjectManager.Email: Manager            # names are fine - resolved via user_crosswalk.csv
+        C_BusinessSponsor: Business Sponsor
+        C_CN: "CN#"
+        C_DeptforExpense: "Dept # for Expense"
+        C_Region: Region
+        C_NextGoLiveDate: Next Go-Live Date
+        StartDate: Start Date
+        DueDate: Planned Finish
+        ActualStartDate: Actual Start Date
+        ActualEndDate: Actual End Date
+        C_ProjectFundingType: Project Funding Type
+        C_FundingType: Funding Type
+        State: State
+        Phase: Phase
+        C_BudgetHealth: Budget Health
+        C_Health: Health
+        C_ResourceHealth: Resource Health
+        C_RiskHealth: Risk Health
+        C_ScheduleHealth: Schedule Health
+        C_ScopeHealth: Scope Health
+        C_UpdateNotes: Update Notes
+        C_EstimateType: Estimate Type
+        C_RequestReceived: Request Received
+        C_RequestAssigned: Request Assigned
+        C_EstimateComplete: Estimate Complete
+        C_ReadyForDelivery: Ready For Delivery
+        C_ProjectAssigned: Project Assigned
+        C_Customers: Customers
+        C_BusinessCategory: Business Category
+        PercentCompleted: "% Complete"
+        CreatedOn: Created On
+        LastUpdatedOn: Last Updated On
+    Task:
+      file: Adaptive_Tasks.xlsx
+      id_column: SYSID
+      references: {Project: Project, Parent: auto}
+      columns:
+        Name: Name
+        SYSID: SYSID
+        Description: Description
+        Project: Project ID                      # SYSID of the project (P-00123)
+        Parent: Parent ID                        # SYSID of the parent task or the project
+        State: State
+        Manager.Email: Manager
+        StartDate: Start Date
+        DueDate: Due Date
+        ActualStartDate: Actual Start Date
+        ActualEndDate: Actual End Date
+        PercentCompleted: "% Complete"
+    Milestone:
+      file: Adaptive_Milestones.xlsx
+      id_column: SYSID
+      references: {Project: Project, Parent: auto}
+      columns: {Name: Name, SYSID: SYSID, Project: Project ID, Parent: Parent ID, State: State,
+                StartDate: Due Date, DueDate: Due Date}
+    Link:
+      file: Adaptive_Dependencies.xlsx
+      id_column: ID
+      references: {Predecessor: auto, Successor: auto}
+      columns: {Predecessor: Predecessor ID, Successor: Successor ID, DependencyType: Type, Lag: Lag}
 
   # One CZQL query per entity. `role` tells the normalizer what the entity is.
   # SELECT list = field_map[role] values + extra_fields. The C_ names below are the

@@ -336,3 +336,81 @@ def test_user_stories_generation(tmp_path):
     fm = list(wb["Field Maps"].iter_rows(min_row=2, values_only=True))
     assert fm and not any(str(r[4]).startswith("u_u_") for r in fm)
     assert "`u_cn` | `u_cn`" in text
+
+
+def test_export_files_route(tmp_path):
+    """No API access: Asana CSV exports + Adaptive Excel exports -> same load files."""
+    from openpyxl import Workbook
+    exp = tmp_path / "exports"
+    (exp / "asana").mkdir(parents=True)
+    (exp / "adaptive").mkdir()
+    (exp / "asana/tracker.csv").write_text(
+        "Task ID,Name,Section/Column,Assignee,Start Date,Due Date,Completed At,Notes,Parent task,"
+        "Blocked By (Dependencies),Project Status,PM Assigned,Project Type,Entity/Organization\n"
+        "111,Benefits Refresh,Benefits & Well-Being,,2026-01-05,2026-12-31,,Vendor RFP,,,In Progress,Pat Lee,Project,RSFH\n"
+        "112,Vendor A,,,2026-02-01,2026-03-01,,,Benefits Refresh,,,,,\n"
+        "113,Old Thing,Labor,,2024-01-01,2024-02-01,,,,,Cancelled,Pat Lee,Project,BSMH\n")
+    (exp / "asana/plan.csv").write_text(
+        "Task ID,Task Name,Section,Assigned To,Due Date,Task Status,% Complete,Parent task,Blocked By (Dependencies),COE\n"
+        "201,Initiation Milestone 1,Project Initiation,Pat Lee,2026-08-26,In Progress,0.5,,,Benefits\n"
+        "202,Kickoff Meeting,,,,,,Initiation Milestone 1,,\n"
+        "203,Build Task 1,Build,,2026-10-01,Not Started,0,,Initiation Milestone 1,Benefits\n")
+    wb = Workbook()
+    ws = wb.active
+    ws.append(["SYSID", "Name", "Manager", "State", "Start Date", "Planned Finish", "CN#", "Region",
+               "Business Sponsor", "Health", "Ready For Delivery"])
+    ws.append(["P-1", "DC Exit", "pm2@example.com", "Active", "2026-01-01", "2027-03-31", "00123",
+               "Cincinnati; Toledo", "Casey Sponsor", "In Trouble", "2025-10-01"])
+    ws.append(["P-2", "Clinic Build", "Sam Doe", "Requested", "", "", "", "Lima", "", "", ""])
+    wb.save(exp / "adaptive/Adaptive_Projects.xlsx")
+    wb = Workbook()
+    ws = wb.active
+    ws.append(["SYSID", "Name", "Project ID", "Parent ID", "State", "Start Date", "Due Date"])
+    ws.append(["T-1", "Wave 1", "P-1", "P-1", "Active", "2026-02-01", "2026-04-30"])
+    ws.append(["T-2", "Wave 1a", "P-1", "T-1", "Completed", "2026-02-01", "2026-03-01"])
+    wb.save(exp / "adaptive/Adaptive_Tasks.xlsx")
+
+    settings = yaml.safe_load((ROOT / "config/settings.example.yaml").read_text())
+    settings["paths"] = {k: str(tmp_path / k) for k in ("raw", "staging", "load", "reference", "exports")}
+    settings["as_of_date"] = "2026-09-24"
+    settings["asana"]["exports"] = [{"file": "tracker.csv", "role": "tracker"},
+                                    {"file": "plan.csv", "role": "plan", "tracker_item": "Benefits Refresh"}]
+    settings["asana"]["plan_links_file"] = str(tmp_path / "none.csv")
+    for entity in ("Milestone", "Link"):
+        settings["adaptive"]["exports"].pop(entity)
+        settings["adaptive"]["entities"].pop(entity)
+    (tmp_path / "reference").mkdir()
+    (tmp_path / "reference/user_crosswalk.csv").write_text(
+        "source_value,email\nPat Lee,pat.lee@example.org\nCasey Sponsor,casey.s@example.org\n")
+    (tmp_path / "settings.yaml").write_text(yaml.safe_dump(settings))
+    base = ["--settings", str(tmp_path / "settings.yaml"), "--rules", str(ROOT / "config/classification.yaml"),
+            "--mapping", str(ROOT / "config/target_mapping.yaml"), "--value-maps", str(ROOT / "mapping/value_maps.csv"),
+            "--overrides", str(tmp_path / "none.csv")]
+    assert cli.main(["import-asana-exports", *base]) == 0
+    assert cli.main(["import-adaptive-exports", *base]) == 0
+    assert read_csv(tmp_path / "raw/asana/export_warnings.csv") == []
+    assert cli.main(["run-all", *base]) == 0
+
+    projects = by(read_csv(tmp_path / "load/asana/02_pm_project.csv"))
+    assert set(projects) == {"ASANA:111"}                                   # 113 cancelled -> skipped
+    assert projects["ASANA:111"]["project_manager"] == "pat.lee@example.org"
+    assert projects["ASANA:111"]["primary_portfolio"] == "Benefits & Well-Being"
+    tasks = by(read_csv(tmp_path / "load/asana/03_pm_project_task.csv"))
+    assert tasks["ASANA:112"]["parent_correlation_id"] == "ASANA:111"       # tracker subtask
+    assert tasks["ASANA:202"]["parent_correlation_id"] == "ASANA:201"       # plan subtask by parent name
+    assert tasks["ASANA:201"]["project_correlation_id"] == "ASANA:111"      # plan -> tracker item
+    assert tasks["ASANA:201"]["milestone"] == "true" and tasks["ASANA:201"]["percent_complete"] == "50.0"
+    deps = read_csv(tmp_path / "load/asana/04_planned_task_rel_planned_task.csv")
+    assert [(d["predecessor_correlation_id"], d["successor_correlation_id"]) for d in deps] == [("ASANA:201", "ASANA:203")]
+
+    a_proj = by(read_csv(tmp_path / "load/adaptive/02_pm_project.csv"))
+    a1 = a_proj["ADAPTIVE:/Project/P-1"]
+    assert a1["cn"] == "00123" and a1["sites"] == "Cincinnati,Toledo" and a1["business_owner"] == "casey.s@example.org"
+    assert a1["ready_for_delivery"] == "2025-10-01"
+    demands = by(read_csv(tmp_path / "load/adaptive/01_dmn_demand.csv"))
+    assert set(demands) == {"ADAPTIVE:/Project/P-2"}                        # Requested -> demand
+    a_tasks = by(read_csv(tmp_path / "load/adaptive/03_pm_project_task.csv"))
+    assert a_tasks["ADAPTIVE:/Task/T-2"]["parent_correlation_id"] == "ADAPTIVE:/Task/T-1"
+    assert a_tasks["ADAPTIVE:/Task/T-1"]["parent_correlation_id"] == "ADAPTIVE:/Project/P-1"
+    status = read_csv(tmp_path / "load/adaptive/05_project_status.csv")
+    assert status[0]["overall_health"] == "red"
