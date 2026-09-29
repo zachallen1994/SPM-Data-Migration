@@ -140,7 +140,7 @@ As a ServiceNow Developer, I need an Import Set and Transform Map for the Asana 
 | Assigned To | `assigned_to` | People rule |
 | Collaborators | `additional_assignee_list` | Split on commas; people rule for each name; skip unmatched |
 | Start Date / Due Date | `start_date / end_date` | Date rule |
-| Task Status | `state` | Not Started -5, In Progress 2, Completed 3 |
+| Task Status | `state` | Not Started -> Pending; Started/Scoping -> Investigating; In Progress -> Work in Progress; Delayed -> Work in Progress; On Hold -> Pending; Completed -> Closed Complete; Cancelled -> Closed Incomplete; blank -> Pending. Delayed and On Hold also add a description line 'Asana status: <value>' |
 | % Complete | `percent_complete` | 0.5 -> 50 |
 | Notes | `description` | Then the description block |
 | Task Name contains "Milestone" | `milestone` | true; start = end = due date |
@@ -280,7 +280,7 @@ As a ServiceNow Developer, I need an Import Set and Transform Map for the Adapti
 | Project ID | `top_task` | pm_project where correlation_id = "ADAPTIVE:" + value |
 | Parent ID | `parent` | Task where correlation_id = "ADAPTIVE:" + value; if Parent ID = Project ID or not found, the project |
 | Manager | `assigned_to` | People rule |
-| State | `state` | Draft -5, Active 2, On Hold -3, Completed 3, Cancelled 7 |
+| State | `state` | Draft -> Pending; Active -> Work in Progress; On Hold -> Pending (plus description line 'Adaptive state: On Hold'); Completed -> Closed Complete; Cancelled -> Closed Incomplete |
 | Start Date / Due Date | `start_date / end_date` | Date rule |
 | Actual Start Date / Actual End Date | `work_start / work_end` | Date rule |
 | % Complete | `percent_complete` | Number |
