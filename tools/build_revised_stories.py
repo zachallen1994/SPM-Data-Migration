@@ -73,8 +73,8 @@ STORIES = [
          ]),
     dict(num="STRY0066697", wave="1", pts=7,
          title="Create Transform Map: Migrate Active Adaptive Records to Projects (pm_project)",
-         changed="Conversion now in the transform map (no upstream pipeline). Added u_executive_sponsor to match the "
-                 "Demand map. Added u_sites script and state value table.",
+         changed="Conversion now in the transform map (no upstream pipeline). Business Sponsor -> u_business_owner; "
+                 "u_executive_sponsor left empty (no Adaptive source). Start date from Adaptive StartDate, not Project Assigned. Added u_sites script and state value table.",
          body=[
              (P, "Reference the \"Project Mapping\" tab in the attached Adaptive_to_ServiceNow_Mapping_Guide.xlsx for "
                  "field-level directives. \"Project fields for data migration.xlsx\" shows an example Adaptive project."),
@@ -82,12 +82,17 @@ STORIES = [
              (P, "This story is complete when:"),
              (UL, [
                  "A Transform Map routes u_imp_adaptive_project to pm_project. Coalesce on correlation_id only.",
-                 "Core fields map 1:1: Name, Project Manager, Start/End dates, Percent Complete.",
-                 "User references (Project Manager, Business Owner, Executive Sponsor) match sys_user on email. "
+                 "Core fields map 1:1: Name, Project Manager, Percent Complete. Planned Finish -> end_date.",
+                 "start_date = Adaptive StartDate (system field; the Data Source adds it to the CZQL SELECT). If blank, use "
+                 "Project Assigned and log it. Project Assigned is not mapped as the start date otherwise.",
+                 "Business Sponsor (free text, may list several names) -> u_business_owner: if it holds one name, match it "
+                 "to sys_user; if it holds several names or there is no match, leave the field empty and add the full "
+                 "text to work_notes. u_executive_sponsor is not mapped (Adaptive has no executive sponsor field).",
+                 "Project Manager matches sys_user on email. "
                  "Choice action = Ignore (never create users).",
                  "State and Phase: Choice action = Reject. A field map script converts Adaptive values using the value "
                  "table below.",
-                 "Custom fields u_business_owner, u_executive_sponsor, u_cn, u_sites, u_funding_type, u_funding_source, "
+                 "Custom fields u_cn, u_sites, u_funding_type, u_funding_source, "
                  "u_business_category map exactly as in the Demand map (STRY0066695).",
                  "u_sites: a field map script splits the site names and returns sys_ids from [BA TO CONFIRM - Sites "
                  "table, see D3]. Unknown names are logged.",
@@ -133,12 +138,12 @@ STORIES = [
              (P, "This story is complete when:"),
              (UL, [
                  "A Transform Map routes u_imp_adaptive_demand to dmn_demand. Coalesce on correlation_id only.",
-                 "Name, Phase/State and Dates map 1:1. Choice action = Reject; a field map script converts Adaptive "
+                 "Name, Phase/State and Dates map 1:1 (start date and Business Sponsor follow the Project map rules). Choice action = Reject; a field map script converts Adaptive "
                  "values to ServiceNow choices.",
                  "Capex Budget, Opex Budget and Total Budget map to the demand's matching budget fields (dev confirms "
                  "the field names in the dictionary). Skip this if cost plans are loaded for demands [BA TO CONFIRM - "
                  "see D5].",
-                 "Custom fields u_business_owner, u_executive_sponsor, u_cn, u_funding_type, u_funding_source, "
+                 "Custom fields u_business_owner (from Business Sponsor), u_cn, u_funding_type, u_funding_source, "
                  "u_business_category map 1:1.",
                  "u_sites uses the same field map script as the Project map (STRY0066697).",
                  "User references resolve on email (e.g. BusinessOwner.Email). Choice action = Ignore.",
