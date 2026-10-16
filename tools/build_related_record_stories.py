@@ -207,7 +207,9 @@ STORIES = [
                  "task's correlation id (field map [Script] -> correlation_id returning source.u_project_correlation_id).",
                  "onBefore: first resource on a task -> assigned_to; further resources are added to "
                  "additional_assignee_list (no duplicates). Users matched on email; no match -> logged, left blank.",
-                 "Links whose work item is a project (ADAPTIVE:/Project/...) update additional_assignee_list on pm_project.",
+                 "onBefore also: if no pm_project_task has that correlation_id, ignore = true (this map must never "
+                 "create tasks). Links whose work item is a project (ADAPTIVE:/Project/...) are skipped here; a second "
+                 "map on the same staging table -> pm_project (same rules) adds them to the project's additional_assignee_list.",
                  "Asana: no separate feed - assignee and followers already come with the Work Plan (NEW-11/NEW-12).",
                  "Done when the pilot tasks show the same people as Adaptive.",
              ]),
@@ -224,7 +226,8 @@ STORIES = [
                  "Its script sums hours per work item before inserting: one staging row per task with Project Correlation "
                  "ID (= the task) and Total Hours.",
                  "Transform -> pm_project_task, coalesce via [Script] -> correlation_id = source.u_project_correlation_id; "
-                 "Total Hours -> the task's Actual effort field (dev confirms the field name in the pm_project_task dictionary).",
+                 "Total Hours -> the task's Actual effort field (dev confirms the field name in the pm_project_task dictionary). "
+                 "onBefore: if no pm_project_task has that correlation_id, ignore = true (never create tasks from this map).",
                  "Asana: only if Discovery shows actual_time_minutes; then the Work Plan script also fills Total Hours "
                  "(minutes / 60).",
                  "Done when pilot task actual effort equals the Adaptive totals (spot-check 5 tasks).",
