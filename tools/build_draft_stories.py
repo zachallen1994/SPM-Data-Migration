@@ -24,20 +24,23 @@ BASE = ("Already working in Dev: system properties x_mig.adaptive.url (https://a
         "(e.g. ADAPTIVE:/Project/5afh...) or \"ASANA:\" + Asana gid. Scripts: repo folder servicenow/.")
 
 DRAFTS = [
-    dict(num="STRY0067504", pts=2, assign="Yes", deps="-",
-         title="Create Outbound REST Message for AdaptiveWork (Clarizen) API",
+    dict(num="STRY0067504", pts=1, assign="Yes", deps="-",
+         title="Configure AdaptiveWork API connection settings (Dev, Test, Prod)",
          body=[
-             (P, "Connection is proven in Dev. This story closes it out and makes it repeatable in Test and Prod."),
+             (P, "No Outbound REST Message record is needed: every Data Source and script calls the API directly "
+                 "(sn_ws.RESTMessageV2) and reads the address and key from system properties. This is how the working "
+                 "'Adaptive Projects - API' Data Source runs in Dev."),
              (P, "This story is complete when:"),
              (UL, [
                  "System properties exist: x_mig.adaptive.url (string) = https://api2.clarizen.com/v2.0/services; "
                  "x_mig.adaptive.key (password2). No key appears in any script.",
-                 "Header used by every call: Authorization: ApiKey <x_mig.adaptive.key>; Content-Type: application/json.",
-                 "Test 1: POST {url}/data/query with {\"q\":\"SELECT Name FROM Project\",\"paging\":{\"from\":0,\"limit\":2}} "
-                 "returns 200 and two projects.",
+                 "Test 1 (Scripts - Background): POST {url}/data/query with "
+                 "{\"q\":\"SELECT Name FROM Project\",\"paging\":{\"from\":0,\"limit\":2}} and header "
+                 "Authorization: ApiKey <key> returns 200 and two projects.",
                  "Test 2: GET {url}/metadata/describeEntities?typeNames=Project returns 200 (GET - POST returns 404).",
-                 "The key is switched to the svc_sn_migration service account key when issued (property value only).",
-                 "The same properties are created in Test and Prod (values are entered per instance).",
+                 "The key value is switched to the svc_sn_migration service account key when issued.",
+                 "The same properties are created in Test and Prod (values are entered per instance; they do not move "
+                 "with code), and Test 1 passes in each.",
              ]),
          ]),
     dict(num="STRY0067506", pts=8, assign="Yes", deps="STRY0067504; projects loaded (STRY0066697)",
@@ -192,6 +195,7 @@ DRAFTS = [
 
 IN_FLIGHT = [
     ("STRY0067932", "Ready", "Asana API Connection",
+     "AC 1: no Outbound REST Message record is needed - the Data Source script calls Asana directly and reads the token from property x_mig.asana.token (same as Adaptive). "
      "Staging table is u_import_asana_hr_project_portfolio (story says u_imp_asana_hr_portfolio). "
      "Project GID = 1208928603143252 (HR Project Portfolio 2026; workspace 5286451799521 is not the project). "
      "Use a Data Source 'Custom (Load by Script)' instead of a Scheduled Job, so the transform map runs on the loaded "
@@ -233,7 +237,7 @@ IN_FLIGHT = [
 ]
 
 BUILD_ORDER = [
-    ("1", "STRY0067504", "Close out connection (Dev, then Test/Prod properties)"),
+    ("1", "STRY0067504", "Connection settings (system properties) in Dev, Test, Prod - no REST Message record"),
     ("2", "STRY0066697 fixes", "Project map fixes, rerun -> 'updated' not 'inserted'"),
     ("3", "STRY0067932 / STRY0065263", "Asana portfolio via API"),
     ("4", "STRY0067506", "Discovery, then Tasks/Milestones, Risks, Issues, Lessons, Resources, Time Data Sources"),
