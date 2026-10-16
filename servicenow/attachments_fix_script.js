@@ -3,14 +3,15 @@
 // Start with DRY_RUN = true: it only logs what it would do (System Logs, source "x_mig.attachments").
 var DRY_RUN = true;
 var TABLES = ['pm_project', 'pm_project_task', 'dmn_demand'];   // add 'risk', 'issue' when loaded
-var MAX_MB = 50;                                                  // larger files are logged, not copied
+var MAX_MB = 0;                                                   // 0 = no limit (every stored file is copied);
+                                                                  // ServiceNow's own max size (com.glide.attachment.max_size) still applies
 
 // Adaptive: confirm these two with the Discovery output (AttachmentLink / Document entities)
 var ADAPTIVE_LINK_QUERY = "SELECT Document, Document.Name, Document.FileSize FROM AttachmentLink WHERE Entity = '{id}'";
 var ADAPTIVE_DOWNLOAD = '/files/download?documentId={doc}&redirect=false';   // returns {"url": "..."}
 
 var LOG = 'x_mig.attachments';
-var stats = { copied: 0, skipped: 0, linked: 0, failed: 0 };
+var stats = { found: 0, copied: 0, skipped: 0, linked: 0, failed: 0 };   // found = files stored in Asana/Adaptive
 
 function already(table, sysId, fileName) {
     var a = new GlideRecord('sys_attachment');
@@ -59,7 +60,8 @@ function asanaFiles(gr, gid) {
         '&opt_fields=name,host,size,download_url,view_url', auth).data;
     list.forEach(function (f) {
         if (f.host == 'asana' && f.download_url) {
-            if (f.size && f.size > MAX_MB * 1048576) { stats.failed++; gs.logWarning('Too large, copy by hand: ' + f.name, LOG); return; }
+            stats.found++;
+            if (MAX_MB && f.size && f.size > MAX_MB * 1048576) { stats.failed++; gs.logWarning('Too large, copy by hand: ' + f.name, LOG); return; }
             // download_url is a short-lived signed link: fetch it straight away, WITHOUT the Asana token
             download(f.download_url, {}, gr.getTableName(), gr.getUniqueValue(), f.name);
         } else {
@@ -82,8 +84,9 @@ function adaptiveFiles(gr, id) {
     if (res.getStatusCode() != 200) throw res.getStatusCode() + ': ' + res.getBody();
     JSON.parse(res.getBody()).entities.forEach(function (link) {
         var doc = link.Document || {};
+        stats.found++;
         var name = doc.Name || 'attachment';
-        if (doc.FileSize && doc.FileSize > MAX_MB * 1048576) { stats.failed++; gs.logWarning('Too large, copy by hand: ' + name, LOG); return; }
+        if (MAX_MB && doc.FileSize && doc.FileSize > MAX_MB * 1048576) { stats.failed++; gs.logWarning('Too large, copy by hand: ' + name, LOG); return; }
         var file = getJson(base + ADAPTIVE_DOWNLOAD.replace('{doc}', encodeURIComponent(doc.id)), auth);
         if (file.url) download(file.url, {}, gr.getTableName(), gr.getUniqueValue(), name);
     });
@@ -104,4 +107,5 @@ TABLES.forEach(function (table) {
         }
     }
 });
-gs.log('Attachments done' + (DRY_RUN ? ' (DRY RUN)' : '') + ': ' + JSON.stringify(stats), LOG);
+gs.log('Attachments done' + (DRY_RUN ? ' (DRY RUN)' : '') + ': ' + JSON.stringify(stats) +
+    ' - complete when copied + skipped = found and failed = 0', LOG);

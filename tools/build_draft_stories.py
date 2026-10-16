@@ -45,12 +45,15 @@ DRAFTS = [
         "Rate models, weekly time cards and resource plans are out of scope.",
         "5 pilot tasks show the same people and hours as Adaptive.",
     ]),
-    ("STRY0066723", "Copy attachments from Asana and Adaptive", 5, "Yes - run last", [
-        "servicenow/attachments_fix_script.js is run as a Fix Script after all other loads.",
-        "It is run first with DRY_RUN = true, and the log reviewed. Then it is run with DRY_RUN = false.",
-        "Files stored in Google Drive, Box, Dropbox or OneDrive are added to the record as a link in a work note.",
-        "Running it again does not create duplicate files.",
-        "10 spot-checked files open correctly in ServiceNow.",
+    ("STRY0066723", "Copy all attachments from Asana and Adaptive into ServiceNow", 5, "Yes - run last", [
+        "Every file stored in Asana or Adaptive on a migrated project, task, demand, risk or issue is copied onto the "
+        "matching ServiceNow record, with the same file name.",
+        "servicenow/attachments_fix_script.js is run as a Fix Script after all other loads: first with DRY_RUN = true "
+        "(log reviewed), then with DRY_RUN = false.",
+        "Links to files kept outside Asana (Google Drive, Box, Dropbox, OneDrive) are added to the record as a work "
+        "note with the link.",
+        "The final log line shows copied + skipped = found, and failed = 0. Any failed file is listed and copied by hand.",
+        "Running it again does not create duplicate files, and 10 spot-checked files open correctly.",
     ]),
     ("STRY0066721", "Create cost plans from Adaptive budgets", 6, "HOLD", [
         "On hold until the BA confirms (1) where budgets live in Adaptive and (2) cost plans or demand budget totals "
