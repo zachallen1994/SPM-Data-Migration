@@ -1,0 +1,129 @@
+// Data Source template for Adaptive records that belong to a project
+// (tasks, milestones, issues, risks, lessons learned, resource links, timesheets).
+// Type: Custom (Load by Script). One Data Source per entity; copy this script and change only the CONFIG.
+//
+// It loads ONLY records of projects already migrated (pm_project.correlation_id starts with
+// ADAPTIVE:/Project/), so the pilot and the full load follow whatever projects are in ServiceNow.
+//
+// Every staging table needs these columns (add them like "Correlation ID" on the project table):
+//   Correlation ID, Parent Correlation ID, Project Correlation ID   (String, 100)
+(function loadData(import_set_table, data_source, import_log, last_success_import_time) {
+
+    // ======================= CONFIG ✏️ =======================
+    var ENTITY = 'Task';            // Adaptive entity, e.g. Task | Milestone | Issue | Risk | C_PMOLessonsLearned
+    var PROJECT_FIELD = 'Project';  // field on ENTITY that points at its project (Lessons: C_RelatedWorkItem)
+
+    // Column LABEL in the staging table : Adaptive field.
+    //   '@Field'  -> "ADAPTIVE:" + that reference's id   (links to parents)
+    //   '=value'  -> a fixed value
+    var MAP = {
+        'Correlation ID':         '@id',
+        'Parent Correlation ID':  '@Parent',
+        'Project Correlation ID': '@Project',
+        'Name':                   'Name',
+        'Description':            'Description',
+        'Start Date':             'StartDate',
+        'Due Date':               'DueDate',
+        'Actual Start Date':      'ActualStartDate',
+        'Actual End Date':        'ActualEndDate',
+        '% Complete':             'PercentCompleted',
+        'State':                  'State',
+        'Milestone':              '=false'      // Milestone Data Source: '=true'
+    };
+    // Presets (replace MAP for that entity; confirm names with the Discovery output):
+    //  Milestone:  same as Task, with ENTITY = 'Milestone' and 'Milestone': '=true'
+    //  Lessons:    ENTITY = 'C_PMOLessonsLearned', PROJECT_FIELD = 'C_RelatedWorkItem', MAP =
+    //              { 'Correlation ID':'@id', 'Project Correlation ID':'@C_RelatedWorkItem', 'Name':'Name',
+    //                'Lesson Type':'C_LessonType', 'Topic':'C_Topic', 'Lesson':'C_Lesson', 'ID':'SYSID' }
+    // =========================================================
+
+    var table = data_source.getValue('import_set_table_name');
+    var colByLabel = {};
+    var d = new GlideRecord('sys_dictionary');
+    d.addQuery('name', table);
+    d.addQuery('element', 'STARTSWITH', 'u_');
+    d.query();
+    while (d.next()) colByLabel[(d.getValue('column_label') || '').toLowerCase().trim()] = d.getValue('element');
+    for (var label in MAP) {
+        if (!colByLabel[label.toLowerCase()]) import_log.warn('No column labelled "' + label + '" in ' + table + ' - skipped');
+    }
+
+    function clean(v) {
+        if (v === null || v === undefined) return '';
+        if (Array.isArray(v)) return v.map(clean).filter(function (x) { return x; }).join(', ');
+        if (typeof v == 'object') {
+            if (v.DisplayName) return String(v.DisplayName);
+            if (v.Name) return String(v.Name);
+            return v.id ? decodeURIComponent(String(v.id).split('/').pop()) : '';
+        }
+        var s = String(v);
+        if (/^\d{4}-\d{2}-\d{2}T/.test(s)) return s.substring(0, 10);
+        return s.replace(/(^|[;,]\s*)\/C?_?[A-Za-z_]+\//g, '$1');
+    }
+    function get(rec, path) {
+        var v = rec;
+        path.split('.').forEach(function (p) { v = (v === null || v === undefined) ? null : v[p]; });
+        return v;
+    }
+    function value(e, spec) {
+        if (spec.charAt(0) == '=') return spec.substring(1);
+        if (spec.charAt(0) == '@') {
+            var ref = spec == '@id' ? e.id : get(e, spec.substring(1));
+            var id = (ref && typeof ref == 'object') ? ref.id : ref;
+            return id ? 'ADAPTIVE:' + id : '';
+        }
+        return clean(get(e, spec));
+    }
+
+    // Fields to SELECT
+    var select = [];
+    for (var l in MAP) {
+        var s = MAP[l];
+        if (s == '@id' || s.charAt(0) == '=') continue;
+        s = s.replace('@', '');
+        if (select.indexOf(s) < 0) select.push(s);
+    }
+
+    // Projects already in ServiceNow
+    var projects = [];
+    var p = new GlideRecord('pm_project');
+    p.addQuery('correlation_id', 'STARTSWITH', 'ADAPTIVE:/Project/');
+    p.query();
+    while (p.next()) projects.push(p.getValue('correlation_id').replace('ADAPTIVE:', ''));
+    if (!projects.length) { import_log.warn('No Adaptive projects in ServiceNow yet - load projects first'); return; }
+
+    function post(body) {
+        var r = new sn_ws.RESTMessageV2();
+        r.setHttpMethod('POST');
+        r.setEndpoint(gs.getProperty('x_mig.adaptive.url') + '/data/query');
+        r.setRequestHeader('Authorization', 'ApiKey ' + gs.getProperty('x_mig.adaptive.key'));
+        r.setRequestHeader('Content-Type', 'application/json');
+        r.setRequestBody(JSON.stringify(body));
+        var res = r.execute();
+        if (res.getStatusCode() != 200) throw 'Adaptive ' + res.getStatusCode() + ': ' + res.getBody();
+        return JSON.parse(res.getBody());
+    }
+
+    var count = 0;
+    for (var i = 0; i < projects.length; i += 20) {              // 20 projects per query
+        var where = projects.slice(i, i + 20).map(function (id) { return PROJECT_FIELD + " = '" + id + "'"; }).join(' OR ');
+        var q = 'SELECT ' + select.join(', ') + ' FROM ' + ENTITY + ' WHERE ' + where;
+        var paging = { from: 0, limit: 100 };
+        while (true) {
+            var body;
+            try { body = post({ q: q, paging: paging }); } catch (err) { import_log.error(String(err)); return; }
+            body.entities.forEach(function (e) {
+                var row = {};
+                for (var label in MAP) {
+                    var col = colByLabel[label.toLowerCase()];
+                    if (col) row[col] = value(e, MAP[label]);
+                }
+                import_set_table.insert(row);
+                count++;
+            });
+            if (!body.paging || !body.paging.hasMore) break;
+            paging = body.paging;
+        }
+    }
+    import_log.info('Adaptive ' + ENTITY + ' rows loaded: ' + count + ' (for ' + projects.length + ' projects)');
+})(import_set_table, data_source, import_log, last_success_import_time);
