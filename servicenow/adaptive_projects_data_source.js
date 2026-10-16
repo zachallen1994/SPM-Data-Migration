@@ -65,7 +65,9 @@
             return v.id ? decodeURIComponent(String(v.id).split('/').pop()) : '';   // "/State/Active" -> "Active"
         }
         var s = String(v);
-        return /^\d{4}-\d{2}-\d{2}T/.test(s) ? s.substring(0, 10) : s;              // keep the date only
+        if (/^\d{4}-\d{2}-\d{2}T/.test(s)) return s.substring(0, 10);              // keep the date only
+        // Multi-pick lists come back as "/C_WorkItemRegion/PAD (Paducah)" -> "PAD (Paducah)"
+        return s.replace(/(^|[;,]\s*)\/C?_?[A-Za-z_]+\//g, '$1');
     }
     function val(rec, path) {
         var v = rec;
