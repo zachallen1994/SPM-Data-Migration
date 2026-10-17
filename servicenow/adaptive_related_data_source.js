@@ -11,7 +11,10 @@
 
     // ======================= CONFIG ✏️ =======================
     var ENTITY = 'Task';            // Adaptive entity, e.g. Task | Milestone | Issue | Risk | C_PMOLessonsLearned
-    var PROJECT_FIELD = 'Project';  // field on ENTITY that points at its project (Lessons: C_RelatedWorkItem)
+    var PROJECT_FIELD = 'Project';  // field on ENTITY that points at its project (Lessons: C_RelatedWorkItem;
+                                    // Resources: WorkItem)
+    var PARENT_TABLES = ['pm_project'];   // records already in ServiceNow that PROJECT_FIELD may point at
+                                          // (Resources: ['pm_project', 'pm_project_task'])
 
     // Column LABEL in the staging table : Adaptive field.
     //   '@Field'  -> "ADAPTIVE:" + that reference's id   (links to parents)
@@ -25,6 +28,7 @@
         'Start Date':             'StartDate',
         'Due Date':               'DueDate',
         'Actual Start Date':      'ActualStartDate',
+        'Actual Effort':          'ActualEffort',     // hours
         'Actual End Date':        'ActualEndDate',
         '% Complete':             'PercentCompleted',
         'State':                  'State',
@@ -35,6 +39,9 @@
     //  Lessons:    ENTITY = 'C_PMOLessonsLearned', PROJECT_FIELD = 'C_RelatedWorkItem', MAP =
     //              { 'Correlation ID':'@id', 'Project Correlation ID':'@C_RelatedWorkItem', 'Name':'Name',
     //                'Lesson Type':'C_LessonType', 'Topic':'C_Topic', 'Lesson':'C_Lesson', 'ID':'SYSID' }
+    //  Resources:  ENTITY = 'RegularResourceLink', PROJECT_FIELD = 'WorkItem',
+    //              PARENT_TABLES = ['pm_project', 'pm_project_task'], MAP =
+    //              { 'Correlation ID':'@id', 'Project Correlation ID':'@WorkItem', 'Resource Email':'Resource.Email' }
     // =========================================================
 
     var table = data_source.getValue('import_set_table_name');
@@ -52,6 +59,10 @@
         if (v === null || v === undefined) return '';
         if (Array.isArray(v)) return v.map(clean).filter(function (x) { return x; }).join(', ');
         if (typeof v == 'object') {
+            if (v.value !== undefined && v.unit) {                          // Adaptive duration -> hours
+                var n = parseFloat(v.value) || 0, u = String(v.unit).toLowerCase();
+                return String(u.indexOf('day') == 0 ? n * 8 : u.indexOf('min') == 0 ? n / 60 : n);
+            }
             if (v.DisplayName) return String(v.DisplayName);
             if (v.Name) return String(v.Name);
             return v.id ? decodeURIComponent(String(v.id).split('/').pop()) : '';
@@ -84,13 +95,15 @@
         if (select.indexOf(s) < 0) select.push(s);
     }
 
-    // Projects already in ServiceNow
+    // Parent records already in ServiceNow (projects; for resources also tasks)
     var projects = [];
-    var p = new GlideRecord('pm_project');
-    p.addQuery('correlation_id', 'STARTSWITH', 'ADAPTIVE:/Project/');
-    p.query();
-    while (p.next()) projects.push(p.getValue('correlation_id').replace('ADAPTIVE:', ''));
-    if (!projects.length) { import_log.warn('No Adaptive projects in ServiceNow yet - load projects first'); return; }
+    PARENT_TABLES.forEach(function (t) {
+        var p = new GlideRecord(t);
+        p.addQuery('correlation_id', 'STARTSWITH', 'ADAPTIVE:/');
+        p.query();
+        while (p.next()) projects.push(p.getValue('correlation_id').replace('ADAPTIVE:', ''));
+    });
+    if (!projects.length) { import_log.warn('No Adaptive records in ' + PARENT_TABLES.join(', ') + ' yet - load those first'); return; }
 
     function post(body) {
         var r = new sn_ws.RESTMessageV2();
