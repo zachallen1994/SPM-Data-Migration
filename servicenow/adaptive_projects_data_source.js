@@ -36,7 +36,8 @@
         'Estimate Complete':    'C_EstimateComplete',
         'Ready For Delivery':   'C_ReadyForDelivery',
         'Project Assigned':     'C_ProjectAssigned',
-        'Business Category':    'C_BusinessCategory'
+        'Business Category':    'C_BusinessCategory',
+        'Portfolio Phase':      'C_PortfolioPhase'          // decides Demand vs Project (demand_project_split.js)
     };
     // The transform map reads start_date from the "Project Assigned" column. Agreed rule:
     // use Adaptive's Start Date (StartDate); fall back to Project Assigned when it is blank.
