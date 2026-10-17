@@ -42,8 +42,17 @@
     //  Resources:  ENTITY = 'RegularResourceLink', PROJECT_FIELD = 'WorkItem',
     //              PARENT_TABLES = ['pm_project', 'pm_project_task'], MAP =
     //              { 'Correlation ID':'@id', 'Project Correlation ID':'@WorkItem', 'Resource Email':'Resource.Email' }
-    //  Risks / Issues: ENTITY = 'Risk' or 'Issue', PROJECT_FIELD = 'PlannedFor',
-    //              'Project Correlation ID':'@PlannedFor' (other MAP labels = the staging table's column labels)
+    //  Issues:     ENTITY = 'Issue', PROJECT_FIELD = 'PlannedFor', MAP =
+    //              { 'Correlation ID':'@id', 'Project Correlation ID':'@PlannedFor', 'Title':'Title', 'State':'State',
+    //                'Current Status':'C_IssueCurrentStatus', 'Priority':'C_IssuePriority', 'Category':'C_IssueCategory',
+    //                'Open Date':'C_OpenDate', 'Opening Date':'OpeningDate', 'Deadline':'DueDate',
+    //                'Date Resolved':'ResolvedDate', 'Resolution':'ResolutionDetails', 'Assigned To Email':'AssignedTo.Email',
+    //                'Description':'C_Description', 'Reason for Change':'Description', 'Status Update':'C_StatusUpdate' }
+    //  Risks:      ENTITY = 'Risk', PROJECT_FIELD = 'PlannedFor', MAP =
+    //              { 'Correlation ID':'@id', 'Project Correlation ID':'@PlannedFor', 'Title':'Title', 'State':'State',
+    //                'Risk Impact':'C_RiskImpact', 'Priority':'C_Priority', 'Impact Rating':'C_ImpactRating',
+    //                'Category':'C_Category', 'Mitigation Plan':'Justification', 'Status':'C_Status',
+    //                'Update Notes':'C_UpdateNotes', 'Deadline':'DueDate', 'Assigned To Email':'AssignedTo.Email' }
     //  Status history: ENTITY = 'C_StatusHistory', PROJECT_FIELD = 'C_RelatedProject', MAP =
     //              { 'Correlation ID':'@id', 'Project Correlation ID':'@C_RelatedProject', 'Updated On':'C_UpdatedOn',
     //                'Health':'C_Health', 'Schedule Health':'C_ScheduleHealth', 'Budget Health':'C_BudgetHealth',
