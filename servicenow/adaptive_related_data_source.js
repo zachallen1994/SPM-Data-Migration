@@ -42,6 +42,13 @@
     //  Resources:  ENTITY = 'RegularResourceLink', PROJECT_FIELD = 'WorkItem',
     //              PARENT_TABLES = ['pm_project', 'pm_project_task'], MAP =
     //              { 'Correlation ID':'@id', 'Project Correlation ID':'@WorkItem', 'Resource Email':'Resource.Email' }
+    //  Risks / Issues: ENTITY = 'Risk' or 'Issue', PROJECT_FIELD = 'PlannedFor',
+    //              'Project Correlation ID':'@PlannedFor' (other MAP labels = the staging table's column labels)
+    //  Status history: ENTITY = 'C_StatusHistory', PROJECT_FIELD = 'C_RelatedProject', MAP =
+    //              { 'Correlation ID':'@id', 'Project Correlation ID':'@C_RelatedProject', 'Updated On':'C_UpdatedOn',
+    //                'Health':'C_Health', 'Schedule Health':'C_ScheduleHealth', 'Budget Health':'C_BudgetHealth',
+    //                'Scope Health':'C_ScopeHealth', 'Resource Health':'C_ResourceHealth', 'Risk Health':'C_RiskHealth',
+    //                'Status Update':'C_StatusUpdate', 'Status Update 1':'C_StatusUpdate1', 'Updated By':'C_UpdatedBy' }
     // =========================================================
 
     var table = data_source.getValue('import_set_table_name');
