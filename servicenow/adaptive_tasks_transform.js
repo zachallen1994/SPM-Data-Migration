@@ -1,4 +1,5 @@
 // "Import Adaptive Project Tasks Transform Map": u_import_adaptive_project_tasks -> pm_project_task
+// PART A also works unchanged for the Asana tasks map (u_import_asana_project_tasks -> pm_project_task).
 //   Field map: correlation_id <- u_correlation_id, Coalesce = true
 //   Transform Scripts: onBefore -> PART A (project + parent)
 //   Field map: Status, Use source script, Choice action = ignore -> PART B

@@ -9,7 +9,7 @@
 
     // ======================= CONFIG ✏️ =======================
     var MODE = 'projects';                       // 'projects' or 'tasks'
-    var PILOT = ['Flu Program', 'Licensure Project', 'Annual Enrollment'];   // [] = every in-flight item
+    var PILOT = ['Flu Program', 'Licensure Project', 'Annual Enrollment'];   // projects mode only; [] = every in-flight item
     var SKIP_STATUS = ['Completed', 'Cancelled'];                            // in-flight only (agreed)
     // =========================================================
 
@@ -61,8 +61,20 @@
         import_set_table.insert(row);
     }
 
+    // tasks mode: only work plans of projects already migrated (pm_project.correlation_id = ASANA:<gid>),
+    // so the tasks always follow whatever Asana projects are in ServiceNow - PILOT is not used.
+    var migrated = {};
+    if (MODE == 'tasks') {
+        var p = new GlideRecord('pm_project');
+        p.addQuery('correlation_id', 'STARTSWITH', 'ASANA:');
+        p.query();
+        while (p.next()) migrated[p.getValue('correlation_id')] = true;
+        if (!Object.keys(migrated).length) { import_log.warn('No Asana projects in pm_project yet - load projects first'); return; }
+    }
+
     var gid = gs.getProperty('x_mig.asana.project_gid');
     var items = all('/projects/' + gid + '/tasks?limit=100&opt_fields=' + FIELDS).filter(function (t) {
+        if (MODE == 'tasks') return migrated['ASANA:' + t.gid] === true;
         if (PILOT.length && PILOT.indexOf(t.name.trim()) < 0) return false;
         return SKIP_STATUS.indexOf(custom(t, 'Project Status')) < 0;
     });
