@@ -2,13 +2,15 @@
 // Run LAST, after all records exist. Safe to re-run: a file already attached (same name) is skipped.
 // Start with DRY_RUN = true: it only logs what it would do (System Logs, source "x_mig.attachments").
 var DRY_RUN = true;
-var TABLES = ['pm_project', 'pm_project_task', 'dmn_demand'];   // add 'risk', 'issue' when loaded
+var TABLES = ['pm_project', 'pm_project_task', 'dmn_demand', 'issue', 'risk'];   // records with an ASANA:/ADAPTIVE: correlation_id
 var MAX_MB = 0;                                                   // 0 = no limit (every stored file is copied);
                                                                   // ServiceNow's own max size (com.glide.attachment.max_size) still applies
 
-// Adaptive: confirm these two with the Discovery output (AttachmentLink / Document entities)
-var ADAPTIVE_LINK_QUERY = "SELECT Document, Document.Name, Document.FileSize FROM AttachmentLink WHERE Entity = '{id}'";
-var ADAPTIVE_DOWNLOAD = '/files/download?documentId={doc}&redirect=false';   // returns {"url": "..."}
+// Adaptive (from Discovery): AttachmentLink.Entity = the record, AttachmentLink.Document = the file.
+// Document.Name = file name, Document.Url = set when the file lives outside Adaptive (e.g. a link or SharePoint).
+var ADAPTIVE_LINK_QUERY = "SELECT Document, Document.Name, Document.Url, Document.StorageType FROM AttachmentLink WHERE Entity = '{id}'";
+// Download call: NOT yet proven against this tenant - the DRY_RUN on one project shows whether it returns a url.
+var ADAPTIVE_DOWNLOAD = '/files/download?documentId={doc}&redirect=false';   // expected to return {"url": "..."}
 
 var LOG = 'x_mig.attachments';
 var stats = { found: 0, copied: 0, skipped: 0, linked: 0, failed: 0 };   // found = files stored in Asana/Adaptive
@@ -86,9 +88,15 @@ function adaptiveFiles(gr, id) {
         var doc = link.Document || {};
         stats.found++;
         var name = doc.Name || 'attachment';
-        if (MAX_MB && doc.FileSize && doc.FileSize > MAX_MB * 1048576) { stats.failed++; gs.logWarning('Too large, copy by hand: ' + name, LOG); return; }
-        var file = getJson(base + ADAPTIVE_DOWNLOAD.replace('{doc}', encodeURIComponent(doc.id)), auth);
+        if (doc.Url) {                                            // file kept outside Adaptive: keep the link
+            addLinkNote(gr, 'Legacy Adaptive linked file: ' + name + ' - ' + doc.Url);
+            return;
+        }
+        var file;
+        try { file = getJson(base + ADAPTIVE_DOWNLOAD.replace('{doc}', encodeURIComponent(doc.id)), auth); }
+        catch (err) { stats.failed++; gs.logError('Adaptive download link failed for ' + name + ' on ' + id + ': ' + err, LOG); return; }
         if (file.url) download(file.url, {}, gr.getTableName(), gr.getUniqueValue(), name);
+        else { stats.failed++; gs.logError('No download url for ' + name + ' on ' + id + ': ' + JSON.stringify(file), LOG); }
     });
 }
 
