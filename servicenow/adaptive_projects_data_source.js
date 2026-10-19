@@ -62,6 +62,15 @@
     for (var label in MAP) {
         if (!colByLabel[label.toLowerCase()]) import_log.warn('No column labelled "' + label + '" in ' + table + ' - skipped');
     }
+    // Adaptive ids are up to 47 characters ("/Project/{AA5A7EA6-...}"), 56 with "ADAPTIVE:". A shorter column
+    // cuts them off and nothing can be matched afterwards, so stop here instead.
+    d = new GlideRecord('sys_dictionary');
+    d.addQuery('name', table);
+    d.addQuery('element', 'IN', [colByLabel['correlation id'], colByLabel['parent correlation id'], colByLabel['project correlation id']].join(','));
+    d.query();
+    var tooShort = [];
+    while (d.next()) if (parseInt(d.getValue('max_length'), 10) < 100) tooShort.push(d.getValue('column_label') + ' (' + d.getValue('max_length') + ')');
+    if (tooShort.length) { import_log.error('Set Max length to 100 on ' + table + ': ' + tooShort.join(', ')); return; }
 
     function clean(v) {
         if (v === null || v === undefined) return '';
