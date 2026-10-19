@@ -37,6 +37,12 @@
         'Ready For Delivery':   'C_ReadyForDelivery',
         'Project Assigned':     'C_ProjectAssigned',
         'Business Category':    'C_BusinessCategory',
+        'Total Budget':         'C_TotalBudget',
+        'Opex Budget':          'C_OpexBudgetNonLabor',
+        'Capex Budget':         'C_CapexBudgetNonLabor',
+        'Total Actual':         'C_TotalActual',
+        'Operating Actuals':    'C_OperatingActuals',
+        'Capital Actuals':      'C_CapitalActuals',
         'Portfolio Phase':      'C_PortfolioPhase'          // decides Demand vs Project (demand_project_split.js)
     };
     // The transform map reads start_date from the "Project Assigned" column. Agreed rule:
@@ -61,6 +67,7 @@
         if (v === null || v === undefined) return '';
         if (Array.isArray(v)) return v.map(clean).filter(function (x) { return x; }).join(', ');
         if (typeof v == 'object') {
+            if (v.value !== undefined && v.currency !== undefined) return String(v.value);   // Adaptive money -> number
             if (v.DisplayName) return String(v.DisplayName);
             if (v.Name) return String(v.Name);
             return v.id ? decodeURIComponent(String(v.id).split('/').pop()) : '';   // "/State/Active" -> "Active"

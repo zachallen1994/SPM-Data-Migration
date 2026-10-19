@@ -75,6 +75,7 @@
         if (v === null || v === undefined) return '';
         if (Array.isArray(v)) return v.map(clean).filter(function (x) { return x; }).join(', ');
         if (typeof v == 'object') {
+            if (v.value !== undefined && v.currency !== undefined) return String(v.value);   // Adaptive money -> number
             if (v.value !== undefined && v.unit) {                          // Adaptive duration -> hours
                 var n = parseFloat(v.value) || 0, u = String(v.unit).toLowerCase();
                 return String(u.indexOf('day') == 0 ? n * 8 : u.indexOf('min') == 0 ? n / 60 : n);
