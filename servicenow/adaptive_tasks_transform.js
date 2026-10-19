@@ -25,7 +25,9 @@
 answer = (function transformEntry(source) {
     // letters only, so "On Track", "OnTrack" and "on-track" all match
     var s = (source.u_status + '').toLowerCase().replace(/[^a-z]/g, '');
-    var colorMap = { 'ontrack': 'green', 'atrisk': 'yellow', 'offtrack': 'red' };   // ✏️ confirm values with the check below
-    if (s && !colorMap[s]) log.warn('Unmapped Adaptive task status: ' + source.u_status);
-    return colorMap[s] || '';
+    // Seen in Dev: On Track, Off Track, blank. Choices on the field: green, yellow, red, no_status.
+    var colorMap = { 'ontrack': 'green', 'atrisk': 'yellow', 'offtrack': 'red' };
+    if (!s) return 'no_status';                                   // blank in Adaptive (otherwise the field default shows Red)
+    if (!colorMap[s]) { log.warn('Unmapped Adaptive task status: ' + source.u_status); return 'no_status'; }
+    return colorMap[s];
 })(source);
