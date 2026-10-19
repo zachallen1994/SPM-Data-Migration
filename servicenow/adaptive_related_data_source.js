@@ -150,7 +150,7 @@
         var paging = { from: 0, limit: 100 };
         while (true) {
             var body;
-            try { body = post({ q: q, paging: paging }); } catch (err) { import_log.error(String(err)); return; }
+            try { body = post({ q: q, paging: paging }); } catch (err) { import_log.error(String(err) + ' -- query: ' + q); return; }
             body.entities.forEach(function (e) {
                 var row = {};
                 for (var label in MAP) {
