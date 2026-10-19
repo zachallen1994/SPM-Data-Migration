@@ -1,29 +1,31 @@
-// Data Source for Asana HR projects. Type: Custom (Load by Script).
+// Data Source for Asana projects. Type: Custom (Load by Script).
 // Two Data Sources use this same script; only MODE changes:
-//   MODE = 'projects' -> u_import_asana_hr_project_portfolio  (one row per project)
+//   MODE = 'projects' -> u_import_asana_hr_project_portfolio  (one row per ACTIVE Asana project)
 //   MODE = 'tasks'    -> u_import_asana_project_tasks         (work plan of every project already migrated)
-// A project can be either:
-//   - an item (task) in the HR Project Portfolio 2026 tracker (x_mig.asana.project_gid), e.g. Flu Program; its
-//     work plan = its subtasks, or
-//   - a real Asana project with its own task list, e.g. October Month RPA Maintenance 2026; its work plan =
-//     its tasks (and their subtasks). Found by exact name, so it must be in PILOT.
+// Active = not archived, not marked complete, latest status update not "Complete", Project Status (custom
+// field, when there is one) not in SKIP_STATUS. Completed projects are out of scope (same rule as Adaptive).
+// The token only sees projects its Asana user can see: use an account with access to every project in scope.
+// The HR Project Portfolio 2026 tracker (x_mig.asana.project_gid) is a list, not a project: it is never loaded
+// itself. Its items (e.g. Flu Program) load only when INCLUDE_TRACKER_ITEMS = true; their work plan = subtasks.
 // Columns are matched by LABEL, so the CSV-built staging tables work as they are.
 // Extra columns to add (String, 100): Correlation ID; tasks also Parent Correlation ID,
-// Project Correlation ID. Optional: Assignee Email, Completed.
+// Project Correlation ID. Optional: Assignee Email, Completed, Team.
 (function loadData(import_set_table, data_source, import_log, last_success_import_time) {
 
     // ======================= CONFIG ✏️ =======================
     var MODE = 'projects';                       // 'projects' or 'tasks'
-    var PILOT = ['Flu Program', 'October Month RPA Maintenance 2026'];   // projects mode only; [] = every in-flight tracker item
-    var SKIP_STATUS = ['Completed', 'Cancelled'];                        // in-flight only (agreed)
+    var PILOT = ['October Month RPA Maintenance 2026'];   // test: only these names; [] = every active project
+    var TEAMS = [];                              // Asana team names to include, e.g. ['HR Technology']; [] = all teams
+    var INCLUDE_TRACKER_ITEMS = false;           // true = also load the items of the HR Project Portfolio 2026 tracker
+    var SKIP_STATUS = ['Completed', 'Cancelled'];   // Project Status custom field values that mean "not active"
     var WORKSPACE = '5286451799521';
     // =========================================================
 
     var BASE = 'https://app.asana.com/api/1.0';
     var FIELDS = 'gid,name,notes,num_subtasks,start_on,due_on,completed,assignee.name,assignee.email,parent.name,' +
                  'tags.name,followers.name,memberships.section.name,custom_fields.name,custom_fields.display_value';
-    var PROJECT_FIELDS = 'gid,name,notes,start_on,due_on,completed,owner.name,owner.email,' +
-                         'custom_fields.name,custom_fields.display_value';
+    var PROJECT_FIELDS = 'gid,name,notes,start_on,due_on,completed,archived,owner.name,owner.email,team.name,' +
+                         'current_status_update.status_type,custom_fields.name,custom_fields.display_value';
 
     var table = data_source.getValue('import_set_table_name');
     var colByLabel = {};
@@ -62,15 +64,6 @@
         (t.memberships || []).forEach(function (m) { if (m.section) s = m.section.name; });
         return s;
     }
-    function projectByName(name) {               // a real Asana project, exact name
-        var found = get('/workspaces/' + WORKSPACE + '/typeahead?resource_type=project&count=20&query=' + encodeURIComponent(name)).data;
-        for (var i = 0; i < found.length; i++) {
-            if (found[i].name.trim().toLowerCase() == name.toLowerCase())
-                return get('/projects/' + found[i].gid + '?opt_fields=' + PROJECT_FIELDS).data;
-        }
-        return null;
-    }
-
     // label -> value. Built-in labels first; any other column label is looked up as an Asana custom field.
     function insert(builtIn, t) {
         var row = {};
@@ -117,35 +110,19 @@
         var tracker = all('/projects/' + gs.getProperty('x_mig.asana.project_gid') + '/tasks?limit=100&opt_fields=' + FIELDS);
 
         if (MODE == 'projects') {
-            var items = tracker.filter(function (t) {
-                if (PILOT.length && PILOT.indexOf(t.name.trim()) < 0) return false;
-                return SKIP_STATUS.indexOf(custom(t, 'Project Status')) < 0;
-            });
-            items.forEach(function (t) {
-                insert({
-                    'correlation id': 'ASANA:' + t.gid,
-                    'name': t.name.trim(),
-                    'section/column': section(t),
-                    'assignee': t.assignee ? t.assignee.name : '',
-                    'assignee email': t.assignee ? t.assignee.email : '',
-                    'start date': t.start_on,
-                    'due date': t.due_on,
-                    'tags': names(t.tags),
-                    'notes': t.notes,
-                    'parent task': ''
-                }, t);
-                count++;
-            });
-            // PILOT names that are not tracker items: look for a real Asana project with that name
-            var inTracker = items.map(function (t) { return t.name.trim(); });
-            PILOT.forEach(function (n) {
-                if (inTracker.indexOf(n) >= 0) return;
-                var p = projectByName(n);
-                if (!p) { import_log.warn('Not found in Asana (tracker item or project): ' + n); return; }
-                if (p.completed || SKIP_STATUS.indexOf(custom(p, 'Project Status')) >= 0) { import_log.info('Skipped (not in flight): ' + n); return; }
+            var trackerGid = gs.getProperty('x_mig.asana.project_gid');
+            var skipped = 0;
+            all('/workspaces/' + WORKSPACE + '/projects?archived=false&limit=100&opt_fields=' + PROJECT_FIELDS).forEach(function (p) {
+                if (p.gid == trackerGid) return;                                           // the tracker list itself
+                if (PILOT.length && PILOT.indexOf(p.name.trim()) < 0) return;
+                if (TEAMS.length && (!p.team || TEAMS.indexOf(p.team.name) < 0)) return;
+                var status = p.current_status_update ? p.current_status_update.status_type : '';
+                if (p.archived || p.completed || status == 'complete' ||
+                    SKIP_STATUS.indexOf(custom(p, 'Project Status')) >= 0) { skipped++; return; }  // not active
                 insert({
                     'correlation id': 'ASANA:' + p.gid,
                     'name': p.name.trim(),
+                    'team': p.team ? p.team.name : '',
                     'assignee': p.owner ? p.owner.name : '',
                     'assignee email': p.owner ? p.owner.email : '',
                     'start date': p.start_on,
@@ -155,6 +132,26 @@
                 }, p);
                 count++;
             });
+            if (INCLUDE_TRACKER_ITEMS) {
+                tracker.forEach(function (t) {
+                    if (PILOT.length && PILOT.indexOf(t.name.trim()) < 0) return;
+                    if (t.completed || SKIP_STATUS.indexOf(custom(t, 'Project Status')) >= 0) { skipped++; return; }
+                    insert({
+                        'correlation id': 'ASANA:' + t.gid,
+                        'name': t.name.trim(),
+                        'section/column': section(t),
+                        'assignee': t.assignee ? t.assignee.name : '',
+                        'assignee email': t.assignee ? t.assignee.email : '',
+                        'start date': t.start_on,
+                        'due date': t.due_on,
+                        'tags': names(t.tags),
+                        'notes': t.notes,
+                        'parent task': ''
+                    }, t);
+                    count++;
+                });
+            }
+            import_log.info('Asana projects skipped as not active: ' + skipped);
         } else {
             // only work plans of projects already migrated (pm_project.correlation_id = ASANA:<gid>)
             var migrated = [];
