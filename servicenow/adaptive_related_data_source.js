@@ -32,6 +32,7 @@
         'Actual End Date':        'ActualEndDate',
         '% Complete':             'PercentCompleted',
         'State':                  'State',
+        'Status':                 'TrackStatus',      // Adaptive Task "Status" (e.g. On Track); comes back as a name
         'Milestone':              '=false'      // Milestone Data Source: '=true'
     };
     // Presets (replace MAP for that entity; confirm names with the Discovery output):
