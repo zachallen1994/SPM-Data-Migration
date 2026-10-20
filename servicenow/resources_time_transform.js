@@ -1,4 +1,6 @@
 // People and hours from Adaptive.
+// SUPERSEDED: people now go to sn_plng_att_core_resource_assignment (resource_assignment_transform.js) and hours
+// to time cards (processed time cards roll up to actual effort). Do NOT use PART D as well - hours would count twice.
 // Source of people: Adaptive RegularResourceLink (one row per person per task or project), loaded by the
 // "Adaptive Resources - API" Data Source into u_import_adaptive_resources.
 // Source of hours: Adaptive Task.ActualEffort (already aggregated by Adaptive), loaded with the tasks.
