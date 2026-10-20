@@ -10,6 +10,11 @@
 //   Field map: Use source script, Target field = the record's project/task field, Coalesce = true -> PART A
 //   Field map: Use source script, Target field = name (or short_description), Coalesce = true  -> PART B
 //   Field map: Use source script, Target field = the amount field                             -> PART C
+//     cost_plan: unit_cost (with quantity = 1 and recurring = false, Total planned cost = the amount)
+//     fm_expense_line: amount
+//   cost_plan only - other mandatory fields:
+//     quantity = 1, recurring = false, entered currency = USD, cost type = per map (implementation team)
+//     start_fiscal_period / end_fiscal_period -> PART E (from the project's start / end date)
 //   Transform Scripts: onBefore                                                              -> PART D
 //   Expense type (Opex/Capex), dates and other required fields: direct values per map, confirmed with
 //   the implementation team (target field names to be confirmed in the cost_plan / fm_expense_line dictionary).
@@ -40,3 +45,20 @@ answer = (function transformEntry(source) {
     if (!p.get('correlation_id', source.u_correlation_id + '')) { ignore = true; return; }   // demand or not migrated
     if (!(parseFloat(source.getValue(AMOUNT_COLUMN)) > 0)) { ignore = true; return; }        // nothing to carry over
 })(source, map, log, target);
+
+// ---------- PART E: cost_plan field maps -> start_fiscal_period / end_fiscal_period ----------
+// The fiscal MONTH containing the project's start (or end) date. ✏️ DATE_FIELD = 'start_date' or 'end_date'.
+// fiscal_period field names (fiscal_type, fiscal_start_date_time, fiscal_end_date_time): confirm in the dictionary.
+answer = (function transformEntry(source) {
+    var DATE_FIELD = 'start_date';
+    var p = new GlideRecord('pm_project');
+    if (!p.get('correlation_id', source.u_correlation_id + '') || !p.getValue(DATE_FIELD)) return '';
+    var day = p.getValue(DATE_FIELD).substring(0, 10);
+    var f = new GlideRecord('fiscal_period');
+    f.addQuery('fiscal_type', 'month');
+    f.addQuery('fiscal_start_date_time', '<=', day + ' 23:59:59');
+    f.addQuery('fiscal_end_date_time', '>=', day + ' 00:00:00');
+    f.setLimit(1);
+    f.query();
+    return f.next() ? f.getUniqueValue() : '';
+})(source);
