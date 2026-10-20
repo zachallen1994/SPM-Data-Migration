@@ -1,7 +1,7 @@
 // Background Script (read-only): which Adaptive entity holds the Financial Planning budget lines
 // (e.g. Opex | Vendor Services Opex | 3,465 per month), its fields, and samples for one project.
 // Also lists the ServiceNow cost types. Changes nothing.
-var PROJECT_NAME = '26264-00000-Wyandot Epic Occupational Health Mo';   // ✏️ start of the project's name is enough
+var PROJECT_NAME = '26264-00000-Wyandot Epic Occupational Health Mo';   // ✏️ paste the project's FULL name from Adaptive
 var BASE = gs.getProperty('x_mig.adaptive.url');
 function call(method, path, body) {
     var r = new sn_ws.RESTMessageV2();
@@ -22,8 +22,12 @@ gs.print('==== 1. Candidate entities: ' + cands.join(', '));
 
 // 2. The project id
 var pid = null;
-var found = call('POST', '/data/query', { q: "SELECT Name FROM Project WHERE Name LIKE '" + PROJECT_NAME.replace(/'/g, "''") + "%'", paging: { from: 0, limit: 1 } });
-if (found && found.entities.length) pid = found.entities[0].id;
+var nm = PROJECT_NAME.replace(/'/g, "''");
+['=', 'LIKE'].forEach(function (op) {                      // exact name first; LIKE may not work in this tenant
+    if (pid) return;
+    var found = call('POST', '/data/query', { q: "SELECT Name FROM Project WHERE Name " + op + " '" + nm + (op == 'LIKE' ? "%'" : "'"), paging: { from: 0, limit: 1 } });
+    if (found && found.entities.length) pid = found.entities[0].id;
+});
 gs.print('==== 2. Project: ' + (pid || 'not found - set PROJECT_NAME to the exact full name'));
 
 // 3. Fields of each candidate, and rows for that project when a field points at a project/work item
