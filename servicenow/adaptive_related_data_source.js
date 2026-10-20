@@ -67,15 +67,26 @@
     d.addQuery('name', table);
     d.addQuery('element', 'STARTSWITH', 'u_');
     d.query();
-    while (d.next()) colByLabel[(d.getValue('column_label') || '').toLowerCase().trim()] = d.getValue('element');
-    for (var label in MAP) {
-        if (!colByLabel[label.toLowerCase()]) import_log.warn('No column labelled "' + label + '" in ' + table + ' - skipped');
+    var colNames = {};
+    while (d.next()) {
+        colByLabel[(d.getValue('column_label') || '').toLowerCase().trim()] = d.getValue('element');
+        colNames[d.getValue('element')] = true;
     }
-    if (!Object.keys(colByLabel).length) {
-        // A load-by-script data source cannot build the staging table: it must exist first, with columns labelled
-        // as in MAP. Create it from the header CSV in servicenow/staging_csv/ (File data source, Load All Records).
-        import_log.error('Staging table ' + table + ' does not exist yet (or has no u_ columns). Create it first ' +
-            'from the CSV in servicenow/staging_csv/, then run this data source again.');
+    function key(label) { return label.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, ''); }
+    for (var lb in MAP) {                         // columns this script created itself: match on the name too
+        if (!colByLabel[lb.toLowerCase()] && colNames['u_' + key(lb)]) colByLabel[lb.toLowerCase()] = 'u_' + key(lb);
+    }
+    for (var label in MAP) {
+        if (Object.keys(colNames).length && !colByLabel[label.toLowerCase()]) import_log.warn('No column labelled "' + label + '" in ' + table + ' - skipped');
+    }
+    if (!Object.keys(colNames).length) {
+        // New staging table: one SETUP row makes ServiceNow create the table with a column per MAP label.
+        // Stop there - the id columns are created 40 long and must be 100 before the real load.
+        var setup = {};
+        for (var sl in MAP) setup[key(sl)] = 'SETUP ROW - DELETE ME';
+        import_set_table.insert(setup);
+        import_log.error('Created staging table ' + table + '. Before the real load: set Max length = 100 on the ' +
+            'Correlation ID columns, delete the SETUP row, then run this data source again.');
         return;
     }
     // Adaptive ids are up to 47 characters ("/Project/{AA5A7EA6-...}"), 56 with "ADAPTIVE:". A shorter column
