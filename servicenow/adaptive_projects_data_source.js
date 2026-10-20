@@ -43,7 +43,9 @@
         'Total Actual':         'C_TotalActual',
         'Operating Actuals':    'C_OperatingActuals',
         'Capital Actuals':      'C_CapitalActuals',
-        'Portfolio Phase':      'C_PortfolioPhase'          // decides Demand vs Project (demand_project_split.js)
+        'Portfolio Phase':      'C_PortfolioPhase',         // decides Demand vs Project (demand_project_split.js)
+        'Project Pool':         'C_ProjectPool',            // Yes / No
+        'Groups':               'C_Groups'                  // multi-pick list (C_WorkItemGroups), comma separated
     };
     // The transform map reads start_date from the "Project Assigned" column. Agreed rule:
     // use Adaptive's Start Date (StartDate); fall back to Project Assigned when it is blank.
