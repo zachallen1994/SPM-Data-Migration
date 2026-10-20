@@ -1,4 +1,5 @@
 // Adaptive project budgets and actuals (fields on the Adaptive project, loaded into u_import_adaptive_projects)
+// Budgets: SUPERSEDED by the line-by-line, month-by-month load (adaptive_budget_data_source.js + cost_plan_transform.js).
 // -> ServiceNow cost plans (budget) and expense lines (actuals). PROJECTS only; demands get totals on the demand.
 //
 // Four small transform maps on u_import_adaptive_projects (Order 300+), one per amount:
