@@ -71,6 +71,13 @@
     for (var label in MAP) {
         if (!colByLabel[label.toLowerCase()]) import_log.warn('No column labelled "' + label + '" in ' + table + ' - skipped');
     }
+    if (!Object.keys(colByLabel).length) {
+        // A load-by-script data source cannot build the staging table: it must exist first, with columns labelled
+        // as in MAP. Create it from the header CSV in servicenow/staging_csv/ (File data source, Load All Records).
+        import_log.error('Staging table ' + table + ' does not exist yet (or has no u_ columns). Create it first ' +
+            'from the CSV in servicenow/staging_csv/, then run this data source again.');
+        return;
+    }
     // Adaptive ids are up to 47 characters ("/Project/{AA5A7EA6-...}"), 56 with "ADAPTIVE:". A shorter column
     // cuts them off and nothing can be matched afterwards, so stop here instead.
     d = new GlideRecord('sys_dictionary');
