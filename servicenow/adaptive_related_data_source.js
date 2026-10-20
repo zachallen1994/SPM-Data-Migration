@@ -42,7 +42,8 @@
     //                'Lesson Type':'C_LessonType', 'Topic':'C_Topic', 'Lesson':'C_Lesson', 'ID':'SYSID' }
     //  Resources:  ENTITY = 'RegularResourceLink', PROJECT_FIELD = 'WorkItem',
     //              PARENT_TABLES = ['pm_project', 'pm_project_task'], MAP =
-    //              { 'Correlation ID':'@id', 'Project Correlation ID':'@WorkItem', 'Resource Email':'Resource.Email' }
+    //              { 'Correlation ID':'@id', 'Project Correlation ID':'@WorkItem', 'Resource Email':'Resource.Email',
+    //                'Start Date':'StartDate', 'End Date':'InactiveDate' }   -> resource_assignment_transform.js
     //  Issues:     ENTITY = 'Issue', PROJECT_FIELD = 'PlannedFor', MAP =
     //              { 'Correlation ID':'@id', 'Project Correlation ID':'@PlannedFor', 'Title':'Title', 'State':'State',
     //                'Current Status':'C_IssueCurrentStatus', 'Priority':'C_IssuePriority', 'Category':'C_IssueCategory',
