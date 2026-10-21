@@ -17,7 +17,13 @@ answer = (function transformEntry(source) {
 
 // ---------- PART C: onBefore ----------
 (function runTransformScript(source, map, log, target) {
-    if (!target.project) { ignore = true; return; }                      // project not migrated
+    // onBefore runs BEFORE the field maps, so target.project is still empty here: look the project up from the source
+    var p = new GlideRecord('pm_project');
+    if (!p.get('correlation_id', source.u_project_correlation_id + '')) {   // project not migrated (or a demand)
+        log.info('Status skipped - project not in ServiceNow: ' + source.u_project_correlation_id);
+        ignore = true;
+        return;
+    }
     var rag = { 'on target': 'green', 'on plan': 'green', 'needs attention': 'yellow', 'in trouble': 'red' };
     function c(v, label) {
         var s = (v + '').toLowerCase().trim();
