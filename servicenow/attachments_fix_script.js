@@ -90,6 +90,8 @@ function adaptiveFiles(gr, id) {
         var doc = link.Document || {};
         stats.found++;
         var name = doc.Name || 'attachment';
+        if (DRY_RUN) gs.log('[DRY RUN] Adaptive document ' + name + ' | StorageType ' + JSON.stringify(doc.StorageType) +
+            ' | Url ' + (doc.Url || '(none)'), LOG);
         if (doc.Url) {                                            // file kept outside Adaptive: keep the link
             addLinkNote(gr, 'Legacy Adaptive linked file: ' + name + ' - ' + doc.Url);
             return;
@@ -104,11 +106,16 @@ function adaptiveFiles(gr, id) {
 
 TABLES.forEach(function (table) {
     var gr = new GlideRecord(table);
+    if (!gr.isValidField('correlation_id')) {                  // e.g. risk on this instance: no Correlation ID field
+        gs.logWarning(table + ' has no correlation_id field - skipped (migrated records cannot be identified)', LOG);
+        return;
+    }
     if (ONLY.length) gr.addQuery('correlation_id', 'IN', ONLY.join(','));
     else gr.addQuery('correlation_id', 'STARTSWITH', 'ASANA:').addOrCondition('correlation_id', 'STARTSWITH', 'ADAPTIVE:');
     gr.query();
     while (gr.next()) {
-        var corr = gr.getValue('correlation_id');
+        var corr = gr.getValue('correlation_id') || '';
+        if (!corr) continue;
         try {
             if (corr.indexOf('ASANA:') == 0) asanaFiles(gr, corr.substring(6));
             else adaptiveFiles(gr, corr.substring(9));
