@@ -2,8 +2,8 @@
 // Transform Map "Import Adaptive Resources - Assignments": u_import_adaptive_resources -> sn_plng_att_core_resource_assignment
 //   Field map: Use source script, Target field = task,     Coalesce = true -> PART A
 //   Field map: Use source script, Target field = user_resource, Coalesce = true -> PART B
-//   Field map: Use source script, Target field = start_date               -> PART C
-//   Field map: Use source script, Target field = end_date                 -> PART D
+//   Field map: Use source script, Target field = start_date, Date format yyyy-MM-dd -> PART C
+//   Field map: Use source script, Target field = end_date,   Date format yyyy-MM-dd -> PART D
 //   Field map: Use source script, Target field = operational_work_type (MANDATORY) -> PART F
 //   Transform Scripts: onBefore                                           -> PART E
 // Coalescing on task + resource means one assignment per person per project/task; re-runs update it.
@@ -35,7 +35,7 @@ answer = (function transformEntry(source) {
     var t = ['pm_project', 'pm_project_task'];
     for (var i = 0; i < t.length; i++) {
         var gr = new GlideRecord(t[i]);
-        if (gr.get('correlation_id', source.u_project_correlation_id + '')) return gr.getValue('start_date') || '';
+        if (gr.get('correlation_id', source.u_project_correlation_id + '')) return (gr.getValue('start_date') || '').substring(0, 10);
     }
     return '';
 })(source);
@@ -47,7 +47,7 @@ answer = (function transformEntry(source) {
     var t = ['pm_project', 'pm_project_task'];
     for (var i = 0; i < t.length; i++) {
         var gr = new GlideRecord(t[i]);
-        if (gr.get('correlation_id', source.u_project_correlation_id + '')) return gr.getValue('end_date') || '';
+        if (gr.get('correlation_id', source.u_project_correlation_id + '')) return (gr.getValue('end_date') || '').substring(0, 10);
     }
     return '';
 })(source);
