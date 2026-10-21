@@ -3,6 +3,12 @@
 //   Field map: correlation_id <- u_correlation_id, Coalesce = true
 //   Transform Scripts: onBefore -> PART A (project + parent)
 //   Field map: Status, Use source script, Choice action = ignore -> PART B
+//   Field map: state, Use source script                           -> PART C
+//   Field map: assigned_to, Use source script                     -> PART D
+//   Direct field maps (add the staging columns if missing):
+//     u_description -> description, u_complete (% Complete) -> percent_complete,
+//     u_start_date -> start_date, u_due_date -> end_date (Date format yyyy-MM-dd),
+//     u_actual_start_date -> work_start, u_actual_end_date -> work_end (Date format yyyy-MM-dd)
 // Run the transform TWICE: rows arrive in any order, so a child can come before its parent task exists.
 // The second run (updates only, thanks to the coalesce) puts every task under the right parent.
 
@@ -31,4 +37,23 @@ answer = (function transformEntry(source) {
     if (!s) return 'no_status';                                   // blank in Adaptive (otherwise the field default shows Red)
     if (!colorMap[s]) { log.warn('Unmapped Adaptive task status: ' + source.u_status); return 'no_status'; }
     return colorMap[s];
+})(source);
+
+// ---------- PART C: field map -> state ----------
+// Adaptive task State: Draft | Active | On Hold | Completed | Cancelled. -5 Pending is inactive here, so Draft -> Open.
+answer = (function transformEntry(source) {
+    var map = { 'draft': '1', 'active': '2', 'on hold': '1', 'completed': '3', 'cancelled': '4' };
+    var s = (source.u_state + '').toLowerCase().trim();
+    if (s && !map[s]) log.warn('Unmapped Adaptive task state: ' + source.u_state);
+    return map[s] || '1';
+})(source);
+
+// ---------- PART D: field map -> assigned_to (Adaptive "Owner", matched by email) ----------
+answer = (function transformEntry(source) {
+    var email = (source.u_owner_email + '').toLowerCase().trim();
+    if (!email || email == 'undefined' || email == 'null') return '';
+    var u = new GlideRecord('sys_user');
+    if (u.get('email', email)) return u.getUniqueValue();
+    log.warn('No ServiceNow user for task owner ' + email + ' on ' + source.u_correlation_id);
+    return '';
 })(source);

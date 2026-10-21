@@ -33,6 +33,7 @@
         '% Complete':             'PercentCompleted',
         'State':                  'State',
         'Status':                 'TrackStatus',      // Adaptive Task "Status" (e.g. On Track); comes back as a name
+        'Owner Email':            'Manager.Email',    // Adaptive "Owner" -> assigned_to
         'Milestone':              '=false'      // Milestone Data Source: '=true'
     };
     // Presets (replace MAP for that entity; confirm names with the Discovery output):
