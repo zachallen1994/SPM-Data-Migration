@@ -1,12 +1,14 @@
 // Adaptive resources (RegularResourceLink: a person on a project or task) -> sn_plng_att_core_resource_assignment
 // Transform Map "Import Adaptive Resources - Assignments": u_import_adaptive_resources -> sn_plng_att_core_resource_assignment
 //   Field map: Use source script, Target field = task,     Coalesce = true -> PART A
-//   Field map: Use source script, Target field = resource, Coalesce = true -> PART B
+//   Field map: Use source script, Target field = user_resource, Coalesce = true -> PART B
 //   Field map: Use source script, Target field = start_date               -> PART C
 //   Field map: Use source script, Target field = end_date                 -> PART D
+//   Field map: Use source script, Target field = operational_work_type (MANDATORY) -> PART F
 //   Transform Scripts: onBefore                                           -> PART E
 // Coalescing on task + resource means one assignment per person per project/task; re-runs update it.
-// Target field names (task, resource, start_date, end_date): confirm in the table's dictionary.
+// Target fields (confirmed in the dictionary): task, user_resource, start_date, end_date, operational_work_type
+// (start_date, end_date and operational_work_type are mandatory).
 // Staging columns used: u_project_correlation_id (the project or task), u_resource_email, u_start_date, u_end_date.
 // This replaces PARTS B and C of resources_time_transform.js (assigned_to / project team).
 
@@ -20,7 +22,7 @@ answer = (function transformEntry(source) {
     return '';
 })(source);
 
-// ---------- PART B: field map -> resource ----------
+// ---------- PART B: field map -> user_resource ----------
 answer = (function transformEntry(source) {
     var u = new GlideRecord('sys_user');
     return u.get('email', (source.u_resource_email + '').toLowerCase().trim()) ? u.getUniqueValue() : '';
@@ -65,3 +67,10 @@ answer = (function transformEntry(source) {
         ignore = true;
     }
 })(source, map, log, target);
+
+// ---------- PART F: field map -> operational_work_type (mandatory) ----------
+// ✏️ VALUE = the choice value the implementation team picks for migrated assignments.
+answer = (function transformEntry(source) {
+    var VALUE = '';
+    return VALUE;
+})(source);
