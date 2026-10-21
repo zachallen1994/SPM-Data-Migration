@@ -3,6 +3,8 @@
 // Start with DRY_RUN = true: it only logs what it would do (System Logs, source "x_mig.attachments").
 var DRY_RUN = true;
 var TABLES = ['pm_project', 'pm_project_task', 'dmn_demand', 'issue', 'risk'];   // records with an ASANA:/ADAPTIVE: correlation_id
+var ONLY = [];   // ✏️ test on a few records first: correlation_ids, e.g. ['ADAPTIVE:/Project/{05506AB6-...}', 'ASANA:1219075311754614']
+                //    [] = every migrated record
 var MAX_MB = 0;                                                   // 0 = no limit (every stored file is copied);
                                                                   // ServiceNow's own max size (com.glide.attachment.max_size) still applies
 
@@ -102,7 +104,8 @@ function adaptiveFiles(gr, id) {
 
 TABLES.forEach(function (table) {
     var gr = new GlideRecord(table);
-    gr.addQuery('correlation_id', 'STARTSWITH', 'ASANA:').addOrCondition('correlation_id', 'STARTSWITH', 'ADAPTIVE:');
+    if (ONLY.length) gr.addQuery('correlation_id', 'IN', ONLY.join(','));
+    else gr.addQuery('correlation_id', 'STARTSWITH', 'ASANA:').addOrCondition('correlation_id', 'STARTSWITH', 'ADAPTIVE:');
     gr.query();
     while (gr.next()) {
         var corr = gr.getValue('correlation_id');
