@@ -10,7 +10,7 @@
 //   Field map: quantity = 1, recurring = false (Use source script: answer = 1; / answer = false;)
 //   Transform Scripts: onBefore                                                 -> PART F
 // Target field names from the cost_plan dictionary: task, name, resource_type, currency, start_fiscal_period,
-// end_fiscal_period, quantity, recurring. Confirm unit_cost (the form's "Unit cost") in the dictionary.
+// end_fiscal_period, quantity, recurring, unit_cost (confirmed in the dictionary).
 // Supersedes the four project-total maps in financials_transform.js for budgets.
 
 // ---------- PART A: field map -> task ----------
