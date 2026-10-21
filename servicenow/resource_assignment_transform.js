@@ -14,7 +14,7 @@
 
 // ---------- PART A: field map -> task ----------
 answer = (function transformEntry(source) {
-    var t = ['pm_project', 'pm_project_task'];
+    var t = ['pm_project', 'dmn_demand', 'pm_project_task'];
     for (var i = 0; i < t.length; i++) {
         var gr = new GlideRecord(t[i]);
         if (gr.get('correlation_id', source.u_project_correlation_id + '')) return gr.getUniqueValue();
@@ -32,7 +32,7 @@ answer = (function transformEntry(source) {
 answer = (function transformEntry(source) {
     var v = (source.u_start_date + '').trim();
     if (v && v != 'undefined') return v;
-    var t = ['pm_project', 'pm_project_task'];
+    var t = ['pm_project', 'dmn_demand', 'pm_project_task'];
     for (var i = 0; i < t.length; i++) {
         var gr = new GlideRecord(t[i]);
         if (gr.get('correlation_id', source.u_project_correlation_id + '')) return (gr.getValue('start_date') || '').substring(0, 10);
@@ -44,7 +44,7 @@ answer = (function transformEntry(source) {
 answer = (function transformEntry(source) {
     var v = (source.u_end_date + '').trim();
     if (v && v != 'undefined') return v;
-    var t = ['pm_project', 'pm_project_task'];
+    var t = ['pm_project', 'dmn_demand', 'pm_project_task'];
     for (var i = 0; i < t.length; i++) {
         var gr = new GlideRecord(t[i]);
         if (gr.get('correlation_id', source.u_project_correlation_id + '')) return (gr.getValue('end_date') || '').substring(0, 10);
@@ -54,7 +54,7 @@ answer = (function transformEntry(source) {
 
 // ---------- PART E: onBefore - skip what cannot be assigned ----------
 (function runTransformScript(source, map, log, target) {
-    var t = ['pm_project', 'pm_project_task'], found = false;
+    var t = ['pm_project', 'dmn_demand', 'pm_project_task'], found = false;
     for (var i = 0; i < t.length && !found; i++) {
         var gr = new GlideRecord(t[i]);
         found = gr.get('correlation_id', source.u_project_correlation_id + '');

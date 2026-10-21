@@ -15,8 +15,12 @@
 
 // ---------- PART A: field map -> task ----------
 answer = (function transformEntry(source) {
-    var p = new GlideRecord('pm_project');
-    return p.get('correlation_id', source.u_project_correlation_id + '') ? p.getUniqueValue() : '';
+    var p = null;                                          // the migrated project OR demand
+    ['pm_project', 'dmn_demand'].forEach(function (t) {
+        var g = new GlideRecord(t);
+        if (!p && g.get('correlation_id', source.u_project_correlation_id + '')) p = g;
+    });
+    return p ? p.getUniqueValue() : '';
 })(source);
 
 // ---------- PART B: field map -> name, e.g. "Vendor Services Opex 2026-09" (fixed, so re-runs update) ----------
@@ -51,8 +55,12 @@ answer = (function transformEntry(source) {
 
 // ---------- PART F: onBefore - skip what cannot be a cost plan ----------
 (function runTransformScript(source, map, log, target) {
-    var p = new GlideRecord('pm_project');
-    if (!p.get('correlation_id', source.u_project_correlation_id + '')) { ignore = true; return; }   // demand / not migrated
+    var p = null;                                          // the migrated project OR demand
+    ['pm_project', 'dmn_demand'].forEach(function (t) {
+        var g = new GlideRecord(t);
+        if (!p && g.get('correlation_id', source.u_project_correlation_id + '')) p = g;
+    });
+    if (!p) { ignore = true; return; }   // not migrated
     // Adaptive re-plans show as negative months (e.g. -24,509.50): keep them, or the line totals come out too high.
     if (!parseFloat(source.u_budget)) { ignore = true; return; }                                      // 0 budget (actual only)
     var t = new GlideRecord('resource_type_definition');

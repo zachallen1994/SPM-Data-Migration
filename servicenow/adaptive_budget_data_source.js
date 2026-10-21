@@ -25,10 +25,12 @@
     if (missing.length) { import_log.error('Missing columns in ' + table + ' (create it from the CSV): ' + missing.join(', ')); return; }
 
     var projects = [];
-    var p = new GlideRecord('pm_project');
-    p.addQuery('correlation_id', 'STARTSWITH', 'ADAPTIVE:/');
-    p.query();
-    while (p.next()) projects.push(p.getValue('correlation_id').replace('ADAPTIVE:', ''));
+    ['pm_project', 'dmn_demand'].forEach(function (t) {           // projects AND demands
+        var p = new GlideRecord(t);
+        p.addQuery('correlation_id', 'STARTSWITH', 'ADAPTIVE:/');
+        p.query();
+        while (p.next()) projects.push(p.getValue('correlation_id').replace('ADAPTIVE:', ''));
+    });
     if (!projects.length) { import_log.warn('No Adaptive projects in pm_project yet - load those first'); return; }
 
     function query(q) {                                   // all pages

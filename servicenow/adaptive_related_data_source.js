@@ -13,8 +13,8 @@
     var ENTITY = 'Task';            // Adaptive entity, e.g. Task | Milestone | Issue | Risk | C_PMOLessonsLearned
     var PROJECT_FIELD = 'Project';  // field on ENTITY that points at its project (Lessons: C_RelatedWorkItem;
                                     // Resources: WorkItem)
-    var PARENT_TABLES = ['pm_project'];   // records already in ServiceNow that PROJECT_FIELD may point at
-                                          // (Resources: ['pm_project', 'pm_project_task'])
+    var PARENT_TABLES = ['pm_project', 'dmn_demand'];   // records already in ServiceNow that PROJECT_FIELD may point at
+                                          // (Resources: ['pm_project', 'dmn_demand', 'pm_project_task'])
 
     // Column LABEL in the staging table : Adaptive field.
     //   '@Field'  -> "ADAPTIVE:" + that reference's id   (links to parents)
@@ -42,7 +42,7 @@
     //              { 'Correlation ID':'@id', 'Project Correlation ID':'@C_RelatedWorkItem', 'Name':'Name',
     //                'Lesson Type':'C_LessonType', 'Topic':'C_Topic', 'Lesson':'C_Lesson', 'ID':'SYSID' }
     //  Resources:  ENTITY = 'RegularResourceLink', PROJECT_FIELD = 'WorkItem',
-    //              PARENT_TABLES = ['pm_project', 'pm_project_task'], MAP =
+    //              PARENT_TABLES = ['pm_project', 'dmn_demand', 'pm_project_task'], MAP =
     //              { 'Correlation ID':'@id', 'Project Correlation ID':'@WorkItem', 'Resource Email':'Resource.Email',
     //                'Start Date':'StartDate', 'End Date':'InactiveDate' }   -> resource_assignment_transform.js
     //  Issues:     ENTITY = 'Issue', PROJECT_FIELD = 'PlannedFor', MAP =

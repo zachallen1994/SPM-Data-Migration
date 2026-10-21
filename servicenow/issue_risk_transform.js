@@ -22,8 +22,12 @@ answer = (function transformEntry(source) {
 
 // ---------- ISSUE: onBefore (project link + description) ----------
 (function runTransformScript(source, map, log, target) {
-    var p = new GlideRecord('pm_project');
-    if (!p.get('correlation_id', source.u_project_correlation_id + '')) { ignore = true; return; }   // project not migrated
+    var p = null;                                          // the migrated project OR demand
+    ['pm_project', 'dmn_demand'].forEach(function (t) {
+        var g = new GlideRecord(t);
+        if (!p && g.get('correlation_id', source.u_project_correlation_id + '')) p = g;
+    });
+    if (!p) { ignore = true; return; }   // project not migrated
     target.parent = p.getUniqueValue();          // dev confirms the issue field that holds the project
     var parts = [];
     function add(label, v) { v = (v + '').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').trim(); if (v) parts.push(label + ':\n' + v); }
@@ -48,8 +52,12 @@ answer = (function transformEntry(source) {
 
 // ---------- RISK: onBefore (project link + history to work notes) ----------
 (function runTransformScript(source, map, log, target) {
-    var p = new GlideRecord('pm_project');
-    if (!p.get('correlation_id', source.u_project_correlation_id + '')) { ignore = true; return; }
+    var p = null;                                          // the migrated project OR demand
+    ['pm_project', 'dmn_demand'].forEach(function (t) {
+        var g = new GlideRecord(t);
+        if (!p && g.get('correlation_id', source.u_project_correlation_id + '')) p = g;
+    });
+    if (!p) { ignore = true; return; }
     target.task = p.getUniqueValue();            // risk -> project link is the mandatory "task" field
     var notes = [];
     if ((source.u_status + '').trim()) notes.push('Status (Adaptive): ' + source.u_status);

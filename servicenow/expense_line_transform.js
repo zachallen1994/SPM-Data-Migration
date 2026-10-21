@@ -15,8 +15,12 @@
 
 // ---------- PART A: field map -> task (the project) ----------
 answer = (function transformEntry(source) {
-    var p = new GlideRecord('pm_project');
-    return p.get('correlation_id', source.u_project_correlation_id + '') ? p.getUniqueValue() : '';
+    var p = null;                                          // the migrated project OR demand
+    ['pm_project', 'dmn_demand'].forEach(function (t) {
+        var g = new GlideRecord(t);
+        if (!p && g.get('correlation_id', source.u_project_correlation_id + '')) p = g;
+    });
+    return p ? p.getUniqueValue() : '';
 })(source);
 
 // ---------- PART B: field map -> short_description, e.g. "Adaptive actual: Hardware Capex 2025-10" ----------
@@ -26,8 +30,12 @@ answer = (function transformEntry(source) {
 
 // ---------- PART C: field map -> cost_plan (same line and month; blank when that month had no budget) ----------
 answer = (function transformEntry(source) {
-    var p = new GlideRecord('pm_project');
-    if (!p.get('correlation_id', source.u_project_correlation_id + '')) return '';
+    var p = null;                                          // the migrated project OR demand
+    ['pm_project', 'dmn_demand'].forEach(function (t) {
+        var g = new GlideRecord(t);
+        if (!p && g.get('correlation_id', source.u_project_correlation_id + '')) p = g;
+    });
+    if (!p) return '';
     var c = new GlideRecord('cost_plan');
     c.addQuery('task', p.getUniqueValue());
     c.addQuery('name', (source.u_cost_type + '').trim() + ' ' + (source.u_month + '').substring(0, 7));
@@ -63,7 +71,11 @@ answer = (function transformEntry(source) {
 
 // ---------- PART F: onBefore - only real actuals of migrated projects ----------
 (function runTransformScript(source, map, log, target) {
-    var p = new GlideRecord('pm_project');
-    if (!p.get('correlation_id', source.u_project_correlation_id + '')) { ignore = true; return; }   // demand / not migrated
+    var p = null;                                          // the migrated project OR demand
+    ['pm_project', 'dmn_demand'].forEach(function (t) {
+        var g = new GlideRecord(t);
+        if (!p && g.get('correlation_id', source.u_project_correlation_id + '')) p = g;
+    });
+    if (!p) { ignore = true; return; }   // not migrated
     if (!parseFloat(source.u_actual)) { ignore = true; return; }        // no actual that month (negatives = corrections, kept)
 })(source, map, log, target);
