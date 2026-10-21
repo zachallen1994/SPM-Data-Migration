@@ -56,3 +56,14 @@ answer = (function transformEntry(source) {
     if ((source.u_update_notes + '').trim()) notes.push('Update Notes (Adaptive): ' + (source.u_update_notes + '').replace(/<[^>]+>/g, ' '));
     if (notes.length) target.work_notes = notes.join('\n\n');
 })(source, map, log, target);
+
+// ---------- ISSUE and RISK: field map -> assigned_to (Adaptive AssignedTo, matched by email) ----------
+// Staging column "Assigned To Email" (u_assigned_to_email), filled by MAP 'Assigned To Email': 'AssignedTo.Email'.
+answer = (function transformEntry(source) {
+    var email = (source.u_assigned_to_email + '').toLowerCase().trim();
+    if (!email || email == 'undefined' || email == 'null') return '';
+    var u = new GlideRecord('sys_user');
+    if (u.get('email', email)) return u.getUniqueValue();
+    log.warn('No ServiceNow user for Adaptive assignee ' + email + ' on ' + source.u_correlation_id + ' - left blank');
+    return '';
+})(source);
