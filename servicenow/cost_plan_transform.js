@@ -53,7 +53,8 @@ answer = (function transformEntry(source) {
 (function runTransformScript(source, map, log, target) {
     var p = new GlideRecord('pm_project');
     if (!p.get('correlation_id', source.u_project_correlation_id + '')) { ignore = true; return; }   // demand / not migrated
-    if (!(parseFloat(source.u_budget) > 0)) { ignore = true; return; }                                // actual only: expense lines
+    // Adaptive re-plans show as negative months (e.g. -24,509.50): keep them, or the line totals come out too high.
+    if (!parseFloat(source.u_budget)) { ignore = true; return; }                                      // 0 budget (actual only)
     var t = new GlideRecord('resource_type_definition');
     if (!t.get('name', (source.u_cost_type + '').trim())) {
         log.warn('No ServiceNow cost type "' + source.u_cost_type + '" - budget line skipped (' + source.u_budget + ', ' + source.u_month + ')');
