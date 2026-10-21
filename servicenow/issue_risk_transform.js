@@ -50,7 +50,7 @@ answer = (function transformEntry(source) {
 (function runTransformScript(source, map, log, target) {
     var p = new GlideRecord('pm_project');
     if (!p.get('correlation_id', source.u_project_correlation_id + '')) { ignore = true; return; }
-    target.parent = p.getUniqueValue();          // dev confirms the risk field that holds the project
+    target.task = p.getUniqueValue();            // risk -> project link is the mandatory "task" field
     var notes = [];
     if ((source.u_status + '').trim()) notes.push('Status (Adaptive): ' + source.u_status);
     if ((source.u_update_notes + '').trim()) notes.push('Update Notes (Adaptive): ' + (source.u_update_notes + '').replace(/<[^>]+>/g, ' '));
