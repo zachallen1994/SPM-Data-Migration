@@ -14,9 +14,12 @@
 
     // ======================= CONFIG ✏️ =======================
     var MODE = 'projects';                       // 'projects' or 'tasks'
-    var PILOT = ['October Month RPA Maintenance 2026'];   // test: only these names; [] = every active project
+    var PILOT = ['Flu Program', 'Annual Enrollment', 'Respiratory Fit Testing'];   // test: only these names; [] = all active
     var TEAMS = [];                              // Asana team names to include, e.g. ['HR Technology']; [] = all teams
-    var INCLUDE_TRACKER_ITEMS = false;           // true = also load the items of the HR Project Portfolio 2026 tracker
+    var SOURCE = 'tracker';                      // 'tracker'  = rows of HR Project Portfolio 2026 (HR PMO initiatives)
+                                                 // 'projects' = real Asana projects in the workspace
+                                                 // 'both'     = both, as separate records
+    var INCLUDE_TRACKER_ITEMS = (SOURCE == 'tracker' || SOURCE == 'both');
     var SKIP_STATUS = ['Completed', 'Cancelled'];   // Project Status custom field values that mean "not active"
     var WORKSPACE = '5286451799521';
     // =========================================================
@@ -112,7 +115,7 @@
         if (MODE == 'projects') {
             var trackerGid = gs.getProperty('x_mig.asana.project_gid');
             var skipped = 0;
-            all('/workspaces/' + WORKSPACE + '/projects?archived=false&limit=100&opt_fields=' + PROJECT_FIELDS).forEach(function (p) {
+            (SOURCE == 'tracker' ? [] : all('/workspaces/' + WORKSPACE + '/projects?archived=false&limit=100&opt_fields=' + PROJECT_FIELDS)).forEach(function (p) {
                 if (p.gid == trackerGid) return;                                           // the tracker list itself
                 if (PILOT.length && PILOT.indexOf(p.name.trim()) < 0) return;
                 if (TEAMS.length && (!p.team || TEAMS.indexOf(p.team.name) < 0)) return;
