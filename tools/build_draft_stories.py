@@ -17,11 +17,11 @@ DRAFTS = [
         "These system properties exist in Dev, Test and Prod: x_mig.adaptive.url, x_mig.adaptive.key (password2), "
         "x_mig.asana.token (password2), x_mig.asana.project_gid.",
         "The keys are the svc_sn_migration service account keys.",
-        "servicenow/test_connection.js, run in Scripts - Background, shows Status: 200 for Adaptive and Asana in each instance.",
+        "servicenow/background_scripts/test_connection.js, run in Scripts - Background, shows Status: 200 for Adaptive and Asana in each instance.",
         "No Outbound REST Message is needed.",
     ]),
     ("STRY0067506", "Create the Adaptive Data Sources for project-related records", 8, "Yes", [
-        "servicenow/discovery_background_script.js has been run once, and its output is attached to this story.",
+        "servicenow/background_scripts/discovery_background_script.js has been run once, and its output is attached to this story.",
         "One Data Source (Type: Custom (Load by Script)) exists for each: Tasks, Milestones, Risks, Issues, "
         "Lessons Learned, Resources, Time.",
         "Each uses servicenow/adaptive_related_data_source.js. Only the settings block at the top changes, using the "
@@ -48,7 +48,7 @@ DRAFTS = [
     ("STRY0066723", "Copy all attachments from Asana and Adaptive into ServiceNow", 5, "Yes - run last", [
         "Every file stored in Asana or Adaptive on a migrated project, task, demand, risk or issue is copied onto the "
         "matching ServiceNow record, with the same file name.",
-        "servicenow/attachments_fix_script.js is run as a Fix Script after all other loads: first with DRY_RUN = true "
+        "servicenow/fix_scripts/attachments_fix_script.js is run as a Fix Script after all other loads: first with DRY_RUN = true "
         "(log reviewed), then with DRY_RUN = false.",
         "Links to files kept outside Asana (Google Drive, Box, Dropbox, OneDrive) are added to the record as a work "
         "note with the link.",

@@ -31,7 +31,7 @@ STORIES = [
              (P, "Purpose: the related-record Data Sources need exact Adaptive entity and field names. One script "
                  "prints them, so nothing is guessed."),
              (UL, [
-                 "Run servicenow/discovery_background_script.js in Scripts - Background (Dev), after at least one "
+                 "Run servicenow/background_scripts/discovery_background_script.js in Scripts - Background (Dev), after at least one "
                  "Adaptive project is loaded.",
                  "Download the output and attach it to this story.",
                  "From the output, record on this story: the entity names for tasks, milestones, issues, risks, lessons "
@@ -268,7 +268,7 @@ STORIES = [
          body=[
              (P, SHARED),
              (P, "Replaces the manual download/upload. Runs LAST, after every record exists. "
-                 "Script: servicenow/attachments_fix_script.js (Fix Script)."),
+                 "Script: servicenow/fix_scripts/attachments_fix_script.js (Fix Script)."),
              (UL, [
                  "Asana: GET /attachments?parent=<gid> per migrated record. Files hosted by Asana are downloaded from "
                  "download_url (short-lived signed link, fetched without the token) and saved to the record "
