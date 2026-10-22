@@ -3,7 +3,7 @@
 //   2. what landed in the import set row
 //   3. what the transform map does with each column
 // Changes nothing.
-var PROJECT_NAME = 'October Month RPA Maintenance 2026';   // ✏️ exact Asana name
+var PROJECT_NAME = 'Flu Program';   // ✏️ exact Asana name
 var STAGING = 'u_import_asana_hr_project_portfolio';      // ✏️ the Asana projects import set table
 
 // ---- 1. Asana
@@ -21,7 +21,17 @@ if (gid) {
         'start_on,due_on,completed,archived,current_status_update.status_type,current_status_update.title,notes,' +
         'custom_fields.name,custom_fields.display_value');
     r.setRequestHeader('Authorization', 'Bearer ' + gs.getProperty('x_mig.asana.token'));
-    var p = JSON.parse(r.execute().getBody()).data || {};
+    var p = JSON.parse(r.execute().getBody()).data;
+    if (!p) {                                                  // not a project: a tracker row (an Asana task)
+        r = new sn_ws.RESTMessageV2();
+        r.setHttpMethod('GET');
+        r.setEndpoint('https://app.asana.com/api/1.0/tasks/' + gid + '?opt_fields=name,assignee.name,assignee.email,' +
+            'start_on,due_on,completed,notes,custom_fields.name,custom_fields.display_value');
+        r.setRequestHeader('Authorization', 'Bearer ' + gs.getProperty('x_mig.asana.token'));
+        p = JSON.parse(r.execute().getBody()).data || {};
+        p.owner = p.assignee;
+        gs.print('  (tracker row)');
+    }
     gs.print('  owner: ' + (p.owner ? p.owner.name + ' <' + p.owner.email + '>' : '(none)') + ' | team: ' + (p.team ? p.team.name : '') +
         ' | start: ' + p.start_on + ' | due: ' + p.due_on + ' | status: ' +
         (p.current_status_update ? p.current_status_update.status_type : '(none)'));
