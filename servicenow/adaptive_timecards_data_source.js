@@ -8,7 +8,7 @@
 (function loadData(import_set_table, data_source, import_log, last_success_import_time) {
 
     // ======================= CONFIG ✏️ =======================
-    var STATES = [];              // Adaptive timesheet states to load, e.g. ['Approved']; [] = every state
+    var STATES = ['Approved'];     // Adaptive's Actual Effort counts Approved time only (Willow: 14,355.7 h); 'Un Submitted' left out
     var WEEK_START = 'sunday';    // the day a ServiceNow time card week starts on (look at an existing card)
     // =========================================================
 
