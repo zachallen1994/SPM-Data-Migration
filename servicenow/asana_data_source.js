@@ -143,6 +143,7 @@
                         'correlation id': 'ASANA:' + t.gid,
                         'name': t.name.trim(),
                         'section/column': section(t),
+                        'entity/organization': custom(t, 'Organization') || custom(t, 'Entity/Organization'),   // Asana field is named "Organization"
                         'assignee': t.assignee ? t.assignee.name : '',
                         'assignee email': t.assignee ? t.assignee.email : '',
                         'start date': t.start_on,
