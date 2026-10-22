@@ -30,4 +30,4 @@ while (row.next()) {
     if (tc.getValue('state') == PROCESSED) changed++; else stuck++;
 }
 gs.info((DRY_RUN ? 'DRY RUN - would set ' : 'Set ') + changed + ' of ' + found + ' migrated time cards to Processed' +
-    (stuck ? '; ' + stuck + ' went back to ' + 'another state (a business rule changed them)' : ''));
+    (stuck ? '; ' + stuck + ' did not stay Processed (a business rule changed them)' : ''));
