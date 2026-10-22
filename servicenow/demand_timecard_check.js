@@ -13,7 +13,7 @@ while (any.next()) gs.print('   demand ' + any.getValue('number') + ' has correl
 // 2. Did the time card data source write rows for it? (latest load)
 //    The staging table name is read from the time card data source itself.
 var ds = new GlideRecord('sys_data_source');
-ds.addQuery('name', 'CONTAINS', 'Time Card');
+ds.addQuery('name', 'Adaptive Time Entries - API');   // ✏️ the time card data source name
 ds.query();
 var STAGING = ds.next() ? ds.getValue('import_set_table_name') : '';
 gs.print('2. data source "' + ds.getValue('name') + '" writes to table: ' + (STAGING || 'NOT FOUND - check the data source name'));
@@ -23,7 +23,7 @@ rows.orderByDesc('sys_created_on');
 rows.query();
 gs.print('2. staging rows for the demand: ' + rows.getRowCount());
 var n = 0;
-while (rows.next() && n++ < 10) {
+while (rows.next() && n++ < 40) {
     gs.print('   ' + rows.getValue('u_resource_email') + ' | week ' + rows.getValue('u_week_starts_on') + ' | ' + rows.getValue('u_total') +
         ' h | task id ' + rows.getValue('u_task_correlation_id') + ' | state ' + rows.getValue('sys_import_state') +
         ' | ' + (rows.getValue('sys_import_state_comment') || ''));
