@@ -33,6 +33,7 @@ None of these change data. Lines marked ✏️ at the top are the only things to
 | program_fields_check.js | pm_program fields and states, the project -> program field, active Adaptive programs |
 | migrated_state_counts.js | Adaptive projects / demands in ServiceNow, by State |
 | project_load_check.js | After the projects transform: records touched, left over from earlier loads, linked to a program |
+| program_link_check.js | Why projects are not linked to their program (column, staging values, field map) |
 | timecard_br_check.js | Insert rules on time_card / time_sheet that touch State; one card's time sheet |
 | attachment_check.js | What Adaptive returns for one record's files; does download work |
 | asana_scope_check.js | Active Asana projects per team |
