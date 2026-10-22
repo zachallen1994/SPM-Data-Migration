@@ -35,7 +35,9 @@
         'Request Assigned':     'C_RequestAssigned',
         'Estimate Complete':    'C_EstimateComplete',
         'Ready For Delivery':   'C_ReadyForDelivery',
-        'Project Assigned':     'C_ProjectAssigned',
+        'Project Assigned':     'C_ProjectAssigned',    // -> pm_project.u_project_assigned
+        'Schedule Start':       'StartDate',            // label "Schedule Start"  -> start_date (Planned start)
+        'Schedule Finish':      'DueDate',              // label "Schedule Finish" -> end_date (Planned end)
         'Business Category':    'C_BusinessCategory',
         'Total Budget':         'C_TotalBudget',
         'Opex Budget':          'C_OpexBudgetNonLabor',
@@ -48,9 +50,6 @@
         'Project Pool':         'C_ProjectPool',            // Yes / No
         'Groups':               'C_Groups'                  // multi-pick list (C_WorkItemGroups), comma separated
     };
-    // The transform map reads start_date from the "Project Assigned" column. Agreed rule:
-    // use Adaptive's Start Date (StartDate); fall back to Project Assigned when it is blank.
-    var START_DATE_COLUMN = 'Project Assigned';
 
     // Only these Adaptive Project Types (field ProjectType) are migrated. Values seen on active projects:
     // Project 307, Merger & Acquisition Work-stream 65, Security Investment 37, Internal IT Projects 30,
@@ -161,8 +160,6 @@
             var progCol = colByLabel['program correlation id'];
             var parentId = e.Parent && e.Parent.id ? String(e.Parent.id) : '';
             if (progCol && parentId.indexOf('/Program/') == 0) row[progCol] = 'ADAPTIVE:' + parentId;
-            var startCol = colByLabel[START_DATE_COLUMN.toLowerCase()];
-            if (startCol && val(e, 'StartDate')) row[startCol] = val(e, 'StartDate');
             import_set_table.insert(row);
             count++;
         });
