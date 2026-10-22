@@ -13,6 +13,9 @@
 // Map 2 = the EXISTING Adaptive projects map (u_import_adaptive_projects -> pm_project): add one field map
 //   Field map: Use source script, Target field = primary_program -> PART C   (confirmed: pm_project.primary_program)
 //   (staging column "Program Correlation ID", filled by adaptive_projects_data_source.js)
+//
+// Map 3 = the EXISTING Adaptive demands map (same staging table -> dmn_demand): add the same PART C field map,
+//   Target field = the demand's program field (name shown by program_fields_check.js as "dmn_demand -> program field")
 
 // ---------- PART A: field map -> program_manager (by email) ----------
 answer = (function transformEntry(source) {
@@ -29,7 +32,7 @@ answer = (function transformEntry(source) {
     return map[(source.u_state + '').toLowerCase().trim()] || '1';
 })(source);
 
-// ---------- PART C: projects map, field map -> primary_program ----------
+// ---------- PART C: projects map -> primary_program; demands map -> the demand's program field ----------
 answer = (function transformEntry(source) {
     var id = (source.u_program_correlation_id + '').trim();
     if (!id || id == 'undefined') return '';

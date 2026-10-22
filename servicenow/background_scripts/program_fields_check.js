@@ -1,5 +1,5 @@
 // Background Script (read-only): confirm the field names the program load needs, before building it.
-// 1) pm_program fields + State choices  2) the pm_project field that points to a program
+// 1) pm_program fields + State choices  2) the project and demand fields that point to a program
 // 3) Adaptive Program fields + how many programs are active
 var t = new GlideRecord('sys_dictionary');
 t.addQuery('name', 'IN', 'pm_program,planned_task,task');
@@ -14,10 +14,10 @@ c.orderBy('name'); c.orderBy('sequence'); c.query();
 while (c.next()) gs.print('state choice (' + c.getValue('name') + '): ' + c.getValue('value') + ' = ' + c.getValue('label'));
 
 var r = new GlideRecord('sys_dictionary');
-r.addQuery('name', 'IN', 'pm_project,planned_task,task');
+r.addQuery('name', 'IN', 'pm_project,dmn_demand,planned_task,task');
 r.addQuery('reference', 'pm_program');
 r.query();
-while (r.next()) gs.print('project -> program field: ' + r.getValue('element') + ' (' + r.getValue('column_label') + ', on ' + r.getValue('name') + ')');
+while (r.next()) gs.print(r.getValue('name') + ' -> program field: ' + r.getValue('element') + ' (' + r.getValue('column_label') + ', on ' + r.getValue('name') + ')');
 
 var x = new sn_ws.RESTMessageV2();
 x.setHttpMethod('GET');
