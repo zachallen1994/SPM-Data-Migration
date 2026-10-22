@@ -30,6 +30,7 @@ None of these change data. Lines marked ✏️ at the top are the only things to
 | timecard_user_check.js | One person's time cards: week, hours, record, state |
 | timecard_totals_check.js | Time card hours vs Adaptive for one project; duplicates; hours by state |
 | timecard_state_check.js | Why time cards are Pending instead of Processed |
+| timecard_br_check.js | Insert rules on time_card / time_sheet that touch State; one card's time sheet |
 | attachment_check.js | What Adaptive returns for one record's files; does download work |
 | asana_scope_check.js | Active Asana projects per team |
 | asana_scope_overview.js | The Asana tracker (owner, rows) and portfolios with their projects |
