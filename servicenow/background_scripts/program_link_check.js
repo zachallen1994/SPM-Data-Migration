@@ -43,6 +43,12 @@ if (!any) gs.print('NO field map to primary_program on the projects / demands ma
 
 // Per program: rows in the latest load that name it vs projects linked to it. Rows to programs NOT migrated
 // (inactive in Adaptive) cannot link; demand rows link only once the demands map has its program field map.
+var demandField = '', df = new GlideRecord('sys_dictionary');       // the demand field that points to a program
+df.addQuery('name', 'IN', 'dmn_demand,task');
+df.addQuery('reference', 'pm_program');
+df.query();
+if (df.next()) demandField = df.getValue('element');
+gs.print('demand -> program field: ' + (demandField || '(none found)'));
 if (c && last && last.isValidRecord()) {
     var rows = {}, s2 = new GlideRecord('u_import_adaptive_projects');
     s2.addQuery('sys_import_set', last.getUniqueValue());
@@ -55,6 +61,13 @@ if (c && last && last.isValidRecord()) {
         var lk = new GlideAggregate('pm_project');
         lk.addQuery('primary_program', prog.getUniqueValue());
         lk.addAggregate('COUNT'); lk.query(); lk.next();
-        gs.print('rows ' + rows[id] + ' | projects linked ' + lk.getAggregate('COUNT') + ' | ' + prog.getValue('short_description'));
+        var dl = '';
+        if (demandField) {
+            var dk = new GlideAggregate('dmn_demand');
+            dk.addQuery(demandField, prog.getUniqueValue());
+            dk.addAggregate('COUNT'); dk.query(); dk.next();
+            dl = ' | demands linked ' + dk.getAggregate('COUNT');
+        }
+        gs.print('rows ' + rows[id] + ' | projects linked ' + lk.getAggregate('COUNT') + dl + ' | ' + prog.getValue('short_description'));
     }
 }
