@@ -58,6 +58,9 @@
     // Operational Projects 7, Merger & Acquisitions Program 4, Nordic Clarity SOW's 1, blank 2.
     var PROJECT_TYPES = ['Project'];   // ✏️ add 'Construction' if that group says yes
 
+    // Only these Adaptive States (field State) are migrated. Completed / Cancelled projects are out of scope.
+    var STATES = ['Active'];           // ✏️ add 'On Hold' (or others) if the client wants them
+
     // ---------------- nothing to edit below ----------------
 
     // Column label -> column name, read from the import table itself
@@ -129,7 +132,7 @@
     var q = 'SELECT ' + select.join(', ') + ' FROM Project' + (where ? ' WHERE ' + where : '');
 
     var paging = { from: 0, limit: 100 };
-    var count = 0, skippedType = 0;
+    var count = 0, skippedType = 0, skippedState = {};
     while (true) {
         var r = new sn_ws.RESTMessageV2();
         r.setHttpMethod('POST');
@@ -146,6 +149,8 @@
         body.entities.forEach(function (e) {
             var type = e.ProjectType && e.ProjectType.id ? decodeURIComponent(String(e.ProjectType.id).split('/').pop()) : '';
             if (PROJECT_TYPES.length && PROJECT_TYPES.indexOf(type) < 0) { skippedType++; return; }
+            var state = val(e, 'State');
+            if (STATES.length && STATES.indexOf(state) < 0) { skippedState[state || '(blank)'] = (skippedState[state || '(blank)'] || 0) + 1; return; }
             var row = {};
             for (var label in MAP) {
                 var colName = colByLabel[label.toLowerCase()];
@@ -164,5 +169,6 @@
         if (!body.paging || !body.paging.hasMore) break;
         paging = body.paging;
     }
-    import_log.info('Adaptive projects loaded: ' + count + ' (skipped, other project type: ' + skippedType + ')');
+    import_log.info('Adaptive projects loaded: ' + count + ' (skipped, other project type: ' + skippedType +
+        '; skipped by State: ' + JSON.stringify(skippedState) + ')');
 })(import_set_table, data_source, import_log, last_success_import_time);
