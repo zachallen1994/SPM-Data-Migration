@@ -6,7 +6,7 @@
 
 // ---------- PART A: onBefore on the PROJECT map ----------
 (function runTransformScript(source, map, log, target) {
-    var DEMAND = ['pending portfolio assignment', 'in portfolio discovery', 'on hold pending requestor',
+    var DEMAND = ['pending portfolio assignment', 'in portfolio discovery', 'on hold pending requestor', 'on hold pending requester',
                   'on hold estimate complete - with ocio', 'on hold estimate complete - pending sow'];
     var PROJECT = ['ready for pm assignment', 'pm assigned', 'analyst run'];
     var phase = (source.u_portfolio_phase + '').toLowerCase().replace(/[–—-]/g, '-').replace(/\s+/g, ' ').trim();
@@ -17,7 +17,7 @@
 
 // ---------- PART B: onBefore on the DEMAND map ----------
 (function runTransformScript(source, map, log, target) {
-    var DEMAND = ['pending portfolio assignment', 'in portfolio discovery', 'on hold pending requestor',
+    var DEMAND = ['pending portfolio assignment', 'in portfolio discovery', 'on hold pending requestor', 'on hold pending requester',
                   'on hold estimate complete - with ocio', 'on hold estimate complete - pending sow'];
     var phase = (source.u_portfolio_phase + '').toLowerCase().replace(/[–—-]/g, '-').replace(/\s+/g, ' ').trim();
     if (DEMAND.indexOf(phase) > -1) return;                                   // load as demand
