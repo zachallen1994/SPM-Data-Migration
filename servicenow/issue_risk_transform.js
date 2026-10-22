@@ -75,3 +75,14 @@ answer = (function transformEntry(source) {
     log.warn('No ServiceNow user for Adaptive assignee ' + email + ' on ' + source.u_correlation_id + ' - left blank');
     return '';
 })(source);
+
+// ---------- RISK: field map -> task, Coalesce = true (with u_title -> short_description, Coalesce = true) ----------
+// The risk table has no correlation_id on this instance, so risks are matched on project + title.
+answer = (function transformEntry(source) {
+    var p = null;
+    ['pm_project', 'dmn_demand'].forEach(function (t) {
+        var g = new GlideRecord(t);
+        if (!p && g.get('correlation_id', source.u_project_correlation_id + '')) p = g;
+    });
+    return p ? p.getUniqueValue() : '';
+})(source);
