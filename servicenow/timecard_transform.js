@@ -43,7 +43,7 @@ answer = (function transformEntry(source) {
         ignore = true;
         return;
     }
-    var found = false, t = ['pm_project_task', 'pm_project'];
+    var found = false, t = ['pm_project_task', 'pm_project', 'dmn_demand'];
     for (var i = 0; i < t.length && !found; i++) {
         var gr = new GlideRecord(t[i]);
         found = gr.get('correlation_id', source.u_task_correlation_id + '');
