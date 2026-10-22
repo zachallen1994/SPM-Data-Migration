@@ -16,6 +16,8 @@
     var PARENT_TABLES = ['pm_project', 'dmn_demand'];   // records already in ServiceNow that PROJECT_FIELD may point at
                                           // (Resources: ['pm_project', 'dmn_demand', 'pm_project_task'])
                                           // (Tasks / Milestones: ['pm_project'] - demands have no work plan)
+    var PARENT_STATES = ['Active', 'On Hold'];   // only records of projects / demands in these Adaptive States
+                                                 // (same as STATES in the projects data source); [] = no check
 
     // Column LABEL in the staging table : Adaptive field.
     //   '@Field'  -> "ADAPTIVE:" + that reference's id   (links to parents)
@@ -164,6 +166,30 @@
         var res = r.execute();
         if (res.getStatusCode() != 200) throw 'Adaptive ' + res.getStatusCode() + ': ' + res.getBody();
         return JSON.parse(res.getBody());
+    }
+
+    // Keep only projects / demands whose State in Adaptive is in PARENT_STATES (closed or cancelled ones are
+    // skipped even if they are in ServiceNow). Task parents (Resources) are kept: their project was checked.
+    if (PARENT_STATES.length) {
+        var stateOf = {}, sp = { from: 0, limit: 100 };
+        try {
+            while (true) {
+                var sb = post({ q: 'SELECT State FROM Project', paging: sp });
+                sb.entities.forEach(function (e) { stateOf[e.id] = clean(e.State); });
+                if (!sb.paging || !sb.paging.hasMore) break;
+                sp = sb.paging;
+            }
+        } catch (err) { import_log.error(String(err) + ' -- reading Adaptive project states'); return; }
+        var skippedParents = {};
+        projects = projects.filter(function (id) {
+            if (id.indexOf('/Project/') != 0) return true;
+            var st = stateOf[id] || '(not found)';
+            if (PARENT_STATES.indexOf(st) >= 0) return true;
+            skippedParents[st] = (skippedParents[st] || 0) + 1;
+            return false;
+        });
+        import_log.info('Parents skipped by Adaptive State: ' + JSON.stringify(skippedParents));
+        if (!projects.length) { import_log.warn('No parents left in PARENT_STATES ' + PARENT_STATES.join(', ')); return; }
     }
 
     var count = 0;
