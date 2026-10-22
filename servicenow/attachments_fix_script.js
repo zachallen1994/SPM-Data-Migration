@@ -11,8 +11,8 @@ var MAX_MB = 0;                                                   // 0 = no limi
 // Adaptive (from Discovery): AttachmentLink.Entity = the record, AttachmentLink.Document = the file.
 // Document.Name = file name, Document.Url = set when the file lives outside Adaptive (e.g. a link or SharePoint).
 var ADAPTIVE_LINK_QUERY = "SELECT Document, Document.Name, Document.Url, Document.StorageType FROM AttachmentLink WHERE Entity = '{id}'";
-// Download call: NOT yet proven against this tenant - the DRY_RUN on one project shows whether it returns a url.
-var ADAPTIVE_DOWNLOAD = '/files/download?documentId={doc}&redirect=false';   // expected to return {"url": "..."}
+// Download call: proven in Dev - returns {"fileInformation":{"storage":"Server","url":".../downloadFile","fileName":...}}
+var ADAPTIVE_DOWNLOAD = '/files/download?documentId={doc}&redirect=false';
 
 var LOG = 'x_mig.attachments';
 var stats = { found: 0, copied: 0, skipped: 0, linked: 0, failed: 0 };   // found = files stored in Asana/Adaptive
@@ -92,14 +92,18 @@ function adaptiveFiles(gr, id) {
         var name = doc.Name || 'attachment';
         if (DRY_RUN) gs.log('[DRY RUN] Adaptive document ' + name + ' | StorageType ' + JSON.stringify(doc.StorageType) +
             ' | Url ' + (doc.Url || '(none)'), LOG);
-        if (doc.Url) {                                            // file kept outside Adaptive: keep the link
-            addLinkNote(gr, 'Legacy Adaptive linked file: ' + name + ' - ' + doc.Url);
+        // Adaptive gives every document a Url: for StorageType "File" it is only the internal storage path, so
+        // only documents with another storage type (e.g. a link) are kept as a work note.
+        var storage = doc.StorageType && doc.StorageType.id ? String(doc.StorageType.id).split('/').pop() : '';
+        if (storage && storage != 'File') {
+            addLinkNote(gr, 'Legacy Adaptive linked file: ' + name + ' - ' + (doc.Url || ''));
             return;
         }
         var file;
         try { file = getJson(base + ADAPTIVE_DOWNLOAD.replace('{doc}', encodeURIComponent(doc.id)), auth); }
         catch (err) { stats.failed++; gs.logError('Adaptive download link failed for ' + name + ' on ' + id + ': ' + err, LOG); return; }
-        if (file.url) download(file.url, {}, gr.getTableName(), gr.getUniqueValue(), name);
+        var info = file.fileInformation || file;                 // proven: {"fileInformation":{"storage":"Server","url":...,"fileName":...}}
+        if (info.url) download(info.url, { 'Authorization': auth.Authorization }, gr.getTableName(), gr.getUniqueValue(), info.fileName || name);
         else { stats.failed++; gs.logError('No download url for ' + name + ' on ' + id + ': ' + JSON.stringify(file), LOG); }
     });
 }
