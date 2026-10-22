@@ -11,7 +11,13 @@ any.query();
 while (any.next()) gs.print('   demand ' + any.getValue('number') + ' has correlation_id [' + any.getValue('correlation_id') + ']');
 
 // 2. Did the time card data source write rows for it? (latest load)
-var rows = new GlideRecord('u_import_adaptive_time_cards');
+//    The staging table name is read from the time card data source itself.
+var ds = new GlideRecord('sys_data_source');
+ds.addQuery('name', 'CONTAINS', 'Time Card');
+ds.query();
+var STAGING = ds.next() ? ds.getValue('import_set_table_name') : '';
+gs.print('2. data source "' + ds.getValue('name') + '" writes to table: ' + (STAGING || 'NOT FOUND - check the data source name'));
+var rows = new GlideRecord(STAGING || 'sys_import_set_row');
 rows.addQuery('u_project_correlation_id', 'ADAPTIVE:' + ADAPTIVE_ID);
 rows.orderByDesc('sys_created_on');
 rows.query();
