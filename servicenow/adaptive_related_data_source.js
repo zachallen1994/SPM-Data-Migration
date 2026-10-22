@@ -15,6 +15,7 @@
                                     // Resources: WorkItem)
     var PARENT_TABLES = ['pm_project', 'dmn_demand'];   // records already in ServiceNow that PROJECT_FIELD may point at
                                           // (Resources: ['pm_project', 'dmn_demand', 'pm_project_task'])
+                                          // (Tasks / Milestones: ['pm_project'] - demands have no work plan)
 
     // Column LABEL in the staging table : Adaptive field.
     //   '@Field'  -> "ADAPTIVE:" + that reference's id   (links to parents)
