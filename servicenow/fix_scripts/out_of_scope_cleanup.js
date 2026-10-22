@@ -5,7 +5,10 @@
 var DRY_RUN = true;                        // ✏️ true = list only; false = delete
 var STATES = ['Active', 'On Hold'];        // ✏️ same as the projects data source
 var PROJECT_TYPES = ['Project'];           // ✏️ same as the projects data source
-gs.info('out_of_scope_cleanup VERSION 1');
+var MAX = 25;                              // ✏️ projects / demands per run (run again until it finds 0); 0 = all
+gs.info('out_of_scope_cleanup VERSION 2');
+var started = new Date().getTime();
+function progress(msg) { gs.info('out_of_scope_cleanup ' + Math.round((new Date().getTime() - started) / 1000) + 's: ' + msg); }
 
 // Records that hang off a project / demand / project task: [table, field that points at it]
 var CHILDREN = [['time_card', 'task'], ['cost_plan', 'task'], ['fm_expense_line', 'task'], ['risk', 'task'],
@@ -37,7 +40,8 @@ while (true) {
     paging = body.paging;
 }
 
-var byReason = {}, childCount = {}, removed = 0, sample = [];
+progress('Adaptive scope read: ' + Object.keys(reason).length + ' projects');
+var byReason = {}, childCount = {}, removed = 0, more = 0, sample = [];
 ['pm_project', 'dmn_demand'].forEach(function (t) {
     var p = new GlideRecord(t);
     p.addQuery('correlation_id', 'STARTSWITH', 'ADAPTIVE:/Project/');
@@ -46,7 +50,8 @@ var byReason = {}, childCount = {}, removed = 0, sample = [];
         var id = p.getValue('correlation_id').replace('ADAPTIVE:', '');
         var why = reason.hasOwnProperty(id) ? reason[id] : 'not in Adaptive';
         if (!why) continue;                                             // in scope: keep
-        byReason[t + ' | ' + why] = (byReason[t + ' | ' + why] || 0) + 1;
+        byReason[t + ' | ' + why] = (byReason[t + ' | ' + why] || 0) + 1;   // counts ALL out of scope
+        if (MAX && removed >= MAX) { more++; continue; }               // next run
         if (sample.length < 20) sample.push(t + ' ' + p.getValue('number') + ' ' + p.getValue('short_description') + ' (' + why + ')');
         // the project / demand and its tasks; children of any of them go first
         var ids = [p.getUniqueValue()];
@@ -57,16 +62,21 @@ var byReason = {}, childCount = {}, removed = 0, sample = [];
         CHILDREN.forEach(function (c) {
             var g = new GlideRecord(c[0]);
             if (!g.isValid() || !g.isValidField(c[1])) return;          // table / field not in this instance
-            g.addQuery(c[1], 'IN', ids.join(','));
-            g.query();
-            childCount[c[0]] = (childCount[c[0]] || 0) + g.getRowCount();
-            if (!DRY_RUN) g.deleteMultiple();
+            var n = new GlideAggregate(c[0]);
+            n.addQuery(c[1], 'IN', ids.join(','));
+            n.addAggregate('COUNT'); n.query();
+            var cnt = n.next() ? parseInt(n.getAggregate('COUNT'), 10) : 0;
+            childCount[c[0]] = (childCount[c[0]] || 0) + cnt;
+            if (!DRY_RUN && cnt) { g.addQuery(c[1], 'IN', ids.join(',')); g.deleteMultiple(); }
         });
         if (!DRY_RUN) p.deleteRecord();
         removed++;
+        if (removed % 5 == 0) progress(removed + ' done');
     }
 });
 gs.info('Out of scope: ' + JSON.stringify(byReason));
-gs.info('Records under them: ' + JSON.stringify(childCount));
+gs.info('Records under the ' + removed + ' handled this run: ' + JSON.stringify(childCount));
 sample.forEach(function (s) { gs.info('  e.g. ' + s); });
-gs.info((DRY_RUN ? 'DRY RUN - would delete ' : 'Deleted ') + removed + ' projects / demands and the records above');
+gs.info((DRY_RUN ? 'DRY RUN - would delete ' : 'Deleted ') + removed + ' projects / demands and the records above' +
+    (more ? '; ' + more + ' more out of scope - run again' : '; none left'));
+progress('finished');
