@@ -51,6 +51,12 @@
     // use Adaptive's Start Date (StartDate); fall back to Project Assigned when it is blank.
     var START_DATE_COLUMN = 'Project Assigned';
 
+    // Only these Adaptive Project Types (field ProjectType) are migrated. Values seen on active projects:
+    // Project 307, Merger & Acquisition Work-stream 65, Security Investment 37, Internal IT Projects 30,
+    // Security Investment Programs 24, Customer Projects 19, Non Project Work 11, Construction 7,
+    // Operational Projects 7, Merger & Acquisitions Program 4, Nordic Clarity SOW's 1, blank 2.
+    var PROJECT_TYPES = ['Project'];   // ✏️ add 'Construction' if that group says yes
+
     // ---------------- nothing to edit below ----------------
 
     // Column label -> column name, read from the import table itself
@@ -112,13 +118,13 @@
         return clean(v);
     }
 
-    var select = ['StartDate'];
+    var select = ['StartDate', 'ProjectType'];
     for (var l in MAP) if (MAP[l] != 'id' && select.indexOf(MAP[l]) < 0) select.push(MAP[l]);
     var where = PILOT.map(function (n) { return "Name = '" + n.replace(/'/g, "''") + "'"; }).join(' OR ');
     var q = 'SELECT ' + select.join(', ') + ' FROM Project' + (where ? ' WHERE ' + where : '');
 
     var paging = { from: 0, limit: 100 };
-    var count = 0;
+    var count = 0, skippedType = 0;
     while (true) {
         var r = new sn_ws.RESTMessageV2();
         r.setHttpMethod('POST');
@@ -133,6 +139,8 @@
         }
         var body = JSON.parse(res.getBody());
         body.entities.forEach(function (e) {
+            var type = e.ProjectType && e.ProjectType.id ? decodeURIComponent(String(e.ProjectType.id).split('/').pop()) : '';
+            if (PROJECT_TYPES.length && PROJECT_TYPES.indexOf(type) < 0) { skippedType++; return; }
             var row = {};
             for (var label in MAP) {
                 var colName = colByLabel[label.toLowerCase()];
@@ -147,5 +155,5 @@
         if (!body.paging || !body.paging.hasMore) break;
         paging = body.paging;
     }
-    import_log.info('Adaptive projects loaded: ' + count);
+    import_log.info('Adaptive projects loaded: ' + count + ' (skipped, other project type: ' + skippedType + ')');
 })(import_set_table, data_source, import_log, last_success_import_time);
