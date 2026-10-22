@@ -27,6 +27,15 @@
     while (d.next()) col[(d.getValue('column_label') || '').toLowerCase().trim()] = d.getValue('element');
     var missing = Object.keys(MAP).filter(function (l) { return !col[l.toLowerCase()]; });
     if (missing.length) { import_log.error('Missing columns in ' + table + ' (create it from the CSV): ' + missing.join(', ')); return; }
+    // Adaptive ids are up to 56 characters with "ADAPTIVE:"; a 40-long column cuts them off and projects cannot link.
+    var len = new GlideRecord('sys_dictionary');
+    len.addQuery('name', table);
+    len.addQuery('element', col['correlation id']);
+    len.query();
+    if (len.next() && parseInt(len.getValue('max_length'), 10) < 100) {
+        import_log.error('Set Max length = 100 on Correlation ID in ' + table + ' (now ' + len.getValue('max_length') + ')');
+        return;
+    }
 
     function get(rec, path) {
         var v = rec;
