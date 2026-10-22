@@ -15,9 +15,9 @@ answer = (function transformEntry(source) {
     return u.get('email', (source.u_resource_email + '').toLowerCase().trim()) ? u.getUniqueValue() : '';
 })(source);
 
-// ---------- PART B: field map -> task (the project task the time was entered on, or the project itself) ----------
+// ---------- PART B: field map -> task (the project task, the project, or the demand) ----------
 answer = (function transformEntry(source) {
-    var t = ['pm_project_task', 'pm_project'];
+    var t = ['pm_project_task', 'pm_project', 'dmn_demand'];
     for (var i = 0; i < t.length; i++) {
         var gr = new GlideRecord(t[i]);
         if (gr.get('correlation_id', source.u_task_correlation_id + '')) return gr.getUniqueValue();
@@ -48,7 +48,7 @@ answer = (function transformEntry(source) {
         var gr = new GlideRecord(t[i]);
         found = gr.get('correlation_id', source.u_task_correlation_id + '');
     }
-    if (!found) {                                       // task not migrated (or a demand): nothing to book against
+    if (!found) {                                       // project / demand / task not migrated
         log.warn('Work item not in ServiceNow: ' + source.u_task_correlation_id + ' - time skipped (' + source.u_total + ' h)');
         ignore = true;
     }

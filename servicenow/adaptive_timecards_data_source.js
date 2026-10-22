@@ -3,7 +3,8 @@
 // Adaptive Timesheet = one entry per person per day per work item. ServiceNow time_card = one card per person
 // per task per WEEK, with Sunday..Saturday hours. This script adds the daily entries up into weekly rows, so the
 // transform (timecard_transform.js) creates one card per row and re-runs replace the hours instead of adding.
-// Only entries of Adaptive projects already migrated are loaded.
+// Only entries of Adaptive projects and demands already migrated are loaded. Demand time rolls up to the demand
+// (demand tasks are not migrated); project time goes to the project task if migrated, else to the project.
 (function loadData(import_set_table, data_source, import_log, last_success_import_time) {
 
     // ======================= CONFIG ✏️ =======================
@@ -36,13 +37,23 @@
     var missing = LABELS.filter(function (l) { return !col[l.toLowerCase()]; });
     if (missing.length) { import_log.error('Missing columns in ' + table + ': ' + missing.join(', ')); return; }
 
-    // Migrated Adaptive projects
-    var projects = [];
-    var p = new GlideRecord('pm_project');
-    p.addQuery('correlation_id', 'STARTSWITH', 'ADAPTIVE:/');
-    p.query();
-    while (p.next()) projects.push(p.getValue('correlation_id').replace('ADAPTIVE:', ''));
-    if (!projects.length) { import_log.warn('No Adaptive projects in pm_project yet - load those first'); return; }
+    // Migrated Adaptive projects AND demands (time is booked on the project/demand or a migrated project task)
+    var projects = [], isDemand = {}, migratedTask = {};
+    ['pm_project', 'dmn_demand'].forEach(function (t) {
+        var p = new GlideRecord(t);
+        p.addQuery('correlation_id', 'STARTSWITH', 'ADAPTIVE:/');
+        p.query();
+        while (p.next()) {
+            var id = p.getValue('correlation_id').replace('ADAPTIVE:', '');
+            projects.push(id);
+            if (t == 'dmn_demand') isDemand[id] = true;
+        }
+    });
+    var pt = new GlideRecord('pm_project_task');
+    pt.addQuery('correlation_id', 'STARTSWITH', 'ADAPTIVE:/');
+    pt.query();
+    while (pt.next()) migratedTask[pt.getValue('correlation_id').replace('ADAPTIVE:', '')] = true;
+    if (!projects.length) { import_log.warn('No Adaptive projects or demands in ServiceNow yet - load those first'); return; }
 
     function post(body) {
         var r = new sn_ws.RESTMessageV2();
@@ -78,8 +89,12 @@
                     var day = new Date(String(e.ReportedDate).substring(0, 10) + 'T00:00:00Z');
                     var back = (day.getUTCDay() - DAYS.indexOf(WEEK_START) + 7) % 7;
                     var week = ymd(new Date(day.getTime() - back * 86400000));
-                    var k = email + '|' + e.WorkItem.id + '|' + week;
-                    if (!cards[k]) cards[k] = { email: email, task: 'ADAPTIVE:' + e.WorkItem.id,
+                    // Book on the project task when it was migrated; otherwise (demands, or tasks not migrated)
+                    // roll the time up to the project / demand itself.
+                    var proj = e.Project ? e.Project.id : '';
+                    var target = (!isDemand[proj] && migratedTask[e.WorkItem.id]) ? e.WorkItem.id : proj;
+                    var k = email + '|' + target + '|' + week;
+                    if (!cards[k]) cards[k] = { email: email, task: 'ADAPTIVE:' + target,
                         project: 'ADAPTIVE:' + (e.Project ? e.Project.id : ''), week: week, h: [0, 0, 0, 0, 0, 0, 0] };
                     cards[k].h[day.getUTCDay()] += h;
                     entries++;
