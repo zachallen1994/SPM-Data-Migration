@@ -43,6 +43,7 @@
         'Total Actual':         'C_TotalActual',
         'Operating Actuals':    'C_OperatingActuals',
         'Capital Actuals':      'C_CapitalActuals',
+        'Actual Effort':        'ActualEffort',             // hours logged (Adaptive roll-up) -> demand_actual_effort
         'Portfolio Phase':      'C_PortfolioPhase',         // decides Demand vs Project (demand_project_split.js)
         'Project Pool':         'C_ProjectPool',            // Yes / No
         'Groups':               'C_Groups'                  // multi-pick list (C_WorkItemGroups), comma separated
@@ -103,6 +104,10 @@
         if (Array.isArray(v)) return v.map(clean).filter(function (x) { return x; }).join(', ');
         if (typeof v == 'object') {
             if (v.value !== undefined && v.currency !== undefined) return String(v.value);   // Adaptive money -> number
+            if (v.value !== undefined && v.unit) {                                          // Adaptive duration -> hours
+                var n = parseFloat(v.value) || 0, u = String(v.unit).toLowerCase();
+                return String(u.indexOf('day') == 0 ? n * 8 : u.indexOf('min') == 0 ? n / 60 : n);
+            }
             if (v.DisplayName) return String(v.DisplayName);
             if (v.Name) return String(v.Name);
             return v.id ? decodeURIComponent(String(v.id).split('/').pop()) : '';   // "/State/Active" -> "Active"
