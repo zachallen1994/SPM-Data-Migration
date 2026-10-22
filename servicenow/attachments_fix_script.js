@@ -15,6 +15,7 @@ var ADAPTIVE_LINK_QUERY = "SELECT Document, Document.Name, Document.Url, Documen
 var ADAPTIVE_DOWNLOAD = '/files/download?documentId={doc}&redirect=false';
 
 var LOG = 'x_mig.attachments';
+var VERSION = 'v3 (StorageType File = copy, all pages)';   // printed first, so you can see which copy ran
 var stats = { found: 0, copied: 0, skipped: 0, linked: 0, failed: 0 };   // found = files stored in Asana/Adaptive
 
 function already(table, sysId, fileName) {
@@ -79,14 +80,21 @@ function asanaFiles(gr, gid) {
 function adaptiveFiles(gr, id) {
     var base = gs.getProperty('x_mig.adaptive.url');
     var auth = { 'Authorization': 'ApiKey ' + gs.getProperty('x_mig.adaptive.key'), 'Content-Type': 'application/json' };
-    var r = new sn_ws.RESTMessageV2();
-    r.setHttpMethod('POST');
-    r.setEndpoint(base + '/data/query');
-    for (var h in auth) r.setRequestHeader(h, auth[h]);
-    r.setRequestBody(JSON.stringify({ q: ADAPTIVE_LINK_QUERY.replace('{id}', id), paging: { from: 0, limit: 100 } }));
-    var res = r.execute();
-    if (res.getStatusCode() != 200) throw res.getStatusCode() + ': ' + res.getBody();
-    JSON.parse(res.getBody()).entities.forEach(function (link) {
+    var links = [], paging = { from: 0, limit: 100 };           // all pages (Willow alone has 279 files)
+    while (true) {
+        var r = new sn_ws.RESTMessageV2();
+        r.setHttpMethod('POST');
+        r.setEndpoint(base + '/data/query');
+        for (var h in auth) r.setRequestHeader(h, auth[h]);
+        r.setRequestBody(JSON.stringify({ q: ADAPTIVE_LINK_QUERY.replace('{id}', id), paging: paging }));
+        var res = r.execute();
+        if (res.getStatusCode() != 200) throw res.getStatusCode() + ': ' + res.getBody();
+        var page = JSON.parse(res.getBody());
+        links = links.concat(page.entities || []);
+        if (!page.paging || !page.paging.hasMore) break;
+        paging = page.paging;
+    }
+    links.forEach(function (link) {
         var doc = link.Document || {};
         stats.found++;
         var name = doc.Name || 'attachment';
@@ -95,8 +103,9 @@ function adaptiveFiles(gr, id) {
         // Adaptive gives every document a Url: for StorageType "File" it is only the internal storage path, so
         // only documents with another storage type (e.g. a link) are kept as a work note.
         var storage = doc.StorageType && doc.StorageType.id ? String(doc.StorageType.id).split('/').pop() : '';
-        if (storage && storage != 'File') {
-            addLinkNote(gr, 'Legacy Adaptive linked file: ' + name + ' - ' + (doc.Url || ''));
+        var url = String(doc.Url || '');
+        if (storage != 'File' && /^https?:\/\//i.test(url)) {   // a real web link (SharePoint etc.), not a stored file
+            addLinkNote(gr, 'Legacy Adaptive linked file: ' + name + ' - ' + url);
             return;
         }
         var file;
@@ -108,6 +117,7 @@ function adaptiveFiles(gr, id) {
     });
 }
 
+gs.log('Attachments script ' + VERSION, LOG);
 TABLES.forEach(function (table) {
     var gr = new GlideRecord(table);
     if (!gr.isValidField('correlation_id')) {                  // e.g. risk on this instance: no Correlation ID field
