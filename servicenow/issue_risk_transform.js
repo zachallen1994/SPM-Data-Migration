@@ -59,10 +59,14 @@ answer = (function transformEntry(source) {
     });
     if (!p) { ignore = true; return; }
     target.task = p.getUniqueValue();            // risk -> project link is the mandatory "task" field
+    if (action != 'insert') return;              // history notes once only: re-runs would add them again
     var notes = [];
-    if ((source.u_status + '').trim()) notes.push('Status (Adaptive): ' + source.u_status);
-    if ((source.u_update_notes + '').trim()) notes.push('Update Notes (Adaptive): ' + (source.u_update_notes + '').replace(/<[^>]+>/g, ' '));
-    if (notes.length) target.work_notes = notes.join('\n\n');
+    function add(label, v) { v = (v + '').replace(/<[^>]+>/g, ' ').trim(); if (v && v != 'undefined') notes.push(label + ' (Adaptive): ' + v); }
+    add('Status', source.u_status);
+    add('Update Notes', source.u_update_notes);
+    add('Resolution', source.u_resolution);
+    add('Date Resolved', source.u_date_resolved);
+    if (notes.length) target.work_notes = notes.join('\n\n');   // the ONLY work_notes writer: remove any work_notes field map
 })(source, map, log, target);
 
 // ---------- ISSUE and RISK: field map -> assigned_to (Adaptive AssignedTo, matched by email) ----------

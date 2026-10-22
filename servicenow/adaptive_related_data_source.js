@@ -55,7 +55,8 @@
     //              { 'Correlation ID':'@id', 'Project Correlation ID':'@PlannedFor', 'Title':'Title', 'State':'State',
     //                'Risk Impact':'C_RiskImpact', 'Priority':'C_Priority', 'Impact Rating':'C_ImpactRating',
     //                'Category':'C_Category', 'Mitigation Plan':'Justification', 'Status':'C_Status',
-    //                'Update Notes':'C_UpdateNotes', 'Deadline':'DueDate', 'Assigned To Email':'AssignedTo.Email' }
+    //                'Update Notes':'C_UpdateNotes', 'Deadline':'DueDate', 'Assigned To Email':'AssignedTo.Email',
+    //                'Reason for Change':'Description', 'Resolution':'ResolutionDetails', 'Date Resolved':'ResolvedDate' }
     //  Status history: ENTITY = 'C_StatusHistory', PROJECT_FIELD = 'C_RelatedProject', MAP =
     //              { 'Correlation ID':'@id', 'Project Correlation ID':'@C_RelatedProject', 'Updated On':'C_UpdatedOn',
     //                'Health':'C_Health', 'Schedule Health':'C_ScheduleHealth', 'Budget Health':'C_BudgetHealth',
