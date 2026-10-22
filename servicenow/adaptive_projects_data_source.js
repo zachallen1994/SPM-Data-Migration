@@ -118,7 +118,7 @@
         return clean(v);
     }
 
-    var select = ['StartDate', 'ProjectType'];
+    var select = ['StartDate', 'ProjectType', 'Parent'];
     for (var l in MAP) if (MAP[l] != 'id' && select.indexOf(MAP[l]) < 0) select.push(MAP[l]);
     var where = PILOT.map(function (n) { return "Name = '" + n.replace(/'/g, "''") + "'"; }).join(' OR ');
     var q = 'SELECT ' + select.join(', ') + ' FROM Project' + (where ? ' WHERE ' + where : '');
@@ -147,6 +147,10 @@
                 if (!colName) continue;
                 row[colName] = (MAP[label] == 'id') ? 'ADAPTIVE:' + e.id : val(e, MAP[label]);
             }
+            // The project's program (Adaptive Parent = /Program/...). Column "Program Correlation ID", String 100.
+            var progCol = colByLabel['program correlation id'];
+            var parentId = e.Parent && e.Parent.id ? String(e.Parent.id) : '';
+            if (progCol && parentId.indexOf('/Program/') == 0) row[progCol] = 'ADAPTIVE:' + parentId;
             var startCol = colByLabel[START_DATE_COLUMN.toLowerCase()];
             if (startCol && val(e, 'StartDate')) row[startCol] = val(e, 'StartDate');
             import_set_table.insert(row);
