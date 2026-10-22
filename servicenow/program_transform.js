@@ -7,10 +7,11 @@
 //   Field map: u_start_date -> start_date, u_due_date -> end_date (Date format yyyy-MM-dd)
 //   Field map: Use source script, Target field = program_manager -> PART A
 //   Field map: Use source script, Target field = state           -> PART B
-//   (confirm program_manager / state / start_date / end_date in the pm_program dictionary)
+//   Confirmed in Dev (program_fields_check.js): program_manager -> sys_user, correlation_id (100), state = task
+//   choices (1 Open, 2 Work in Progress, 3 Closed Complete, 4 Closed Incomplete), start/end_date are date/time.
 //
 // Map 2 = the EXISTING Adaptive projects map (u_import_adaptive_projects -> pm_project): add one field map
-//   Field map: Use source script, Target field = primary_program -> PART C
+//   Field map: Use source script, Target field = primary_program -> PART C   (confirmed: pm_project.primary_program)
 //   (staging column "Program Correlation ID", filled by adaptive_projects_data_source.js)
 
 // ---------- PART A: field map -> program_manager (by email) ----------
