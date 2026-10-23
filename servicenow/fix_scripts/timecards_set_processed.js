@@ -6,7 +6,13 @@ var TRANSFORM = 'Import Adaptive Time Cards'; // ✏️ the time card transform 
 var ONLY_TASK = 'DMND0002548';               // ✏️ a project / demand / task number: its cards AND its tasks' cards; '' = all
 var LIMIT = 1;                               // ✏️ test on 1 card first; 0 = no limit
 var STEPS = ['Submitted', 'Approved'];       // State labels, in order (what Submit and Approve set)
-gs.info('timecards_set_processed VERSION 3');
+gs.info('timecards_set_processed VERSION 4');
+
+// time_card.task points at the task table, which has no top_task: read it from the project task itself
+function projectOf(taskId) {
+    var pt = new GlideRecord('pm_project_task');
+    return taskId && pt.get(taskId) ? pt.top_task.number + '' : '';
+}
 
 function value(label) {
     var c = new GlideRecord('sys_choice');
@@ -28,7 +34,7 @@ while (row.next()) {
     if (LIMIT && done >= LIMIT) break;
     var tc = new GlideRecord('time_card');
     if (!tc.get(row.getValue('sys_target_sys_id'))) continue;
-    if (ONLY_TASK && tc.task.number + '' != ONLY_TASK && tc.task.top_task.number + '' != ONLY_TASK) continue;   // project task cards count for their project
+    if (ONLY_TASK && tc.task.number + '' != ONLY_TASK && projectOf(tc.getValue('task')) != ONLY_TASK) continue;   // project task cards count for their project
     found++;
     if (tc.getValue('state') != PENDING) continue;      // already submitted / approved / processed
     done++;
