@@ -38,6 +38,7 @@ None of these change data. Lines marked ✏️ at the top are the only things to
 | transform_progress_check.js | A long transform: rows by state, rows done in the last 10 min, time left, duplicate rows |
 | task_dates_check.js | One project's task dates: Adaptive Schedule Start / Finish vs ServiceNow planned dates and time constraint |
 | task_dates_debug.js | Why task dates stay at the project start: map, field maps, rules; optional one-task test update |
+| planned_dates_debug.js | Which part of ServiceNow changes a project's / task's planned end; optional one-record test with and without the planning rules |
 | timecard_br_check.js | Insert rules on time_card / time_sheet that touch State; one card's time sheet |
 | attachment_check.js | What Adaptive returns for one record's files; does download work |
 | asana_scope_check.js | Active Asana projects per team |
