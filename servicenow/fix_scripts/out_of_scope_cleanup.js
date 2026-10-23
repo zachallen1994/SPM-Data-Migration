@@ -26,7 +26,7 @@ function post(body) {
     if (res.getStatusCode() != 200) throw 'Adaptive ' + res.getStatusCode() + ': ' + res.getBody();
     return JSON.parse(res.getBody());
 }
-function name(ref) { return ref && ref.id ? decodeURIComponent(String(ref.id).split('/').pop()) : ''; }
+function name(ref) { return ref && ref.id ? decodeURIComponent(String(ref.id).split('/').slice(2).join('/')) : ''; }
 
 // Adaptive scope: id -> reason it is out of scope ('' = in scope)
 var reason = {}, paging = { from: 0, limit: 100 };

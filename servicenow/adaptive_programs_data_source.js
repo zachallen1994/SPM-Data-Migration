@@ -41,7 +41,7 @@
         var v = rec;
         path.split('.').forEach(function (p) { v = (v === null || v === undefined) ? null : v[p]; });
         if (v === null || v === undefined) return '';
-        if (typeof v == 'object') return v.id ? decodeURIComponent(String(v.id).split('/').pop()) : '';
+        if (typeof v == 'object') return v.id ? decodeURIComponent(String(v.id).split('/').slice(2).join('/')) : '';
         var s = String(v);
         return /^\d{4}-\d{2}-\d{2}T/.test(s) ? s.substring(0, 10) : s;
     }

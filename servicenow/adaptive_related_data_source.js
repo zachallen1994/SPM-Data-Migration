@@ -117,7 +117,7 @@
             }
             if (v.DisplayName) return String(v.DisplayName);
             if (v.Name) return String(v.Name);
-            return v.id ? decodeURIComponent(String(v.id).split('/').pop()) : '';
+            return v.id ? decodeURIComponent(String(v.id).split('/').slice(2).join('/')) : '';
         }
         var s = String(v);
         if (/^\d{4}-\d{2}-\d{2}T/.test(s)) return s.substring(0, 10);

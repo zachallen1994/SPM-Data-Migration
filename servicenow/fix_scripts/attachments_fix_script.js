@@ -102,7 +102,7 @@ function adaptiveFiles(gr, id) {
             ' | Url ' + (doc.Url || '(none)'), LOG);
         // Adaptive gives every document a Url: for StorageType "File" it is only the internal storage path, so
         // only documents with another storage type (e.g. a link) are kept as a work note.
-        var storage = doc.StorageType && doc.StorageType.id ? String(doc.StorageType.id).split('/').pop() : '';
+        var storage = doc.StorageType && doc.StorageType.id ? String(doc.StorageType.id).split('/').slice(2).join('/') : '';
         var url = String(doc.Url || '');
         if (storage != 'File' && /^https?:\/\//i.test(url)) {   // a real web link (SharePoint etc.), not a stored file
             addLinkNote(gr, 'Legacy Adaptive linked file: ' + name + ' - ' + url);

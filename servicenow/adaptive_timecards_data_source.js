@@ -85,7 +85,7 @@
                 var body = post({ q: q, paging: paging });
                 body.entities.forEach(function (e) {
                     var h = hours(e.Duration);
-                    var state = e.State && e.State.id ? decodeURIComponent(e.State.id.split('/').pop()) : '';
+                    var state = e.State && e.State.id ? decodeURIComponent(e.State.id.split('/').slice(2).join('/')) : '';
                     var email = e.ReportedBy && e.ReportedBy.Email ? String(e.ReportedBy.Email).toLowerCase() : '';
                     if (!h || !e.ReportedDate || !email || !e.WorkItem || (STATES.length && STATES.indexOf(state) < 0)) { skipped++; return; }
                     var day = new Date(String(e.ReportedDate).substring(0, 10) + 'T00:00:00Z');

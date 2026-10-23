@@ -55,7 +55,7 @@
         }
     }
     function money(m) { return m && m.value !== undefined ? parseFloat(m.value) || 0 : 0; }
-    function last(ref) { return ref && ref.id ? decodeURIComponent(String(ref.id).split('/').pop()) : ''; }
+    function last(ref) { return ref && ref.id ? decodeURIComponent(String(ref.id).split('/').slice(2).join('/')) : ''; }
 
     var lines = 0, count = 0, empty = 0;
     try {

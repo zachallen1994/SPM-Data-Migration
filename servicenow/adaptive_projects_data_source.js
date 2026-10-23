@@ -112,7 +112,7 @@
             }
             if (v.DisplayName) return String(v.DisplayName);
             if (v.Name) return String(v.Name);
-            return v.id ? decodeURIComponent(String(v.id).split('/').pop()) : '';   // "/State/Active" -> "Active"
+            return v.id ? decodeURIComponent(String(v.id).split('/').slice(2).join('/')) : '';   // "/State/Active" -> "Active"; keeps a "/" in the value
         }
         var s = String(v);
         if (/^\d{4}-\d{2}-\d{2}T/.test(s)) return s.substring(0, 10);              // keep the date only
@@ -146,7 +146,7 @@
         }
         var body = JSON.parse(res.getBody());
         body.entities.forEach(function (e) {
-            var type = e.ProjectType && e.ProjectType.id ? decodeURIComponent(String(e.ProjectType.id).split('/').pop()) : '';
+            var type = e.ProjectType && e.ProjectType.id ? decodeURIComponent(String(e.ProjectType.id).split('/').slice(2).join('/')) : '';
             if (PROJECT_TYPES.length && PROJECT_TYPES.indexOf(type) < 0) { skippedType++; return; }
             var state = val(e, 'State');
             if (STATES.length && STATES.indexOf(state) < 0) { skippedState[state || '(blank)'] = (skippedState[state || '(blank)'] || 0) + 1; return; }
