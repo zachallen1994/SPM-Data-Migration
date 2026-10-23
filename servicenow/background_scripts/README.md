@@ -35,6 +35,7 @@ None of these change data. Lines marked ✏️ at the top are the only things to
 | project_load_check.js | After the projects transform: records touched, left over from earlier loads, linked to a program |
 | program_link_check.js | Why projects are not linked to their program (column, staging values, field map) |
 | project_dates_check.js | Adaptive Schedule Start / Finish / Project Assigned field names and values; ServiceNow date fields |
+| transform_progress_check.js | A long transform: rows by state, rows done in the last 10 min, time left, duplicate rows |
 | timecard_br_check.js | Insert rules on time_card / time_sheet that touch State; one card's time sheet |
 | attachment_check.js | What Adaptive returns for one record's files; does download work |
 | asana_scope_check.js | Active Asana projects per team |
