@@ -16,6 +16,7 @@
     var PARENT_TABLES = ['pm_project', 'dmn_demand'];   // records already in ServiceNow that PROJECT_FIELD may point at
                                           // (Resources: ['pm_project', 'dmn_demand', 'pm_project_task'])
                                           // (Tasks / Milestones: ['pm_project'] - demands have no work plan)
+    var ONLY = [];                  // test / batch: project or demand numbers or names, e.g. ['PRJ0010675']; [] = all
     var PARENT_STATES = ['Active', 'On Hold'];   // only records of projects / demands in these Adaptive States
                                                  // (same as STATES in the projects data source); [] = no check
 
@@ -152,7 +153,10 @@
         var p = new GlideRecord(t);
         p.addQuery('correlation_id', 'STARTSWITH', 'ADAPTIVE:/');
         p.query();
-        while (p.next()) projects.push(p.getValue('correlation_id').replace('ADAPTIVE:', ''));
+        while (p.next()) {
+            if (ONLY.length && ONLY.indexOf(p.getValue('number')) < 0 && ONLY.indexOf(p.getValue('short_description')) < 0) continue;
+            projects.push(p.getValue('correlation_id').replace('ADAPTIVE:', ''));
+        }
     });
     if (!projects.length) { import_log.warn('No Adaptive records in ' + PARENT_TABLES.join(', ') + ' yet - load those first'); return; }
 
