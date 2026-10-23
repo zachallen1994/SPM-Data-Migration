@@ -154,11 +154,16 @@
         p.addQuery('correlation_id', 'STARTSWITH', 'ADAPTIVE:/');
         p.query();
         while (p.next()) {
-            if (ONLY.length && ONLY.indexOf(p.getValue('number')) < 0 && ONLY.indexOf(p.getValue('short_description')) < 0) continue;
+            if (ONLY.length) {                       // a task counts when its project is in ONLY
+                var own = t == 'pm_project_task' ? [p.top_task.number + '', p.top_task.short_description + '']
+                                                 : [p.getValue('number'), p.getValue('short_description')];
+                if (ONLY.indexOf(own[0]) < 0 && ONLY.indexOf(own[1]) < 0) continue;
+            }
             projects.push(p.getValue('correlation_id').replace('ADAPTIVE:', ''));
         }
     });
-    if (!projects.length) { import_log.warn('No Adaptive records in ' + PARENT_TABLES.join(', ') + ' yet - load those first'); return; }
+    if (!projects.length) { import_log.warn('No Adaptive records in ' + PARENT_TABLES.join(', ') + (ONLY.length ? ' for ONLY ' + ONLY.join(', ') : ' yet - load those first')); return; }
+    import_log.info('Parents to load for: ' + projects.length + (ONLY.length ? ' (ONLY ' + ONLY.join(', ') + ')' : ' (all)'));
 
     function post(body) {
         var r = new sn_ws.RESTMessageV2();
