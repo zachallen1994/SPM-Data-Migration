@@ -3,10 +3,10 @@
 // Only cards created by the time card transform are touched. Business rules run, as when a person clicks.
 var DRY_RUN = true;                          // ✏️ true = only count; false = update
 var TRANSFORM = 'Import Adaptive Time Cards'; // ✏️ the time card transform map name
-var ONLY_TASK = 'DMND0002548';               // ✏️ test on one record first; '' = all
+var ONLY_TASK = 'DMND0002548';               // ✏️ a project / demand / task number: its cards AND its tasks' cards; '' = all
 var LIMIT = 1;                               // ✏️ test on 1 card first; 0 = no limit
 var STEPS = ['Submitted', 'Approved'];       // State labels, in order (what Submit and Approve set)
-gs.info('timecards_set_processed VERSION 2');
+gs.info('timecards_set_processed VERSION 3');
 
 function value(label) {
     var c = new GlideRecord('sys_choice');
@@ -28,7 +28,7 @@ while (row.next()) {
     if (LIMIT && done >= LIMIT) break;
     var tc = new GlideRecord('time_card');
     if (!tc.get(row.getValue('sys_target_sys_id'))) continue;
-    if (ONLY_TASK && tc.task.number + '' != ONLY_TASK) continue;
+    if (ONLY_TASK && tc.task.number + '' != ONLY_TASK && tc.task.top_task.number + '' != ONLY_TASK) continue;   // project task cards count for their project
     found++;
     if (tc.getValue('state') != PENDING) continue;      // already submitted / approved / processed
     done++;
