@@ -1,14 +1,14 @@
 // "Import Adaptive Project Tasks Transform Map": u_import_adaptive_project_tasks -> pm_project_task
 // PART A also works unchanged for the Asana tasks map (u_import_asana_project_tasks -> pm_project_task).
 //   Field map: correlation_id <- u_correlation_id, Coalesce = true
-//   Transform Scripts: onBefore -> PART A (project + parent)
+//   Transform Scripts: onBefore, Order 100 -> PART A (project + parent)   - TWO separate onBefore scripts:
 //   Field map: Status, Use source script, Choice action = ignore -> PART B
 //   Field map: state, Use source script                           -> PART C
 //   Field map: assigned_to, Use source script                     -> PART D
-//   Transform Scripts: onBefore -> PART E (keep Adaptive's dates: "Start on specific date", not "Start ASAP")
+//   Transform Scripts: onBefore, Order 200 -> PART E (keep Adaptive's dates: "Start on specific date", not "Start ASAP")
 //   Direct field maps (add the staging columns if missing):
 //     u_description -> description, u_complete (% Complete) -> percent_complete,
-//     u_start_date -> start_date, u_due_date -> end_date (Date format yyyy-MM-dd),
+//     u_start_date (Start Date) -> start_date, u_due_date (Due Date) -> end_date (Date format yyyy-MM-dd),
 //     u_actual_start_date -> work_start, u_actual_end_date -> work_end (Date format yyyy-MM-dd)
 // Run the transform TWICE: rows arrive in any order, so a child can come before its parent task exists.
 // The second run (updates only, thanks to the coalesce) puts every task under the right parent.
