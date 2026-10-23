@@ -5,6 +5,7 @@
 //   Field map: Status, Use source script, Choice action = ignore -> PART B
 //   Field map: state, Use source script                           -> PART C
 //   Field map: assigned_to, Use source script                     -> PART D
+//   Transform Scripts: onBefore -> PART E (keep Adaptive's dates: "Start on specific date", not "Start ASAP")
 //   Direct field maps (add the staging columns if missing):
 //     u_description -> description, u_complete (% Complete) -> percent_complete,
 //     u_start_date -> start_date, u_due_date -> end_date (Date format yyyy-MM-dd),
@@ -44,6 +45,7 @@ answer = (function transformEntry(source) {
 answer = (function transformEntry(source) {
     var map = { 'draft': '1', 'active': '2', 'on hold': '1', 'completed': '3', 'cancelled': '4' };
     var s = (source.u_state + '').toLowerCase().trim();
+    if (s == 'undefined' || s == 'null') s = '';                  // no State column in staging: add it (label "State")
     if (s && !map[s]) log.warn('Unmapped Adaptive task state: ' + source.u_state);
     return map[s] || '1';
 })(source);
@@ -57,3 +59,16 @@ answer = (function transformEntry(source) {
     log.warn('No ServiceNow user for task owner ' + email + ' on ' + source.u_correlation_id);
     return '';
 })(source);
+
+// ---------- PART E: onBefore - keep the Adaptive Schedule Start / Finish ----------
+// With "Start ASAP" (the default) ServiceNow moves every task to the project start, because the Adaptive
+// predecessors are not migrated. "Start on specific date" keeps the task's own Schedule Start (start_date field map).
+(function runTransformScript(source, map, log, target) {
+    var c = new GlideRecord('sys_choice');
+    c.addQuery('name', 'IN', 'planned_task,pm_project_task');
+    c.addQuery('element', 'time_constraint');
+    c.addQuery('label', 'CONTAINS', 'specific');
+    c.query();
+    if (!c.next()) { log.error('No "Start on specific date" choice on time_constraint - dates follow the project start'); return; }
+    target.time_constraint = c.getValue('value');   // the start_date / end_date field maps then set the dates
+})(source, map, log, target);
