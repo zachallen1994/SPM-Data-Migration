@@ -201,15 +201,21 @@
         if (!projects.length) { import_log.warn('No parents left in PARENT_STATES ' + PARENT_STATES.join(', ')); return; }
     }
 
-    var count = 0;
+    var count = 0, notOurs = 0, notOursExample = '';
+    if (select.indexOf(PROJECT_FIELD) < 0) select.push(PROJECT_FIELD);
     for (var i = 0; i < projects.length; i += 20) {              // 20 projects per query
-        var where = projects.slice(i, i + 20).map(function (id) { return PROJECT_FIELD + " = '" + id + "'"; }).join(' OR ');
+        var batch = projects.slice(i, i + 20);
+        var where = batch.map(function (id) { return PROJECT_FIELD + " = '" + id + "'"; }).join(' OR ');
         var q = 'SELECT ' + select.join(', ') + ' FROM ' + ENTITY + ' WHERE ' + where;
         var paging = { from: 0, limit: 100 };
         while (true) {
             var body;
             try { body = post({ q: q, paging: paging }); } catch (err) { import_log.error(String(err) + ' -- query: ' + q); return; }
             body.entities.forEach(function (e) {
+                // keep only records that really point at one of these parents (guards against a WHERE that
+                // Adaptive does not apply, e.g. on a custom reference field)
+                var ref = get(e, PROJECT_FIELD), refId = ref && typeof ref == 'object' ? ref.id : ref;
+                if (batch.indexOf(refId) < 0) { notOurs++; if (!notOursExample) notOursExample = String(refId); return; }
                 var row = {};
                 for (var label in MAP) {
                     var col = colByLabel[label.toLowerCase()];
@@ -222,5 +228,6 @@
             paging = body.paging;
         }
     }
-    import_log.info('Adaptive ' + ENTITY + ' rows loaded: ' + count + ' (for ' + projects.length + ' projects)');
+    import_log.info('Adaptive ' + ENTITY + ' rows loaded: ' + count + ' (for ' + projects.length + ' projects)' +
+        (notOurs ? '; ' + notOurs + ' returned by Adaptive but for another record (skipped), e.g. ' + PROJECT_FIELD + ' = ' + notOursExample : ''));
 })(import_set_table, data_source, import_log, last_success_import_time);
