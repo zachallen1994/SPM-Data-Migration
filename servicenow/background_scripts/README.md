@@ -40,6 +40,7 @@ None of these change data. Lines marked ✏️ at the top are the only things to
 | task_dates_debug.js | Why task dates stay at the project start: map, field maps, rules; optional one-task test update |
 | planned_dates_debug.js | Which part of ServiceNow changes a project's / task's planned end; optional one-record test with and without the planning rules |
 | task_parent_check.js | Tasks loaded but not on the project: duplicate projects, which project each task went to |
+| status_history_check.js | Fewer status reports than Adaptive updates: same-day updates, row results |
 | timecard_br_check.js | Insert rules on time_card / time_sheet that touch State; one card's time sheet |
 | attachment_check.js | What Adaptive returns for one record's files; does download work |
 | asana_scope_check.js | Active Asana projects per team |
