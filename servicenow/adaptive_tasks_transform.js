@@ -64,6 +64,7 @@ answer = (function transformEntry(source) {
 // With "Start ASAP" (the default) ServiceNow moves every task to the project start, because the Adaptive
 // predecessors are not migrated. "Start on specific date" keeps the task's own Schedule Start (start_date field map).
 (function runTransformScript(source, map, log, target) {
+    var OVERRIDE_STATUS = true;   // ✏️ implementation team decides: true = keep Adaptive's Status; false = ServiceNow calculates it
     var c = new GlideRecord('sys_choice');
     c.addQuery('name', 'IN', 'planned_task,pm_project_task');
     c.addQuery('element', 'time_constraint');
@@ -71,4 +72,6 @@ answer = (function transformEntry(source) {
     c.query();
     if (!c.next()) { log.error('No "Start on specific date" choice on time_constraint - dates follow the project start'); return; }
     target.time_constraint = c.getValue('value');   // the start_date / end_date field maps then set the dates
+    // Keep Adaptive's Status (PART B): without "Override status" ServiceNow recalculates it (e.g. Red on a past date)
+    if (OVERRIDE_STATUS && (source.u_status + '').trim() && target.isValidField('override_status')) target.override_status = true;
 })(source, map, log, target);
