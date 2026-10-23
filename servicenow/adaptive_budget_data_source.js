@@ -11,6 +11,7 @@
     // ======================= CONFIG ✏️ =======================
     var BUDGET_FIELD = 'C_BudgetCostTest';   // monthly budget field (confirm with the Adaptive admin)
     var ACTUAL_FIELD = 'ActualCost';         // monthly actual
+    var ONLY = [];                 // ✏️ test / batch: project or demand numbers or names, e.g. ['PRJ0011395']; [] = all
     // =========================================================
 
     var LABELS = ['Correlation ID', 'Project Correlation ID', 'Cost Type', 'Expense Type', 'Month', 'Budget', 'Actual', 'Currency'];
@@ -29,7 +30,10 @@
         var p = new GlideRecord(t);
         p.addQuery('correlation_id', 'STARTSWITH', 'ADAPTIVE:/');
         p.query();
-        while (p.next()) projects.push(p.getValue('correlation_id').replace('ADAPTIVE:', ''));
+        while (p.next()) {
+            if (ONLY.length && ONLY.indexOf(p.getValue('number')) < 0 && ONLY.indexOf(p.getValue('short_description')) < 0) continue;
+            projects.push(p.getValue('correlation_id').replace('ADAPTIVE:', ''));
+        }
     });
     if (!projects.length) { import_log.warn('No Adaptive projects in pm_project yet - load those first'); return; }
 

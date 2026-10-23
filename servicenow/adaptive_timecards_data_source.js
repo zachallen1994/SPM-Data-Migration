@@ -9,6 +9,7 @@
 
     // ======================= CONFIG ✏️ =======================
     var STATES = ['Approved'];     // Adaptive's Actual Effort counts Approved time only (Willow: 14,355.7 h); 'Un Submitted' left out
+    var ONLY = [];                 // ✏️ test / batch: project or demand numbers or names, e.g. ['PRJ0011395']; [] = all
     var WEEK_START = 'sunday';    // the day a ServiceNow time card week starts on (look at an existing card)
     // =========================================================
 
@@ -44,6 +45,7 @@
         p.addQuery('correlation_id', 'STARTSWITH', 'ADAPTIVE:/');
         p.query();
         while (p.next()) {
+            if (ONLY.length && ONLY.indexOf(p.getValue('number')) < 0 && ONLY.indexOf(p.getValue('short_description')) < 0) continue;
             var id = p.getValue('correlation_id').replace('ADAPTIVE:', '');
             projects.push(id);
             if (t == 'dmn_demand') isDemand[id] = true;
