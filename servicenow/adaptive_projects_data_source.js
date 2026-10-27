@@ -61,6 +61,23 @@
     // Only these Adaptive States (field State) are migrated. Completed / Cancelled projects are out of scope.
     var STATES = ['Active'];           // ✏️ add 'On Hold' (or others) if the client wants them
 
+    // Run settings without editing this script (DEV / TEST / PROD) - system properties override the lists above:
+    //   x_mig.adaptive.pilot         project names separated by ;   ('all' = every project)
+    //   x_mig.adaptive.states        e.g. Active;On Hold
+    //   x_mig.adaptive.project_types e.g. Project
+    //   x_mig.adaptive.batch         e.g. 2/7 = the 2nd of 7 equal batches of the projects in scope (blank = all)
+    function listProp(name, fallback) {
+        var v = (gs.getProperty(name, '') + '').trim();
+        if (!v) return fallback;
+        return /^all$/i.test(v) ? [] : v.split(/\s*;\s*/).filter(function (x) { return x; });
+    }
+    PILOT = listProp('x_mig.adaptive.pilot', PILOT);
+    STATES = listProp('x_mig.adaptive.states', STATES);
+    PROJECT_TYPES = listProp('x_mig.adaptive.project_types', PROJECT_TYPES);
+    var BATCH = (gs.getProperty('x_mig.adaptive.batch', '') + '').match(/^\s*(\d+)\s*\/\s*(\d+)\s*$/);
+    import_log.info('Settings: PILOT ' + (PILOT.length ? PILOT.length + ' names' : 'all') + ' | STATES ' + STATES.join(',') +
+        ' | TYPES ' + PROJECT_TYPES.join(',') + ' | BATCH ' + (BATCH ? BATCH[1] + ' of ' + BATCH[2] : 'none'));
+
     // ---------------- nothing to edit below ----------------
 
     // Column label -> column name, read from the import table itself
@@ -132,7 +149,7 @@
     var q = 'SELECT ' + select.join(', ') + ' FROM Project' + (where ? ' WHERE ' + where : '');
 
     var paging = { from: 0, limit: 100 };
-    var count = 0, skippedType = 0, skippedState = {};
+    var count = 0, skippedType = 0, skippedState = {}, rows = [];
     while (true) {
         var r = new sn_ws.RESTMessageV2();
         r.setHttpMethod('POST');
@@ -161,12 +178,21 @@
             var progCol = colByLabel['program correlation id'];
             var parentId = e.Parent && e.Parent.id ? String(e.Parent.id) : '';
             if (progCol && parentId.indexOf('/Program/') == 0) row[progCol] = 'ADAPTIVE:' + parentId;
-            import_set_table.insert(row);
-            count++;
+            rows.push({ id: e.id, row: row });
         });
         if (!body.paging || !body.paging.hasMore) break;
         paging = body.paging;
     }
+    // Batches: same order every run (by Adaptive id), so batch 2 is always the same projects. Projects added in
+    // Adaptive between runs can shift the split - a last run with no batch picks up anything missed (re-runs update).
+    rows.sort(function (a, b) { return a.id < b.id ? -1 : a.id > b.id ? 1 : 0; });
+    var inScope = rows.length;
+    if (BATCH) {
+        var n = parseInt(BATCH[1], 10), of = parseInt(BATCH[2], 10), size = Math.ceil(rows.length / of);
+        rows = rows.slice((n - 1) * size, n * size);
+        import_log.info('Batch ' + n + ' of ' + of + ': ' + rows.length + ' of ' + inScope + ' projects in scope');
+    }
+    rows.forEach(function (r) { import_set_table.insert(r.row); count++; });
     import_log.info('Adaptive projects loaded: ' + count + ' (skipped, other project type: ' + skippedType +
         '; skipped by State: ' + JSON.stringify(skippedState) + ')');
 })(import_set_table, data_source, import_log, last_success_import_time);

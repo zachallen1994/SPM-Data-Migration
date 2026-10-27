@@ -9,6 +9,18 @@ A step only finds the records loaded by the steps before it, so keep the order.
 - Delete old rows from the staging tables (or transform only the newest import set).
 - "Restrict time card to unassigned user" rule: off in Dev for now (later: the `x_mig.migration_running` condition).
 
+## Run settings (system properties - no script edits in TEST / PROD)
+| Property | Used by | Value |
+|---|---|---|
+| `x_mig.adaptive.pilot` | Projects data source | project names separated by `;`, or `all` |
+| `x_mig.adaptive.states` | Projects data source | e.g. `Active;On Hold` |
+| `x_mig.adaptive.project_types` | Projects data source | e.g. `Project` |
+| `x_mig.adaptive.batch` | Projects data source | e.g. `2/7` = 2nd of 7 equal batches; blank = all |
+| `x_mig.adaptive.scope` | Related, Budget, Time Cards data sources | `latest` = projects of the latest projects load (the current batch); `all`; or numbers / names separated by `;` |
+
+Batch run: set `batch` = 1/7 and `scope` = latest, run steps 2-7, then batch = 2/7, and so on. A final run with
+`batch` blank and `scope` = all picks up anything missed (re-runs update, never duplicate).
+
 ## Adaptive
 
 | # | Data Source | Then transform with these maps | Target |

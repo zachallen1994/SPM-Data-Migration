@@ -12,6 +12,29 @@
     var BUDGET_FIELD = 'C_BudgetCostTest';   // monthly budget field (confirm with the Adaptive admin)
     var ACTUAL_FIELD = 'ActualCost';         // monthly actual
     var ONLY = [];                 // ✏️ test / batch: project or demand numbers or names, e.g. ['PRJ0011395']; [] = all
+
+    // Run settings without editing this script (DEV / TEST / PROD): system property x_mig.adaptive.scope
+    //   blank    = use ONLY above
+    //   'all'    = every migrated project / demand
+    //   'latest' = only the projects / demands of the LATEST Adaptive projects load (the current batch)
+    //   'PRJ0011403; PRJ0011404' = these numbers or names (separated by ;)
+    var SCOPE = (gs.getProperty('x_mig.adaptive.scope', '') + '').trim(), LATEST = null;
+    if (/^all$/i.test(SCOPE)) ONLY = [];
+    else if (/^latest$/i.test(SCOPE)) {
+        LATEST = {};
+        var ls = new GlideRecord('sys_import_set');
+        ls.addQuery('table_name', 'u_import_adaptive_projects');
+        ls.orderByDesc('sys_created_on');
+        ls.setLimit(1);
+        ls.query();
+        if (ls.next()) {
+            var lr = new GlideRecord('u_import_adaptive_projects');
+            lr.addQuery('sys_import_set', ls.getUniqueValue());
+            lr.query();
+            while (lr.next()) if (lr.getValue('u_correlation_id')) LATEST[lr.getValue('u_correlation_id')] = true;
+        }
+        import_log.info('Scope = latest projects load: ' + Object.keys(LATEST).length + ' projects / demands');
+    } else if (SCOPE) ONLY = SCOPE.split(/\s*;\s*/).filter(function (x) { return x; });
     // =========================================================
 
     var LABELS = ['Correlation ID', 'Project Correlation ID', 'Cost Type', 'Expense Type', 'Month', 'Budget', 'Actual', 'Currency'];
@@ -31,6 +54,7 @@
         p.addQuery('correlation_id', 'STARTSWITH', 'ADAPTIVE:/');
         p.query();
         while (p.next()) {
+            if (LATEST && !LATEST[p.getValue('correlation_id')]) continue;
             if (ONLY.length && ONLY.indexOf(p.getValue('number')) < 0 && ONLY.indexOf(p.getValue('short_description')) < 0) continue;
             projects.push(p.getValue('correlation_id').replace('ADAPTIVE:', ''));
         }
