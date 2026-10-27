@@ -13,6 +13,7 @@
         'Name':                 'Name',
         'Project Description':  'C_ProjectDescription',
         'Manager':              'ProjectManager.DisplayName',
+        'Manager Email':        'ProjectManager.Email',     // matches the ServiceNow user (names differ: Joe vs Joseph)
         'Business Sponsor':     'C_BusinessSponser',        // spelled "Sponser" in Adaptive
         'CN#':                  'C_CN',
         'Dept # for Expense':   'C_DeptforExpense',
