@@ -225,7 +225,7 @@
         if (!projects.length) { import_log.warn('No parents left in PARENT_STATES ' + PARENT_STATES.join(', ')); return; }
     }
 
-    var count = 0, notOurs = 0, notOursExample = '';
+    var count = 0, notOurs = 0, notOursExample = '', pending = [];
     if (select.indexOf(PROJECT_FIELD) < 0) select.push(PROJECT_FIELD);
     for (var i = 0; i < projects.length; i += 20) {              // 20 projects per query
         var batch = projects.slice(i, i + 20);
@@ -245,12 +245,23 @@
                     var col = colByLabel[label.toLowerCase()];
                     if (col) row[col] = value(e, MAP[label]);
                 }
-                import_set_table.insert(row);
-                count++;
+                pending.push({ id: e.id, parent: (get(e, 'Parent') || {}).id || '', row: row });
             });
             if (!body.paging || !body.paging.hasMore) break;
             paging = body.paging;
         }
+        // Parents before children (tasks): the transform then finds every parent task on the FIRST run
+        var byId = {};
+        pending.forEach(function (r) { byId[r.id] = r; });
+        function depth(r) {
+            var d = 0;
+            while (r && byId[r.parent] && d < 50) { r = byId[r.parent]; d++; }
+            return d;
+        }
+        pending.forEach(function (r, k) { r.d = depth(r); r.k = k; });
+        pending.sort(function (a, b) { return a.d - b.d || a.k - b.k; });
+        pending.forEach(function (r) { import_set_table.insert(r.row); count++; });
+        pending = [];
     }
     import_log.info('Adaptive ' + ENTITY + ' rows loaded: ' + count + ' (for ' + projects.length + ' projects)' +
         (notOurs ? '; ' + notOurs + ' returned by Adaptive but for another record (skipped), e.g. ' + PROJECT_FIELD + ' = ' + notOursExample : ''));

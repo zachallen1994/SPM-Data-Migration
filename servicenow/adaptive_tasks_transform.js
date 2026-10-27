@@ -10,8 +10,8 @@
 //     u_description -> description, u_complete (% Complete) -> percent_complete,
 //     u_start_date (Start Date) -> start_date, u_due_date (Due Date) -> end_date (Date format yyyy-MM-dd),
 //     u_actual_start_date -> work_start, u_actual_end_date -> work_end (Date format yyyy-MM-dd)
-// Run the transform TWICE: rows arrive in any order, so a child can come before its parent task exists.
-// The second run (updates only, thanks to the coalesce) puts every task under the right parent.
+// The data source writes parents before children, so ONE transform run links every task to its parent.
+// (A second run is harmless - updates only, thanks to the coalesce - and fixes any task whose parent came later.)
 
 // ---------- PART A: onBefore - project and parent ----------
 (function runTransformScript(source, map, log, target) {
@@ -74,4 +74,9 @@ answer = (function transformEntry(source) {
     target.time_constraint = c.getValue('value');   // the start_date / end_date field maps then set the dates
     // Keep Adaptive's Status (PART B): without "Override status" ServiceNow recalculates it (e.g. Red on a past date)
     if (OVERRIDE_STATUS && (source.u_status + '').trim() && target.isValidField('override_status')) target.override_status = true;
+    // FAST LOAD (implementation team decides): skip the planning rules while loading - about 6 s per task with them.
+    // The rules check run_calc_brs; it is stored on the task, so fix_scripts/tasks_fast_load_finish.js MUST run after
+    // the load (sets it back to true and recalculates each project once).
+    var FAST_LOAD = false;        // ✏️ true = fast load
+    if (FAST_LOAD && target.isValidField('run_calc_brs')) target.run_calc_brs = false;
 })(source, map, log, target);
