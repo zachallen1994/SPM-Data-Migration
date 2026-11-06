@@ -44,6 +44,7 @@ None of these change data. Lines marked ✏️ at the top are the only things to
 | labor_cost_discovery.js | Where Processed time cards create labor expense lines / cost plans: properties, rules, counts |
 | related_load_check.js | A related data source loads 0 rows for a project: checks each gate (record, correlation id, scope, Adaptive State, API) |
 | lookup_speed_check.js | Times the per-row lookups the transforms make; SLOW = the field needs a database index |
+| resource_rows_check.js | Big Resources load: project team vs task assignments, ended links, people without a user |
 | timecard_br_check.js | Insert rules on time_card / time_sheet that touch State; one card's time sheet |
 | attachment_check.js | What Adaptive returns for one record's files; does download work |
 | asana_scope_check.js | Active Asana projects per team |
