@@ -17,6 +17,8 @@
                                           // (Resources: ['pm_project', 'dmn_demand', 'pm_project_task'])
                                           // (Tasks / Milestones: ['pm_project'] - demands have no work plan)
     var ONLY = [];                  // test / batch: project or demand numbers or names, e.g. ['PRJ0010675']; [] = all
+    var SINCE_FIELD = '';           // date cut-off, e.g. Status history: 'C_UpdatedOn' ('' = no cut-off)
+    var SINCE = '';                 // yyyy-MM-dd: records dated before this are not loaded, e.g. '2025-01-01'
     var PARENT_STATES = ['Active', 'On Hold'];   // only records of projects / demands in these Adaptive States
                                                  // (same as STATES in the projects data source); [] = no check
 
@@ -84,7 +86,8 @@
     //                'Category':'C_Category', 'Mitigation Plan':'Justification', 'Status':'C_Status',
     //                'Update Notes':'C_UpdateNotes', 'Deadline':'DueDate', 'Assigned To Email':'AssignedTo.Email',
     //                'Reason for Change':'Description', 'Resolution':'ResolutionDetails', 'Date Resolved':'ResolvedDate' }
-    //  Status history: ENTITY = 'C_StatusHistory', PROJECT_FIELD = 'C_RelatedProject', MAP =
+    //  Status history: ENTITY = 'C_StatusHistory', PROJECT_FIELD = 'C_RelatedProject',
+    //              SINCE_FIELD = 'C_UpdatedOn', SINCE = '2025-01-01' (agreed: Jan 2025 and newer only), MAP =
     //              { 'Correlation ID':'@id', 'Project Correlation ID':'@C_RelatedProject', 'Updated On':'C_UpdatedOn',
     //                'Health':'C_Health', 'Schedule Health':'C_ScheduleHealth', 'Budget Health':'C_BudgetHealth',
     //                'Scope Health':'C_ScopeHealth', 'Resource Health':'C_ResourceHealth', 'Risk Health':'C_RiskHealth',
@@ -225,8 +228,9 @@
         if (!projects.length) { import_log.warn('No parents left in PARENT_STATES ' + PARENT_STATES.join(', ')); return; }
     }
 
-    var count = 0, notOurs = 0, notOursExample = '', pending = [];
+    var count = 0, notOurs = 0, notOursExample = '', pending = [], beforeSince = 0;
     if (select.indexOf(PROJECT_FIELD) < 0) select.push(PROJECT_FIELD);
+    if (SINCE_FIELD && SINCE && select.indexOf(SINCE_FIELD) < 0) select.push(SINCE_FIELD);
     for (var i = 0; i < projects.length; i += 20) {              // 20 projects per query
         var batch = projects.slice(i, i + 20);
         var where = batch.map(function (id) { return PROJECT_FIELD + " = '" + id + "'"; }).join(' OR ');
@@ -240,6 +244,7 @@
                 // Adaptive does not apply, e.g. on a custom reference field)
                 var ref = get(e, PROJECT_FIELD), refId = ref && typeof ref == 'object' ? ref.id : ref;
                 if (batch.indexOf(refId) < 0) { notOurs++; if (!notOursExample) notOursExample = String(refId); return; }
+                if (SINCE_FIELD && SINCE && String(get(e, SINCE_FIELD) || '').substring(0, 10) < SINCE) { beforeSince++; return; }   // blank = old
                 var row = {};
                 for (var label in MAP) {
                     var col = colByLabel[label.toLowerCase()];
@@ -264,5 +269,6 @@
         pending = [];
     }
     import_log.info('Adaptive ' + ENTITY + ' rows loaded: ' + count + ' (for ' + projects.length + ' projects)' +
-        (notOurs ? '; ' + notOurs + ' returned by Adaptive but for another record (skipped), e.g. ' + PROJECT_FIELD + ' = ' + notOursExample : ''));
+        (notOurs ? '; ' + notOurs + ' returned by Adaptive but for another record (skipped), e.g. ' + PROJECT_FIELD + ' = ' + notOursExample : '') +
+        (SINCE_FIELD && SINCE ? '; ' + beforeSince + ' dated before ' + SINCE + ' (' + SINCE_FIELD + ') skipped' : ''));
 })(import_set_table, data_source, import_log, last_success_import_time);
