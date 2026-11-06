@@ -10,3 +10,4 @@ log, then set `DRY_RUN = false` and run again.
 | timecards_set_processed.js | Moves migrated time cards Pending -> Submitted -> Approved so hours roll up. Test with ONLY_TASK + LIMIT = 1 first. |
 | out_of_scope_cleanup.js | Dev clean-up: deletes migrated projects / demands no longer in scope in Adaptive (State, Type) and the records under them, MAX per run. |
 | tasks_fast_load_finish.js | After a FAST_LOAD task load: turns the planning rules back on for migrated tasks and recalculates each project. |
+| status_history_before_cutoff.js | Removes migrated status reports dated before the cut-off (2025-01-01) - for loads done before the cut-off existed. |
