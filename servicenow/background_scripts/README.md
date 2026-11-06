@@ -42,6 +42,7 @@ None of these change data. Lines marked ✏️ at the top are the only things to
 | task_parent_check.js | Tasks loaded but not on the project: duplicate projects, which project each task went to |
 | status_history_check.js | Fewer status reports than Adaptive updates: same-day updates, row results |
 | labor_cost_discovery.js | Where Processed time cards create labor expense lines / cost plans: properties, rules, counts |
+| related_load_check.js | A related data source loads 0 rows for a project: checks each gate (record, correlation id, scope, Adaptive State, API) |
 | timecard_br_check.js | Insert rules on time_card / time_sheet that touch State; one card's time sheet |
 | attachment_check.js | What Adaptive returns for one record's files; does download work |
 | asana_scope_check.js | Active Asana projects per team |
