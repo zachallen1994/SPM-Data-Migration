@@ -5,6 +5,7 @@
 //   Field map: Status, Use source script, Choice action = ignore -> PART B
 //   Field map: state, Use source script                           -> PART C
 //   Field map: assigned_to, Use source script                     -> PART D
+//   Transform Scripts: onComplete          -> PART F (only with FAST_LOAD; no fix script needed)
 //   Transform Scripts: onBefore, Order 200 -> PART E (keep Adaptive's dates: "Start on specific date", not "Start ASAP")
 //   Direct field maps (add the staging columns if missing):
 //     u_description -> description, u_complete (% Complete) -> percent_complete,
@@ -79,4 +80,35 @@ answer = (function transformEntry(source) {
     // the load (sets it back to true and recalculates each project once).
     var FAST_LOAD = false;        // ✏️ true = fast load
     if (FAST_LOAD && target.isValidField('run_calc_brs')) target.run_calc_brs = false;
+})(source, map, log, target);
+
+// ---------- PART F: onComplete - finish a FAST_LOAD (replaces fix_scripts/tasks_fast_load_finish.js) ----------
+// Only needed when PART E has FAST_LOAD = true. Runs ONCE when the transform ends: for every project in this
+// import set, turns the planning rules back on for its migrated tasks and recalculates the project once.
+// Works for the Adaptive and the Asana tasks maps (both staging tables have "Project Correlation ID").
+(function runTransformScript(source, map, log, target) {
+    var FAST_LOAD = false;                      // ✏️ same value as in PART E
+    if (!FAST_LOAD) return;
+    var projects = {};
+    var r = new GlideRecord(map.source_table + '');
+    r.addQuery('sys_import_set', import_set.sys_id + '');
+    r.query();
+    while (r.next()) {
+        var p = new GlideRecord('pm_project');
+        var id = r.getValue('u_project_correlation_id');
+        if (id && !projects[id] && p.get('correlation_id', id)) projects[id] = p.getUniqueValue();
+    }
+    var done = 0;
+    for (var k in projects) {
+        var pid = projects[k];
+        var t = new GlideRecord('pm_project_task');
+        t.addQuery('top_task', pid);
+        t.addQuery('run_calc_brs', false);
+        t.query();
+        while (t.next()) { t.setWorkflow(false); t.setValue('run_calc_brs', true); t.update(); }
+        try { new SNC.PlannedTaskAPI().recalculateTask(pid); }
+        catch (e) { var pr = new GlideRecord('pm_project'); if (pr.get(pid)) { pr.setForceUpdate(true); pr.update(); } }
+        done++;
+    }
+    log.info('FAST_LOAD finished: planning rules back on and recalculated for ' + done + ' projects');
 })(source, map, log, target);
