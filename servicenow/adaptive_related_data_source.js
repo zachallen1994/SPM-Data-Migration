@@ -14,7 +14,7 @@
     var PROJECT_FIELD = 'Project';  // field on ENTITY that points at its project (Lessons: C_RelatedWorkItem;
                                     // Resources: WorkItem)
     var PARENT_TABLES = ['pm_project', 'dmn_demand'];   // records already in ServiceNow that PROJECT_FIELD may point at
-                                          // (Resources: ['pm_project', 'dmn_demand', 'pm_project_task'])
+                                          // (Resources: ['pm_project'] - the project's own Resources list)
                                           // (Tasks / Milestones: ['pm_project'] - demands have no work plan)
     var ONLY = [];                  // test / batch: project or demand numbers or names, e.g. ['PRJ0010675']; [] = all
     var SINCE_FIELD = '';           // date cut-off, e.g. Status history: 'C_UpdatedOn' ('' = no cut-off)
@@ -71,7 +71,8 @@
     //              { 'Correlation ID':'@id', 'Project Correlation ID':'@C_RelatedWorkItem', 'Name':'Name',
     //                'Lesson Type':'C_LessonType', 'Topic':'C_Topic', 'Lesson':'C_Lesson', 'ID':'SYSID' }
     //  Resources:  ENTITY = 'RegularResourceLink', PROJECT_FIELD = 'WorkItem',
-    //              PARENT_TABLES = ['pm_project', 'dmn_demand', 'pm_project_task'], MAP =
+    //              PARENT_TABLES = ['pm_project'] (agreed: the project's Resources list only - about 3 people per
+    //              project; adding 'pm_project_task' loads every person on every task, 52k rows in TEST), MAP =
     //              { 'Correlation ID':'@id', 'Project Correlation ID':'@WorkItem', 'Resource Email':'Resource.Email',
     //                'Start Date':'StartDate', 'End Date':'InactiveDate' }   -> resource_assignment_transform.js
     //  Issues:     ENTITY = 'Issue', PROJECT_FIELD = 'PlannedFor', MAP =
