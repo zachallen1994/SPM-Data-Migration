@@ -46,6 +46,7 @@ None of these change data. Lines marked ✏️ at the top are the only things to
 | lookup_speed_check.js | Times the per-row lookups the transforms make; SLOW = the field needs a database index |
 | resource_rows_check.js | Big Resources load: project team vs task assignments, ended links, people without a user |
 | business_rule_show.js | Prints one business rule in full (condition, script) - for 'aborted by Business Rule' errors |
+| time_card_preference_check.js | 'Check if time cards allowed' errors: project time card preference choices, default, values on migrated projects |
 | timecard_br_check.js | Insert rules on time_card / time_sheet that touch State; one card's time sheet |
 | attachment_check.js | What Adaptive returns for one record's files; does download work |
 | asana_scope_check.js | Active Asana projects per team |
