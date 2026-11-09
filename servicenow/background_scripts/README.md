@@ -50,6 +50,7 @@ None of these change data. Lines marked ✏️ at the top are the only things to
 | project_timecards_view_check.js | Cards Processed but the project's Time Cards / Expense Lines lists are empty: what the lists query, effort, expense lines |
 | timecards_on_project_check.js | Migrated time cards booked on the project although the project now has migrated tasks |
 | demand_project_duplicates_check.js | Adaptive records that are BOTH a project and a demand; split scripts active? |
+| status_history_volume_check.js | Latest status history load: rows by month, oldest date, projects with the most updates |
 | timecard_br_check.js | Insert rules on time_card / time_sheet that touch State; one card's time sheet |
 | attachment_check.js | What Adaptive returns for one record's files; does download work |
 | asana_scope_check.js | Active Asana projects per team |
