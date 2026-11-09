@@ -14,6 +14,9 @@
     var SINCE_FIELD = 'C_UpdatedOn';               // agreed cut-off: the status date ("Updated On" = ServiceNow "As on")
     var SINCE = '2025-01-01';                      //   only January 2025 and newer; older updates are not loaded
     var PARENT_STATES = ['Active', 'On Hold'];     // only projects / demands in these Adaptive States
+    var ONE_PER = 'day';                           // 'day' = latest update per project per day (the transform makes one
+                                                   //   report per project per day anyway); 'week' = latest per week
+                                                   //   (Sunday start); '' = every update
 
     // Run settings without editing this script (DEV / TEST / PROD): system property x_mig.adaptive.scope
     //   blank    = use ONLY above
@@ -189,7 +192,7 @@
         if (!projects.length) { import_log.warn('No parents left in PARENT_STATES ' + PARENT_STATES.join(', ')); return; }
     }
 
-    var count = 0, notOurs = 0, notOursExample = '', pending = [], beforeSince = 0, sinceOdd = '';
+    var count = 0, notOurs = 0, notOursExample = '', pending = [], beforeSince = 0, sinceOdd = '', collapsed = 0;
     if (select.indexOf(PROJECT_FIELD) < 0) select.push(PROJECT_FIELD);
     if (SINCE_FIELD && SINCE && select.indexOf(SINCE_FIELD) < 0) select.push(SINCE_FIELD);
     for (var i = 0; i < projects.length; i += 20) {              // 20 projects per query
@@ -230,11 +233,28 @@
         }
         pending.forEach(function (r, k) { r.d = depth(r); r.k = k; });
         pending.sort(function (a, b) { return a.d - b.d || a.k - b.k; });
+        if (ONE_PER) {                             // keep the latest update per project per day / week
+            var uCol = colByLabel['updated on'], pCol = colByLabel['project correlation id'], keep = {}, order = [];
+            pending.forEach(function (r) {
+                var dt = String(r.row[uCol] || '').substring(0, 10), key = dt;
+                if (ONE_PER == 'week' && /^\d{4}-\d{2}-\d{2}$/.test(dt)) {
+                    var dd = new Date(dt + 'T00:00:00Z');
+                    dd = new Date(dd.getTime() - dd.getUTCDay() * 86400000);
+                    key = dd.toISOString().substring(0, 10);
+                }
+                key = r.row[pCol] + '|' + key;
+                if (!keep[key]) order.push(key);
+                else { collapsed++; if (dt < String(keep[key].row[uCol] || '').substring(0, 10)) return; }
+                keep[key] = r;                    // same date: the later one Adaptive returned wins
+            });
+            pending = order.map(function (k) { return keep[k]; });
+        }
         pending.forEach(function (r) { import_set_table.insert(r.row); count++; });
         pending = [];
     }
     import_log.info('Adaptive ' + ENTITY + ' rows loaded: ' + count + ' (for ' + projects.length + ' projects)' +
         (notOurs ? '; ' + notOurs + ' returned by Adaptive but for another record (skipped), e.g. ' + PROJECT_FIELD + ' = ' + notOursExample : '') +
         (SINCE_FIELD && SINCE ? '; ' + beforeSince + ' dated before ' + SINCE + ' (' + SINCE_FIELD + ') skipped' +
-            (sinceOdd ? ' - WARNING: some ' + SINCE_FIELD + ' values are not dates (e.g. "' + sinceOdd + '") and were kept' : '') : ''));
+            (sinceOdd ? ' - WARNING: some ' + SINCE_FIELD + ' values are not dates (e.g. "' + sinceOdd + '") and were kept' : '') : '') +
+        (ONE_PER ? '; ' + collapsed + ' older updates in the same ' + ONE_PER + ' left out (latest kept)' : ''));
 })(import_set_table, data_source, import_log, last_success_import_time);
