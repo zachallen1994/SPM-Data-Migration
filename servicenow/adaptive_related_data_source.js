@@ -229,7 +229,7 @@
         if (!projects.length) { import_log.warn('No parents left in PARENT_STATES ' + PARENT_STATES.join(', ')); return; }
     }
 
-    var count = 0, notOurs = 0, notOursExample = '', pending = [], beforeSince = 0;
+    var count = 0, notOurs = 0, notOursExample = '', pending = [], beforeSince = 0, sinceOdd = '';
     if (select.indexOf(PROJECT_FIELD) < 0) select.push(PROJECT_FIELD);
     if (SINCE_FIELD && SINCE && select.indexOf(SINCE_FIELD) < 0) select.push(SINCE_FIELD);
     for (var i = 0; i < projects.length; i += 20) {              // 20 projects per query
@@ -245,7 +245,11 @@
                 // Adaptive does not apply, e.g. on a custom reference field)
                 var ref = get(e, PROJECT_FIELD), refId = ref && typeof ref == 'object' ? ref.id : ref;
                 if (batch.indexOf(refId) < 0) { notOurs++; if (!notOursExample) notOursExample = String(refId); return; }
-                if (SINCE_FIELD && SINCE && String(get(e, SINCE_FIELD) || '').substring(0, 10) < SINCE) { beforeSince++; return; }   // blank = old
+                if (SINCE_FIELD && SINCE) {
+                    var dt = clean(get(e, SINCE_FIELD));                    // "2024-10-03T00:00:00" -> "2024-10-03"
+                    if (dt && !/^\d{4}-\d{2}-\d{2}$/.test(dt)) { if (!sinceOdd) sinceOdd = dt; }   // unknown format: kept, logged
+                    else if (!dt || dt < SINCE) { beforeSince++; return; }   // blank = old
+                }
                 var row = {};
                 for (var label in MAP) {
                     var col = colByLabel[label.toLowerCase()];
@@ -271,5 +275,6 @@
     }
     import_log.info('Adaptive ' + ENTITY + ' rows loaded: ' + count + ' (for ' + projects.length + ' projects)' +
         (notOurs ? '; ' + notOurs + ' returned by Adaptive but for another record (skipped), e.g. ' + PROJECT_FIELD + ' = ' + notOursExample : '') +
-        (SINCE_FIELD && SINCE ? '; ' + beforeSince + ' dated before ' + SINCE + ' (' + SINCE_FIELD + ') skipped' : ''));
+        (SINCE_FIELD && SINCE ? '; ' + beforeSince + ' dated before ' + SINCE + ' (' + SINCE_FIELD + ') skipped' +
+            (sinceOdd ? ' - WARNING: some ' + SINCE_FIELD + ' values are not dates (e.g. "' + sinceOdd + '") and were kept' : '') : ''));
 })(import_set_table, data_source, import_log, last_success_import_time);
