@@ -99,7 +99,7 @@
     }
     function ymd(dt) { return dt.getUTCFullYear() + '-' + ('0' + (dt.getUTCMonth() + 1)).slice(-2) + '-' + ('0' + dt.getUTCDate()).slice(-2); }
 
-    var cards = {}, entries = 0, skipped = 0;
+    var cards = {}, entries = 0, skipped = 0, taskMissing = 0, taskMissingHours = 0;
     try {
         for (var i = 0; i < projects.length; i += 20) {
             var where = projects.slice(i, i + 20).map(function (id) { return "Project = '" + id + "'"; }).join(' OR ');
@@ -119,6 +119,9 @@
                     // roll the time up to the project / demand itself.
                     var proj = e.Project ? e.Project.id : '';
                     var target = (!isDemand[proj] && migratedTask[e.WorkItem.id]) ? e.WorkItem.id : proj;
+                    // time booked on a project task in Adaptive whose task is NOT in ServiceNow lands on the project:
+                    // counted so the log shows it (load the tasks first, then the time cards)
+                    if (!isDemand[proj] && e.WorkItem.id != proj && !migratedTask[e.WorkItem.id]) { taskMissing++; taskMissingHours += h; }
                     var k = email + '|' + target + '|' + week;
                     if (!cards[k]) cards[k] = { email: email, task: 'ADAPTIVE:' + target,
                         project: 'ADAPTIVE:' + (e.Project ? e.Project.id : ''), week: week, h: [0, 0, 0, 0, 0, 0, 0] };
@@ -144,6 +147,8 @@
         import_set_table.insert(row);
         count++;
     }
+    if (taskMissing) import_log.warn(taskMissing + ' time entries (' + Math.round(taskMissingHours * 10) / 10 + ' h) were booked on Adaptive tasks ' +
+        'that are not in ServiceNow yet - they go on the PROJECT. Load the project tasks first, then the time cards.');
     import_log.info('Adaptive time entries: ' + entries + ' -> ' + count + ' weekly time card rows (' + skipped +
         ' skipped: 0 hours, no person/date/work item, or state not in STATES) for ' + projects.length + ' projects');
 })(import_set_table, data_source, import_log, last_success_import_time);
