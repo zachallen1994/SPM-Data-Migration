@@ -10,7 +10,14 @@
                   'on hold estimate complete - with ocio', 'on hold estimate complete - pending sow'];
     var PROJECT = ['ready for pm assignment', 'pm assigned', 'analyst run'];
     var phase = (source.u_portfolio_phase + '').toLowerCase().replace(/[–—-]/g, '-').replace(/\s+/g, ' ').trim();
-    if (PROJECT.indexOf(phase) > -1) return;                                  // load as project
+    if (PROJECT.indexOf(phase) > -1) {                                        // load as project
+        var dm = new GlideRecord('dmn_demand');                               // ...unless it is already a demand
+        if (dm.get('correlation_id', source.u_correlation_id + '')) {
+            log.warn('Already a demand (' + dm.getValue('number') + '), project not created: ' + source.u_name + ' - phase "' + source.u_portfolio_phase + '"');
+            ignore = true;
+        }
+        return;
+    }
     if (DEMAND.indexOf(phase) < 0) log.warn('Unmapped Portfolio Phase "' + source.u_portfolio_phase + '" on ' + source.u_correlation_id);
     ignore = true;                                                            // demand or unmapped: not a project
 })(source, map, log, target);
@@ -20,6 +27,13 @@
     var DEMAND = ['pending portfolio assignment', 'in portfolio discovery', 'on hold pending requestor', 'on hold pending requester',
                   'on hold estimate complete - with ocio', 'on hold estimate complete - pending sow'];
     var phase = (source.u_portfolio_phase + '').toLowerCase().replace(/[–—-]/g, '-').replace(/\s+/g, ' ').trim();
-    if (DEMAND.indexOf(phase) > -1) return;                                   // load as demand
+    if (DEMAND.indexOf(phase) > -1) {                                         // load as demand
+        var pr = new GlideRecord('pm_project');                               // ...unless it is already a project
+        if (pr.get('correlation_id', source.u_correlation_id + '')) {
+            log.warn('Already a project (' + pr.getValue('number') + '), demand not created: ' + source.u_name + ' - phase "' + source.u_portfolio_phase + '"');
+            ignore = true;
+        }
+        return;
+    }
     ignore = true;                                                            // project or unmapped (logged by PART A)
 })(source, map, log, target);
