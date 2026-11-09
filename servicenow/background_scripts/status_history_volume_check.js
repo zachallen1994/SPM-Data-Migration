@@ -6,7 +6,7 @@ set.orderByDesc('sys_created_on');
 set.setLimit(1);
 set.query();
 if (set.next()) {
-    var months = {}, perProject = {}, n = 0, oldest = '9999';
+    var months = {}, perProject = {}, n = 0, oldest = '9999', days = {}, dayCount = 0;
     var r = new GlideRecord('u_import_adaptive_status_history');
     r.addQuery('sys_import_set', set.getUniqueValue());
     r.query();
@@ -17,7 +17,10 @@ if (set.next()) {
         if (d < oldest) oldest = d;
         var p = r.getValue('u_project_correlation_id');
         perProject[p] = (perProject[p] || 0) + 1;
+        var k = p + '|' + (r.getValue('u_updated_on') || '').substring(0, 10);
+        if (!days[k]) { days[k] = true; dayCount++; }
     }
+    gs.print('different project + day pairs: ' + dayCount + ' (the transform makes ONE report per project per day, so this is about how many reports you get)');
     gs.print(set.getValue('number') + ' created ' + set.getValue('sys_created_on') + ': ' + n + ' rows | oldest month ' + oldest);
     Object.keys(months).sort().forEach(function (m) { gs.print('  ' + m + ': ' + months[m]); });
     var ids = Object.keys(perProject);
