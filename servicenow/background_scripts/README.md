@@ -47,6 +47,7 @@ None of these change data. Lines marked ✏️ at the top are the only things to
 | resource_rows_check.js | Big Resources load: project team vs task assignments, ended links, people without a user |
 | business_rule_show.js | Prints one business rule in full (condition, script) - for 'aborted by Business Rule' errors |
 | time_card_preference_check.js | 'Check if time cards allowed' errors: project time card preference choices, default, values on migrated projects |
+| project_timecards_view_check.js | Cards Processed but the project's Time Cards / Expense Lines lists are empty: what the lists query, effort, expense lines |
 | timecard_br_check.js | Insert rules on time_card / time_sheet that touch State; one card's time sheet |
 | attachment_check.js | What Adaptive returns for one record's files; does download work |
 | asana_scope_check.js | Active Asana projects per team |
