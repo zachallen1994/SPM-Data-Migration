@@ -12,3 +12,4 @@ log, then set `DRY_RUN = false` and run again.
 | tasks_fast_load_finish.js | After a FAST_LOAD task load: turns the planning rules back on for migrated tasks and recalculates each project. |
 | status_history_before_cutoff.js | Removes migrated status reports dated before the cut-off (2025-01-01) - for loads done before the cut-off existed. |
 | dev_duplicate_test.js | DEV only: creates / removes one fake project with a demand's Correlation ID to test the duplicate guard. |
+| dev_dates_test.js | DEV only: adds a test copy of a staging row (fake id) so a transform INSERTS a test project; 'remove' cleans up. |
