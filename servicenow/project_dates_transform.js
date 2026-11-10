@@ -5,6 +5,7 @@
 // written again right after the row is transformed. Keep the start_date / end_date field maps as they are.
 // Once the work plan loads, the project dates roll up from its tasks (tasks use "Start on specific date").
 (function runTransformScript(source, map, log, target) {
+    if (action != 'insert') return;     // re-runs: dates are set once, on insert ("Disable the Change of Planned Dates")
     var start = source.getValue('u_schedule_start'), end = source.getValue('u_schedule_finish');   // yyyy-MM-dd
     if (!start || !end) return;
     var p = new GlideRecord('pm_project');
@@ -19,3 +20,16 @@
     if (p.getValue('end_date').substring(0, 10) != e.getValue().substring(0, 10))
         log.warn('Planned end not kept on ' + source.u_name + ': Adaptive ' + end + ', ServiceNow ' + p.getValue('end_date'));
 })(source, map, log, target);
+
+// ---------- Field map scripts for start_date / end_date (replace the two direct field maps) ----------
+// Re-runs UPDATE existing projects; sending planned dates then trips "Disable the Change of Planned Dates" and the
+// WHOLE row is aborted (its other fields are not updated either). So: Adaptive dates on insert, the project's own
+// dates on update (no change -> no abort). Same pattern as the Asana projects map. Date format: yyyy-MM-dd.
+// start_date:
+answer = (function transformEntry(source, target) {
+    return target.isNewRecord() ? source.getValue('u_schedule_start') : target.start_date.getDisplayValue();
+})(source, target);
+// end_date:
+answer = (function transformEntry(source, target) {
+    return target.isNewRecord() ? source.getValue('u_schedule_finish') : target.end_date.getDisplayValue();
+})(source, target);
