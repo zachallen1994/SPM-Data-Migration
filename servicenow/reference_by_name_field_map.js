@@ -7,10 +7,10 @@ answer = (function transformEntry(source) {
     var TABLE = 'rate_model';  // pm_project.rate_model -> rate_model (rate_card_check.js in DEV)
     var NAME_FIELD = 'name';   // ✏️ the field holding names like "BSMH"
     // Adaptive rate card -> ServiceNow rate model (confirmed by the BA, DFCT0010737).
-    // Hampton Roads (1 project) is NOT mapped: HCPH is Hamilton County - left blank and logged until decided.
+    // HCPH = Hamilton County and Hampton Roads (the rate model is named "HCPH" in ServiceNow).
     var ALIASES = {
         'covenant (ghc)': 'COV', 'uva(ghc)': 'UVA', 'wyandot(ghc)': 'WMH', 'nationwide': 'NCH',
-        'rsfh': 'RFSH', 'bsmh': 'BSMH', 'chesapeake(ghc)': 'CRH'
+        'rsfh': 'RFSH', 'bsmh': 'BSMH', 'chesapeake(ghc)': 'CRH', 'hampton roads': 'HCPH'
     };
     var DEFAULT = 'BSMH';      // no rate card in Adaptive -> BSMH (BA); '' = leave blank
 
