@@ -58,8 +58,9 @@
         'Due Date':               'DueDate',
         'Actual Start Date':      'ActualStartDate',
         'Actual Effort':          'ActualEffort',     // hours
+        'Planned Effort':         'Work',             // Adaptive "Assigned Resource Effort" (hours) -> task Planned effort
         'Actual End Date':        'ActualEndDate',
-        '% Complete':             'PercentCompleted',
+        '% Complete':             'PercentCompleted', // Adaptive "Schedule % Complete"
         'State':                  'State',
         'Status':                 'TrackStatus',      // Adaptive Task "Status" (e.g. On Track); comes back as a name
         'Owner Email':            'Manager.Email',    // Adaptive "Owner" -> assigned_to

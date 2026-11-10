@@ -5,6 +5,7 @@
 //   Field map: Status, Use source script, Choice action = ignore -> PART B
 //   Field map: state, Use source script                           -> PART C
 //   Field map: assigned_to, Use source script                     -> PART D
+//   Field map: effort (Planned effort), Use source script                 -> PART G  (staging column "Planned Effort")
 //   Transform Scripts: onComplete          -> PART F (only with FAST_LOAD; no fix script needed)
 //   Transform Scripts: onBefore, Order 200 -> PART E (keep Adaptive's dates: "Start on specific date", not "Start ASAP")
 //   Direct field maps (add the staging columns if missing):
@@ -112,3 +113,11 @@ answer = (function transformEntry(source) {
     }
     log.info('FAST_LOAD finished: planning rules back on and recalculated for ' + done + ' projects');
 })(source, map, log, target);
+
+// ---------- PART G: field map -> effort (Planned effort) from Adaptive "Assigned Resource Effort" (Work, hours) ----------
+answer = (function transformEntry(source) {
+    var h = parseFloat(source.getValue('u_planned_effort'));
+    if (!h) return '';
+    var d = new GlideDuration(Math.round(h * 3600000));      // hours -> duration
+    return d.getDurationValue();                             // e.g. "40 00:00:00" style value the field accepts
+})(source);
