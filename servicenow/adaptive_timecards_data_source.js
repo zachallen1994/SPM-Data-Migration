@@ -11,6 +11,9 @@
     var STATES = ['Approved'];     // Adaptive's Actual Effort counts Approved time only (Willow: 14,355.7 h); 'Un Submitted' left out
     var ONLY = [];                 // ✏️ test / batch: project or demand numbers or names, e.g. ['PRJ0011395']; [] = all
     var PARENT_STATES = ['Active', 'On Hold'];   // only projects / demands in these Adaptive States (as the projects load)
+    var BOOK_ON = 'task';          // ✏️ 'task' = on the migrated project task (one card per person per TASK per week)
+                                   //    'project' = everything on the project (one card per person per PROJECT per week:
+                                   //    far fewer cards, same Actual effort on the project, no actuals per task)
     var WEEK_START = 'sunday';    // the day a ServiceNow time card week starts on (look at an existing card)
 
     // Run settings without editing this script (DEV / TEST / PROD): system property x_mig.adaptive.scope
@@ -144,10 +147,10 @@
                     // Book on the project task when it was migrated; otherwise (demands, or tasks not migrated)
                     // roll the time up to the project / demand itself.
                     var proj = e.Project ? e.Project.id : '';
-                    var target = (!isDemand[proj] && migratedTask[e.WorkItem.id]) ? e.WorkItem.id : proj;
+                    var target = (BOOK_ON == 'task' && !isDemand[proj] && migratedTask[e.WorkItem.id]) ? e.WorkItem.id : proj;
                     // time booked on a project task in Adaptive whose task is NOT in ServiceNow lands on the project:
                     // counted so the log shows it (load the tasks first, then the time cards)
-                    if (!isDemand[proj] && e.WorkItem.id != proj && !migratedTask[e.WorkItem.id]) { taskMissing++; taskMissingHours += h; }
+                    if (BOOK_ON == 'task' && !isDemand[proj] && e.WorkItem.id != proj && !migratedTask[e.WorkItem.id]) { taskMissing++; taskMissingHours += h; }
                     var k = email + '|' + target + '|' + week;
                     if (!cards[k]) cards[k] = { email: email, task: 'ADAPTIVE:' + target,
                         project: 'ADAPTIVE:' + (e.Project ? e.Project.id : ''), week: week, h: [0, 0, 0, 0, 0, 0, 0] };
