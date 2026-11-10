@@ -10,6 +10,7 @@
     // ======================= CONFIG ✏️ =======================
     var STATES = ['Approved'];     // Adaptive's Actual Effort counts Approved time only (Willow: 14,355.7 h); 'Un Submitted' left out
     var ONLY = [];                 // ✏️ test / batch: project or demand numbers or names, e.g. ['PRJ0011395']; [] = all
+    var PARENT_STATES = ['Active', 'On Hold'];   // only projects / demands in these Adaptive States (as the projects load)
     var WEEK_START = 'sunday';    // the day a ServiceNow time card week starts on (look at an existing card)
 
     // Run settings without editing this script (DEV / TEST / PROD): system property x_mig.adaptive.scope
@@ -92,6 +93,31 @@
         if (res.getStatusCode() != 200) throw 'Adaptive ' + res.getStatusCode() + ': ' + res.getBody();
         return JSON.parse(res.getBody());
     }
+    // Only projects / demands still in scope in ADAPTIVE (Active / On Hold) - leftovers from earlier loads are skipped
+    // before any time is asked for (Adaptive's state, not ServiceNow's: a migrated demand can be inactive in ServiceNow)
+    if (PARENT_STATES.length) {
+        var stateOf = {}, sp = { from: 0, limit: 100 };
+        try {
+            while (true) {
+                var sb = post({ q: 'SELECT State FROM Project', paging: sp });
+                sb.entities.forEach(function (e) {
+                    stateOf[e.id] = e.State && e.State.id ? decodeURIComponent(String(e.State.id).split('/').slice(2).join('/')) : '';
+                });
+                if (!sb.paging || !sb.paging.hasMore) break;
+                sp = sb.paging;
+            }
+        } catch (err) { import_log.error(String(err) + ' -- reading Adaptive project states'); return; }
+        var skippedParents = {};
+        projects = projects.filter(function (id) {
+            var st = stateOf[id] || '(not found)';
+            if (PARENT_STATES.indexOf(st) >= 0) return true;
+            skippedParents[st] = (skippedParents[st] || 0) + 1;
+            return false;
+        });
+        import_log.info('Projects / demands to load time for: ' + projects.length + ' | skipped by Adaptive State: ' + JSON.stringify(skippedParents));
+        if (!projects.length) return;
+    }
+
     function hours(dur) {                                    // Adaptive duration {value, unit} -> hours
         if (!dur || dur.value === undefined) return 0;
         var n = parseFloat(dur.value) || 0, u = String(dur.unit || '').toLowerCase();
