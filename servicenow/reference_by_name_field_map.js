@@ -6,14 +6,18 @@ answer = (function transformEntry(source) {
     var SOURCE_COLUMN = 'u_rate_card';
     var TABLE = 'rate_model';  // pm_project.rate_model -> rate_model (rate_card_check.js in DEV)
     var NAME_FIELD = 'name';   // ✏️ the field holding names like "BSMH"
-    // Adaptive rate card -> ServiceNow rate model name. ONLY pairs the BA has confirmed. RFSH matches as is.
-    // To confirm (DEV has: CRH, RFSH, NCH, UVA, HCPH, WMH, COV, Test 1234 - no BSMH):
-    //   'bsmh' (270 projects), 'chesapeake(ghc)' (16), 'covenant (ghc)' (20), 'uva(ghc)' (3), 'wyandot(ghc)' (11),
-    //   'hampton roads' (1), 'nationwide' (1)
-    var ALIASES = {};          // e.g. { 'covenant (ghc)': 'COV', 'uva(ghc)': 'UVA' } once confirmed
+    // Adaptive rate card -> ServiceNow rate model (confirmed by the BA, DFCT0010737).
+    // Hampton Roads (1 project) is NOT mapped: HCPH is Hamilton County - left blank and logged until decided.
+    var ALIASES = {
+        'covenant (ghc)': 'COV', 'uva(ghc)': 'UVA', 'wyandot(ghc)': 'WMH', 'nationwide': 'NCH',
+        'rsfh': 'RFSH', 'bsmh': 'BSMH', 'chesapeake(ghc)': 'CRH'
+    };
+    var DEFAULT = 'BSMH';      // no rate card in Adaptive -> BSMH (BA); '' = leave blank
 
     var v = (source.getValue(SOURCE_COLUMN) || '').trim();
-    if (!v || v == 'undefined' || !TABLE) return '';
+    if (v == 'undefined' || v == 'null') v = '';
+    if (!v) v = DEFAULT;
+    if (!v || !TABLE) return '';
     var name = ALIASES[v.toLowerCase()] || v;
     var g = new GlideRecord(TABLE);
     g.addQuery(NAME_FIELD, name);
