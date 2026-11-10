@@ -11,11 +11,12 @@
     var PROJECT = ['ready for pm assignment', 'pm assigned', 'analyst run'];
     var phase = (source.u_portfolio_phase + '').toLowerCase().replace(/[–—-]/g, '-').replace(/\s+/g, ' ').trim();
     if (PROJECT.indexOf(phase) > -1) {                                        // load as project
-        var dm = new GlideRecord('dmn_demand');                               // ...unless it is already a demand
-        if (dm.get('correlation_id', source.u_correlation_id + '')) {
-            log.warn('Already a demand (' + dm.getValue('number') + '), project not created: ' + source.u_name + ' - phase "' + source.u_portfolio_phase + '"');
-            ignore = true;
-        }
+        // A demand from an earlier load that has since moved on in Adaptive (now a project phase): the project
+        // IS loaded (the phase decides); the old demand is reported for clean-up (link it or remove it).
+        var dm = new GlideRecord('dmn_demand');
+        if (dm.get('correlation_id', source.u_correlation_id + ''))
+            log.warn('Moved from demand to project in Adaptive: ' + source.u_name + ' - phase "' + source.u_portfolio_phase +
+                '". Project loaded; old demand ' + dm.getValue('number') + ' to be linked or removed.');
         return;
     }
     if (DEMAND.indexOf(phase) < 0) log.warn('Unmapped Portfolio Phase "' + source.u_portfolio_phase + '" on ' + source.u_correlation_id);
