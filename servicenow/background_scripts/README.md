@@ -53,6 +53,7 @@ None of these change data. Lines marked ✏️ at the top are the only things to
 | status_history_volume_check.js | Latest status history load: rows by month, oldest date, projects with the most updates |
 | timecard_volume_check.js | Latest time entries load: rows and hours by year, task vs project, projects with the most rows |
 | defect_field_check.js | DFCT0010737: Adaptive project / task fields and values to pick the right source field; resource links users vs groups |
+| rate_card_check.js | Where Adaptive Rate Card can go: rate reference fields on project / task, their records, Adaptive rate card names |
 | timecard_br_check.js | Insert rules on time_card / time_sheet that touch State; one card's time sheet |
 | attachment_check.js | What Adaptive returns for one record's files; does download work |
 | asana_scope_check.js | Active Asana projects per team |

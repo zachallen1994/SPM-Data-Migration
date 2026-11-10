@@ -59,6 +59,7 @@
         'Actual Start Date':      'ActualStartDate',
         'Actual Effort':          'ActualEffort',     // hours
         'Planned Effort':         'Work',             // Adaptive "Assigned Resource Effort" (hours) -> task Planned effort
+        'Rate Card':              'RateCard.Name',    // task rate card (blank = the project's) -> rate model
         'Actual End Date':        'ActualEndDate',
         '% Complete':             'PercentCompleted', // Adaptive "Schedule % Complete"
         'State':                  'State',

@@ -49,7 +49,8 @@
         'Actual Effort':        'ActualEffort',             // hours logged (Adaptive roll-up) -> demand_actual_effort
         'Portfolio Phase':      'C_PortfolioPhase',         // decides Demand vs Project (demand_project_split.js)
         'Project Pool':         'C_ProjectPool',            // Yes / No
-        'Groups':               'C_Groups'                  // multi-pick list (C_WorkItemGroups), comma separated
+        'Groups':               'C_Groups',                 // multi-pick list (C_WorkItemGroups), comma separated
+        'Rate Card':            'RateCard.Name'             // e.g. BSMH, Default Rate Card -> rate model (reference_by_name_field_map.js)
     };
 
     // Only these Adaptive Project Types (field ProjectType) are migrated. Values seen on active projects:
