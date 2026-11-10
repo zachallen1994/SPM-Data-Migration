@@ -23,13 +23,13 @@
 
 // ---------- Field map scripts for start_date / end_date (replace the two direct field maps) ----------
 // Re-runs UPDATE existing projects; sending planned dates then trips "Disable the Change of Planned Dates" and the
-// WHOLE row is aborted (its other fields are not updated either). So: Adaptive dates on insert, the project's own
-// dates on update (no change -> no abort). Same pattern as the Asana projects map. Date format: yyyy-MM-dd.
+// WHOLE row is aborted (its other fields are not updated either). So: Adaptive dates on insert, nothing on update
+// (blank + the map's "Copy empty fields" OFF = the field is left as it is -> no abort). Date format: yyyy-MM-dd.
 // start_date:
 answer = (function transformEntry(source, target) {
-    return target.isNewRecord() ? source.getValue('u_schedule_start') : target.start_date.getDisplayValue();
+    return target.isNewRecord() ? source.getValue('u_schedule_start') : '';
 })(source, target);
 // end_date:
 answer = (function transformEntry(source, target) {
-    return target.isNewRecord() ? source.getValue('u_schedule_finish') : target.end_date.getDisplayValue();
+    return target.isNewRecord() ? source.getValue('u_schedule_finish') : '';
 })(source, target);
