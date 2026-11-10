@@ -17,9 +17,9 @@
         var REMOVE_OTHER = true;                                              // ✏️ remove the demand from an earlier load
         var dm = new GlideRecord('dmn_demand');
         if (dm.get('correlation_id', source.u_correlation_id + '')) {
+            var gone = REMOVE_OTHER && dm.deleteRecord();             // false when a rule / ACL blocks the delete
             log.warn('Now a project in Adaptive (phase "' + source.u_portfolio_phase + '"): ' + source.u_name + '. Old demand ' +
-                dm.getValue('number') + (REMOVE_OTHER ? ' removed.' : ' kept - remove it by hand.'));
-            if (REMOVE_OTHER) dm.deleteRecord();
+                dm.getValue('number') + (gone ? ' removed.' : REMOVE_OTHER ? ' could NOT be removed (blocked) - remove it by hand.' : ' kept - remove it by hand.'));
         }
         return;
     }
@@ -36,10 +36,9 @@
         var REMOVE_OTHER = true;                                              // ✏️ remove the project from an earlier load
         var pr = new GlideRecord('pm_project');
         if (pr.get('correlation_id', source.u_correlation_id + '')) {
+            var gone = REMOVE_OTHER && pr.deleteRecord();             // false when a rule / ACL blocks the delete
             log.warn('Now a demand in Adaptive (phase "' + source.u_portfolio_phase + '"): ' + source.u_name + '. Old project ' +
-                pr.getValue('number') + (REMOVE_OTHER ? ' removed.' : ' kept - remove it by hand.'));
-            if (REMOVE_OTHER) pr.deleteRecord();
-            else ignore = true;
+                pr.getValue('number') + (gone ? ' removed.' : REMOVE_OTHER ? ' could NOT be removed (blocked) - remove it by hand.' : ' kept - remove it by hand.'));
         }
         return;
     }
