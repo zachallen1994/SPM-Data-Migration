@@ -7,7 +7,8 @@
 //   Field map: assigned_to, Use source script                     -> PART D
 //   Field map: effort (Planned effort), Use source script                 -> PART G  (staging column "Planned Effort")
 //   Transform Scripts: onComplete          -> PART F (only with FAST_LOAD; no fix script needed)
-//   Transform Scripts: onBefore, Order 200 -> PART E (keep Adaptive's dates: "Start on specific date", not "Start ASAP")
+//   Transform Scripts: onBefore, Order 200 -> PART E (time constraint + constraint date from Adaptive; ASAP kept as
+//                                             "Start on specific date" so the dates stay - see ASAP_AS_ASAP)
 //   Direct field maps (add the staging columns if missing):
 //     u_description -> description, u_schedule___complete (Schedule % Complete) -> percent_complete,
 //     u_start_date (Start Date) -> start_date, u_due_date (Due Date) -> end_date (Date format yyyy-MM-dd),
@@ -67,13 +68,26 @@ answer = (function transformEntry(source) {
 // predecessors are not migrated. "Start on specific date" keeps the task's own Schedule Start (start_date field map).
 (function runTransformScript(source, map, log, target) {
     var OVERRIDE_STATUS = true;   // ✏️ implementation team decides: true = keep Adaptive's Status; false = ServiceNow calculates it
-    var c = new GlideRecord('sys_choice');
-    c.addQuery('name', 'IN', 'planned_task,pm_project_task');
-    c.addQuery('element', 'time_constraint');
-    c.addQuery('label', 'CONTAINS', 'specific');
-    c.query();
-    if (!c.next()) { log.error('No "Start on specific date" choice on time_constraint - dates follow the project start'); return; }
-    target.time_constraint = c.getValue('value');   // the start_date / end_date field maps then set the dates
+    // Constraint from Adaptive: C_ConstraintType (custom) when filled, else SchedulingType ("Constraint Type").
+    // Choices on time_constraint: asap | start_on | snet (start no earlier than) | snlt (start no later than).
+    // As Soon As Possible -> start_on by default: Adaptive predecessors are not migrated, so "Start ASAP" would move
+    // the task to the project start (wrong dates). Set ASAP_AS_ASAP = true only if the team accepts that.
+    var ASAP_AS_ASAP = false;
+    var raw = ((source.getValue('u_custom_constraint_type') || '') || (source.getValue('u_constraint_type') || '')).toLowerCase();
+    var cdate = (source.getValue('u_constraint_date') || '').substring(0, 10);
+    var tc = 'start_on';
+    if (/no earlier/.test(raw) && /start/.test(raw)) tc = 'snet';
+    else if (/no later/.test(raw) && /start/.test(raw)) tc = 'snlt';
+    else if (/must start|start on/.test(raw)) tc = 'start_on';
+    else if (/as soon/.test(raw) || raw == 'asap') tc = ASAP_AS_ASAP ? 'asap' : 'start_on';
+    else if (raw && raw != 'undefined') log.warn('Adaptive constraint "' + raw + '" has no ServiceNow match - Start on specific date used: ' + source.u_name);
+    target.time_constraint = tc;
+    // Constraint date: Adaptive's own, else the task's Schedule Start (keeps the date for start_on / snet / snlt)
+    var cd = cdate || (source.getValue('u_start_date') || '').substring(0, 10);
+    if (tc != 'asap' && /^\d{4}-\d{2}-\d{2}$/.test(cd) && target.isValidField('constraint_date')) {
+        var g = new GlideDateTime(); g.setDisplayValue(cd + ' 00:00:00', 'yyyy-MM-dd HH:mm:ss');
+        target.constraint_date = g;
+    }
     // Keep Adaptive's Status (PART B): without "Override status" ServiceNow recalculates it (e.g. Red on a past date)
     if (OVERRIDE_STATUS && (source.u_status + '').trim() && target.isValidField('override_status')) target.override_status = true;
     // FAST LOAD (implementation team decides): skip the planning rules while loading - about 6 s per task with them.

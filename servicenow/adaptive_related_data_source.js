@@ -60,6 +60,9 @@
         'Actual Effort':          'ActualEffort',     // hours
         'Planned Effort':         'Work',             // Adaptive "Assigned Resource Effort" (hours) -> task Planned effort
         'Rate Card':              'RateCard.Name',    // task rate card (blank = the project's) -> rate model
+        'Constraint Type':        'SchedulingType',   // e.g. As Soon As Possible -> time_constraint (tasks PART E)
+        'Custom Constraint Type': 'C_ConstraintType', // custom "Constraint Type" - wins when filled
+        'Constraint Date':        'C_ConstraintDate',
         'Actual End Date':        'ActualEndDate',
         'Schedule % Complete':    'PercentCompleted', // column label in the staging table (u_schedule___complete)
         'State':                  'State',
