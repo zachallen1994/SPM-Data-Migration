@@ -9,7 +9,7 @@
 //   Transform Scripts: onComplete          -> PART F (only with FAST_LOAD; no fix script needed)
 //   Transform Scripts: onBefore, Order 200 -> PART E (keep Adaptive's dates: "Start on specific date", not "Start ASAP")
 //   Direct field maps (add the staging columns if missing):
-//     u_description -> description, u_complete (% Complete) -> percent_complete,
+//     u_description -> description, u_schedule___complete (Schedule % Complete) -> percent_complete,
 //     u_start_date (Start Date) -> start_date, u_due_date (Due Date) -> end_date (Date format yyyy-MM-dd),
 //     u_actual_start_date -> work_start, u_actual_end_date -> work_end (Date format yyyy-MM-dd)
 // The data source writes parents before children, so ONE transform run links every task to its parent.

@@ -61,7 +61,7 @@
         'Planned Effort':         'Work',             // Adaptive "Assigned Resource Effort" (hours) -> task Planned effort
         'Rate Card':              'RateCard.Name',    // task rate card (blank = the project's) -> rate model
         'Actual End Date':        'ActualEndDate',
-        '% Complete':             'PercentCompleted', // Adaptive "Schedule % Complete"
+        'Schedule % Complete':    'PercentCompleted', // column label in the staging table (u_schedule___complete)
         'State':                  'State',
         'Status':                 'TrackStatus',      // Adaptive Task "Status" (e.g. On Track); comes back as a name
         'Owner Email':            'Manager.Email',    // Adaptive "Owner" -> assigned_to
