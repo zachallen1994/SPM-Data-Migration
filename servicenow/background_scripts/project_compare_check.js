@@ -40,15 +40,16 @@ else {
             total += sum;
             var ct = l.NonLaborResource ? l.NonLaborResource.Name : '';
             var t = new GlideRecord('resource_type_definition');
-            var exists = t.isValid() ? t.get('name', ct) : '(table?)';
+            t.addQuery('name', ct); t.query();
+            var exists = t.hasNext();
             gs.print('  Adaptive line: ' + ct + ' | ' + last(l.ExpenseType) + ' | ' + Math.round(sum * 100) / 100 + ' | cost type in ServiceNow: ' + exists);
         });
         gs.print('  Adaptive budget lines total: ' + Math.round(total * 100) / 100);
         var cp = new GlideAggregate('cost_plan');
         cp.addQuery('task', p.getUniqueValue());
-        cp.addAggregate('SUM', 'unit_cost'); cp.addAggregate('COUNT');
+        cp.addAggregate('SUM', 'unit_cost'); cp.addAggregate('SUM', 'planned_cost'); cp.addAggregate('COUNT');
         cp.groupBy('resource_type'); cp.query();
-        while (cp.next()) gs.print('  ServiceNow cost plans: ' + cp.getDisplayValue('resource_type') + ' | ' + cp.getAggregate('COUNT') + ' plans | ' + cp.getAggregate('SUM', 'unit_cost'));
+        while (cp.next()) gs.print('  ServiceNow cost plans: ' + cp.getDisplayValue('resource_type') + ' | ' + cp.getAggregate('COUNT') + ' plans | unit cost ' + cp.getAggregate('SUM', 'unit_cost') + ' | planned cost ' + cp.getAggregate('SUM', 'planned_cost'));
 
         // 2) % complete
         gs.print('=== % complete (Adaptive vs ServiceNow)');
@@ -70,9 +71,7 @@ else {
             gs.print('  ' + (same ? 'ok   ' : 'DIFF ') + st.getValue('number') + ' | Adaptive ' + a + ' | ServiceNow ' + s + (parent ? ' | parent (calculated)' : '') + ' | ' + st.getValue('short_description'));
         }
         gs.print('  tasks with a different % complete: ' + diff + ' (first 30)');
-        var stg = new GlideRecord('u_import_adaptive_project_tasks');
-        stg.addNotNullQuery('u_complete'); stg.addQuery('u_complete', '!=', '0'); stg.setLimit(1); stg.query();
-        gs.print('  staging column u_complete has non-zero values: ' + stg.hasNext());
+        gs.print('  (run percent_complete_check.js for the staging column and field map details)');
         var fm = new GlideRecord('sys_transform_entry');
         fm.addQuery('map.source_table', 'u_import_adaptive_project_tasks'); fm.addQuery('target_field', 'percent_complete'); fm.query();
         gs.print('  field map to percent_complete on the tasks map: ' + fm.hasNext());
