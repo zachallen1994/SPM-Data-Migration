@@ -5,7 +5,7 @@
 //   Field map: Status, Use source script, Choice action = ignore -> PART B
 //   Field map: state, Use source script                           -> PART C
 //   Field map: assigned_to, Use source script                     -> PART D
-//   Field map: effort (Planned effort), Use source script                 -> PART G  (staging column "Planned Effort")
+//   Transform Scripts: onBefore, Order 300 -> PART G (Planned effort from "Planned Effort" column, hours)
 //   Transform Scripts: onComplete          -> PART F (only with FAST_LOAD; no fix script needed)
 //   Transform Scripts: onBefore, Order 200 -> PART E (time constraint + constraint date from Adaptive; ASAP kept as
 //                                             "Start on specific date" so the dates stay - see ASAP_AS_ASAP)
@@ -128,13 +128,17 @@ answer = (function transformEntry(source) {
     log.info('FAST_LOAD finished: planning rules back on and recalculated for ' + done + ' projects');
 })(source, map, log, target);
 
-// ---------- PART G: field map -> effort (Planned effort) from Adaptive "Assigned Resource Effort" (Work, hours) ----------
-answer = (function transformEntry(source) {
-    var h = parseFloat(source.getValue('u_planned_effort'));
-    if (!h) return '';
-    var d = new GlideDuration(Math.round(h * 3600000));      // hours -> duration
-    return d.getDurationValue();                             // e.g. "40 00:00:00" style value the field accepts
-})(source);
+// ---------- PART G: onBefore (Order 300) -> effort (Planned effort) from Adaptive "Assigned Resource Effort" ----------
+// Adaptive Work comes in as hours (staging column "Planned Effort"). Set directly as a duration (milliseconds) - a
+// field map with a duration string can silently give 0. Parent tasks: ServiceNow rolls effort up from the children.
+// (Replaces the earlier PART G field map - delete that field map if it exists.)
+(function runTransformScript(source, map, log, target) {
+    var raw = source.getValue('u_planned_effort');
+    var h = parseFloat(raw);
+    if (isNaN(h) || h <= 0) return;
+    if (!target.isValidField('effort')) { log.warn('No effort field on project task'); return; }
+    target.effort.setDateNumericValue(Math.round(h * 3600000));
+})(source, map, log, target);
 
 // ---------- PART H: field map -> percent_complete (Adaptive "Schedule % Complete") ----------
 // Bottom-level tasks only: parent tasks are calculated from their children in ServiceNow (and in Adaptive, the "?"),
