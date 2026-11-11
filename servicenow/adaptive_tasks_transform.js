@@ -10,7 +10,7 @@
 //   Transform Scripts: onBefore, Order 200 -> PART E (time constraint + constraint date from Adaptive; ASAP kept as
 //                                             "Start on specific date" so the dates stay - see ASAP_AS_ASAP)
 //   Direct field maps (add the staging columns if missing):
-//     u_description -> description, u_schedule___complete (Schedule % Complete) -> percent_complete,
+//     u_description -> description,   percent_complete: script field map -> PART H,
 //     u_start_date (Start Date) -> start_date, u_due_date (Due Date) -> end_date (Date format yyyy-MM-dd),
 //     u_actual_start_date -> work_start, u_actual_end_date -> work_end (Date format yyyy-MM-dd)
 // The data source writes parents before children, so ONE transform run links every task to its parent.
@@ -134,4 +134,19 @@ answer = (function transformEntry(source) {
     if (!h) return '';
     var d = new GlideDuration(Math.round(h * 3600000));      // hours -> duration
     return d.getDurationValue();                             // e.g. "40 00:00:00" style value the field accepts
+})(source);
+
+// ---------- PART H: field map -> percent_complete (Adaptive "Schedule % Complete") ----------
+// Bottom-level tasks only: parent tasks are calculated from their children in ServiceNow (and in Adaptive, the "?"),
+// and sending a value to a parent can trip "Validate Percent Complete". Whole number, 0-100. Blank = leave as is.
+answer = (function transformEntry(source) {
+    var v = parseFloat(source.getValue('u_schedule___complete'));
+    if (isNaN(v)) return '';
+    var kids = new GlideRecord(source.getTableName());                   // children of this task in the same load
+    kids.addQuery('sys_import_set', source.getValue('sys_import_set'));
+    kids.addQuery('u_parent_correlation_id', source.getValue('u_correlation_id'));
+    kids.setLimit(1);
+    kids.query();
+    if (kids.hasNext()) return '';                                        // parent task: ServiceNow calculates it
+    return String(Math.max(0, Math.min(100, Math.round(v))));
 })(source);
