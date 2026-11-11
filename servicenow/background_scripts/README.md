@@ -57,6 +57,7 @@ None of these change data. Lines marked ✏️ at the top are the only things to
 | project_compare_check.js | DFCT0010737: one project's budget lines vs cost plans (missing cost types) and task % complete vs Adaptive |
 | percent_complete_check.js | Task % complete = 0: staging column, field map source, values |
 | constraint_check.js | Adaptive task constraint fields and values vs ServiceNow time constraint choices |
+| project_state_choices_check.js | Project State shows a raw value: state choices (incl. inactive) per table, values on migrated projects |
 | timecard_br_check.js | Insert rules on time_card / time_sheet that touch State; one card's time sheet |
 | attachment_check.js | What Adaptive returns for one record's files; does download work |
 | asana_scope_check.js | Active Asana projects per team |
