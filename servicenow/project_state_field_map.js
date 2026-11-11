@@ -3,7 +3,11 @@
 // In the field map: Use source script = true, Choice action = ignore, Target field = state.
 // Unknown or inactive -> blank (the field is left as it is) + a log line. Never "undefined".
 answer = (function transformEntry(source) {
-    var TABLE = 'pm_project';                    // ✏️ 'dmn_demand' on the demands map
+    // Projects only. DEV pm_project.state has: 1 Open, 3 Closed Complete, 4 Closed Incomplete, 5 Investigating,
+    // -5 Pending - NO "Work in Progress" (2). Until the implementation team adds it (or names the state active
+    // projects should get), Active / On Hold are logged and the field is left as it is.
+    // Demands have their own states (Draft, Submitted, Screening, Qualified, Approved, Completed...) - not this script.
+    var TABLE = 'pm_project';
     var LABEL = {                                // Adaptive State -> ServiceNow state LABEL (BA)
         'completed': 'Closed Complete',
         'active':    'Work in Progress',
