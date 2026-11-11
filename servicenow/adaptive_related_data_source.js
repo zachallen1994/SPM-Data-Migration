@@ -65,7 +65,7 @@
         'Constraint Date':        'C_ConstraintDate',
         'Actual End Date':        'ActualEndDate',
         'Schedule % Complete':    'PercentCompleted', // column label in the staging table (u_schedule___complete)
-        'State':                  'State',
+        'Task State':             'State',            // NOT "State": that label is the import set's own sys_import_state column
         'Status':                 'TrackStatus',      // Adaptive Task "Status" (e.g. On Track); comes back as a name
         'Owner Email':            'Manager.Email',    // Adaptive "Owner" -> assigned_to
         'Milestone':              '=false'      // Milestone Data Source: '=true'

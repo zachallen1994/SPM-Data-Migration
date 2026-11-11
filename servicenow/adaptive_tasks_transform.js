@@ -47,9 +47,9 @@ answer = (function transformEntry(source) {
 // Adaptive task State: Draft | Active | On Hold | Completed | Cancelled. -5 Pending is inactive here, so Draft -> Open.
 answer = (function transformEntry(source) {
     var map = { 'draft': '1', 'active': '2', 'on hold': '1', 'completed': '3', 'cancelled': '4' };
-    var s = (source.u_state + '').toLowerCase().trim();
+    var s = (source.u_task_state + '').toLowerCase().trim();
     if (s == 'undefined' || s == 'null') s = '';                  // no State column in staging: add it (label "State")
-    if (s && !map[s]) log.warn('Unmapped Adaptive task state: ' + source.u_state);
+    if (s && !map[s]) log.warn('Unmapped Adaptive task state: ' + source.u_task_state);
     return map[s] || '1';
 })(source);
 
