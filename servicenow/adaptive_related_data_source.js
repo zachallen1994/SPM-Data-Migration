@@ -79,7 +79,7 @@
     //              PARENT_TABLES = ['pm_project'] (agreed: the project's Resources list only - about 3 people per
     //              project; adding 'pm_project_task' loads every person on every task, 52k rows in TEST), MAP =
     //              { 'Correlation ID':'@id', 'Project Correlation ID':'@WorkItem', 'Resource Email':'Resource.Email',
-    //                'Start Date':'StartDate', 'End Date':'InactiveDate' }   -> resource_assignment_transform.js
+    //                'Resource Name':'Resource.Name', 'Start Date':'StartDate', 'End Date':'InactiveDate' }   -> resource_assignment_transform.js
     //  Issues:     ENTITY = 'Issue', PROJECT_FIELD = 'PlannedFor', MAP =
     //              { 'Correlation ID':'@id', 'Project Correlation ID':'@PlannedFor', 'Title':'Title', 'State':'State',
     //                'Current Status':'C_IssueCurrentStatus', 'Priority':'C_IssuePriority', 'Category':'C_IssueCategory',

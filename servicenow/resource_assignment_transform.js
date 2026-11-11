@@ -9,7 +9,7 @@
 // Coalescing on task + resource means one assignment per person per project/task; re-runs update it.
 // Target fields (confirmed in the dictionary): task, user_resource, start_date, end_date, operational_work_type
 // (start_date, end_date and operational_work_type are mandatory).
-// Staging columns used: u_project_correlation_id (the project or task), u_resource_email, u_start_date, u_end_date.
+// Staging columns used: u_project_correlation_id (the project or task), u_resource_email, u_resource_name, u_start_date, u_end_date.
 // This replaces PARTS B and C of resources_time_transform.js (assigned_to / project team).
 
 // ---------- PART A: field map -> task ----------
@@ -23,9 +23,28 @@ answer = (function transformEntry(source) {
 })(source);
 
 // ---------- PART B: field map -> user_resource ----------
+// Email first; then the name (Adaptive "Joe Smith" = one active ServiceNow user of that name). Adaptive emails can be
+// on another domain than the ServiceNow user (e.g. @bshsi.org vs @bsmhealth.org) - the name match covers that.
 answer = (function transformEntry(source) {
+    var email = (source.getValue('u_resource_email') || '').toLowerCase().trim();
+    var name = (source.getValue('u_resource_name') || '').trim();
     var u = new GlideRecord('sys_user');
-    return u.get('email', (source.u_resource_email + '').toLowerCase().trim()) ? u.getUniqueValue() : '';
+    if (email && email != 'undefined' && u.get('email', email)) return u.getUniqueValue();
+    if (email && email.indexOf('@') > 0) {                     // same mailbox name, other domain
+        u = new GlideRecord('sys_user');
+        u.addQuery('email', 'STARTSWITH', email.split('@')[0] + '@');
+        u.addQuery('active', true);
+        u.query();
+        if (u.getRowCount() == 1 && u.next()) return u.getUniqueValue();
+    }
+    if (name && name != 'undefined') {
+        u = new GlideRecord('sys_user');
+        u.addQuery('name', name);
+        u.addQuery('active', true);
+        u.query();
+        if (u.getRowCount() == 1 && u.next()) return u.getUniqueValue();
+    }
+    return '';
 })(source);
 
 // ---------- PART C: field map -> start_date (Adaptive capacity start, else the project/task start) ----------
@@ -60,10 +79,21 @@ answer = (function transformEntry(source) {
         found = gr.get('correlation_id', source.u_project_correlation_id + '');
     }
     if (!found) { ignore = true; return; }                                  // project/task not migrated
-    var email = (source.u_resource_email + '').toLowerCase().trim();
-    var u = new GlideRecord('sys_user');
-    if (!email || email == 'undefined' || !u.get('email', email)) {         // e.g. "Not Assigned" placeholder
-        log.warn('No ServiceNow user for "' + source.u_resource_email + '" on ' + source.u_project_correlation_id + ' - skipped');
+    // same lookup as PART B (email, same mailbox on another domain, unique active name)
+    var email = (source.getValue('u_resource_email') || '').toLowerCase().trim();
+    var name = (source.getValue('u_resource_name') || '').trim();
+    var ok = false, u = new GlideRecord('sys_user');
+    if (email && email != 'undefined' && u.get('email', email)) ok = true;
+    if (!ok && email.indexOf('@') > 0) {
+        u = new GlideRecord('sys_user'); u.addQuery('email', 'STARTSWITH', email.split('@')[0] + '@'); u.addQuery('active', true); u.query();
+        ok = u.getRowCount() == 1;
+    }
+    if (!ok && name && name != 'undefined') {
+        u = new GlideRecord('sys_user'); u.addQuery('name', name); u.addQuery('active', true); u.query();
+        ok = u.getRowCount() == 1;
+    }
+    if (!ok) {                                                              // e.g. "Not Assigned" placeholder
+        log.warn('No ServiceNow user for ' + name + ' <' + email + '> on ' + source.u_project_correlation_id + ' - skipped');
         ignore = true;
     }
 })(source, map, log, target);

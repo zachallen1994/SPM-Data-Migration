@@ -58,6 +58,7 @@ None of these change data. Lines marked ✏️ at the top are the only things to
 | percent_complete_check.js | Task % complete = 0: staging column, field map source, values |
 | constraint_check.js | Adaptive task constraint fields and values vs ServiceNow time constraint choices |
 | project_state_choices_check.js | Project State shows a raw value: state choices (incl. inactive) per table, values on migrated projects |
+| resource_match_check.js | A project's Adaptive resources: matched to a ServiceNow user by email, mailbox, name - or missing |
 | timecard_br_check.js | Insert rules on time_card / time_sheet that touch State; one card's time sheet |
 | attachment_check.js | What Adaptive returns for one record's files; does download work |
 | asana_scope_check.js | Active Asana projects per team |
