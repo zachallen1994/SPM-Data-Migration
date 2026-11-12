@@ -60,6 +60,7 @@ None of these change data. Lines marked ✏️ at the top are the only things to
 | project_state_choices_check.js | Project State shows a raw value: state choices (incl. inactive) per table, values on migrated projects |
 | resource_match_check.js | A project's Adaptive resources: matched to a ServiceNow user by email, mailbox, name - or missing |
 | duplicate_remove_with_related.js | CHANGES DATA (DRY_RUN first): removes the wrong half of a demand/project duplicate and everything migrated under it |
+| tasks_reset_for_project.js | CHANGES DATA (DRY_RUN first): deletes a project's migrated tasks and their records so the next load inserts them fresh |
 | timecard_br_check.js | Insert rules on time_card / time_sheet that touch State; one card's time sheet |
 | attachment_check.js | What Adaptive returns for one record's files; does download work |
 | asana_scope_check.js | Active Asana projects per team |
