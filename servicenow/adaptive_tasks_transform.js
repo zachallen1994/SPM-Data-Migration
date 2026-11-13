@@ -141,11 +141,14 @@ answer = (function transformEntry(source) {
 })(source, map, log, target);
 
 // ---------- PART H: field map -> percent_complete (Adaptive "Schedule % Complete") ----------
-// Bottom-level tasks only: parent tasks are calculated from their children in ServiceNow (and in Adaptive, the "?"),
-// and sending a value to a parent can trip "Validate Percent Complete". Whole number, 0-100. Blank = leave as is.
+// Whole number, 0-100 ("Validate Percent Complete" only rejects values outside 0-100). Blank = leave as is.
+// SEND_TO_PARENTS = true: every task gets Adaptive's value (parents too), so the project % does not depend on
+// ServiceNow re-calculating parents. false = bottom-level tasks only.
 answer = (function transformEntry(source) {
+    var SEND_TO_PARENTS = true;   // ✏️ true = parents get Adaptive's value too (the project then rolls up from them)
     var v = parseFloat(source.getValue('u_schedule___complete'));
     if (isNaN(v)) return '';
+    if (SEND_TO_PARENTS) return String(Math.max(0, Math.min(100, Math.round(v))));
     var kids = new GlideRecord(source.getTableName());                   // children of this task in the same load
     kids.addQuery('sys_import_set', source.getValue('sys_import_set'));
     kids.addQuery('u_parent_correlation_id', source.getValue('u_correlation_id'));

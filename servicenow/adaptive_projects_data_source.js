@@ -46,6 +46,7 @@
         'Total Actual':         'C_TotalActual',
         'Operating Actuals':    'C_OperatingActuals',
         'Capital Actuals':      'C_CapitalActuals',
+        'Schedule % Complete':  'PercentCompleted',         // project % complete -> percent_complete (project_percent_complete_field_map.js)
         'Actual Effort':        'ActualEffort',             // hours logged (Adaptive roll-up) -> demand_actual_effort
         'Portfolio Phase':      'C_PortfolioPhase',         // decides Demand vs Project (demand_project_split.js)
         'Project Pool':         'C_ProjectPool',            // Yes / No
