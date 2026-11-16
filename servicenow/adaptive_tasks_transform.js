@@ -98,13 +98,15 @@ answer = (function transformEntry(source) {
     if (FAST_LOAD && target.isValidField('run_calc_brs')) target.run_calc_brs = false;
 })(source, map, log, target);
 
-// ---------- PART F: onComplete - finish a FAST_LOAD (replaces fix_scripts/tasks_fast_load_finish.js) ----------
-// Only needed when PART E has FAST_LOAD = true. Runs ONCE when the transform ends: for every project in this
+// ---------- PART F: onComplete - roll up once per project (replaces fix_scripts/tasks_fast_load_finish.js) ----------
+// Needed when PART E has FAST_LOAD = true, or the map runs with "Run business rules" OFF (RECALC_PROJECTS). Runs ONCE when the transform ends: for every project in this
 // import set, turns the planning rules back on for its migrated tasks and recalculates the project once.
 // Works for the Adaptive and the Asana tasks maps (both staging tables have "Project Correlation ID").
 (function runTransformScript(source, map, log, target) {
     var FAST_LOAD = false;                      // ✏️ same value as in PART E
-    if (!FAST_LOAD) return;
+    var RECALC_PROJECTS = true;                 // ✏️ true = recalculate each project once at the end (needed when the
+                                                //    map's "Run business rules" is OFF: % complete, dates, effort roll up)
+    if (!FAST_LOAD && !RECALC_PROJECTS) return;
     var projects = {};
     var r = new GlideRecord(map.source_table + '');
     r.addQuery('sys_import_set', import_set.sys_id + '');
