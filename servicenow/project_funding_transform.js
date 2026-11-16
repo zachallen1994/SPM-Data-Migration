@@ -26,7 +26,12 @@
     r.addQuery('sys_import_set', import_set.sys_id + '');
     r.query();
     var noYear = 0, noProject = 0;
+    var seen = {}, dupes = 0;
     while (r.next()) {
+        // the same budget line + month can be in the import set more than once (e.g. the load ran twice) - count it once
+        var key = r.getValue('u_correlation_id') + '|' + String(r.getValue('u_month') || '').substring(0, 10);
+        if (seen[key]) { dupes++; continue; }
+        seen[key] = true;
         var amount = parseFloat(r.getValue('u_budget')) || 0;
         if (!amount) continue;
         var corr = r.getValue('u_project_correlation_id'), pid = '';
@@ -65,5 +70,6 @@
     }
     log.info('Project funding: ' + made + ' records (project x fiscal year) written' +
         (noYear ? '; ' + noYear + ' budget rows with no fiscal year in ServiceNow' : '') +
-        (noProject ? '; ' + noProject + ' budget rows for projects not migrated' : ''));
+        (noProject ? '; ' + noProject + ' budget rows for projects not migrated' : '') +
+        (dupes ? '; ' + dupes + ' duplicate rows (same line and month) counted once' : ''));
 })(source, map, log, target);
