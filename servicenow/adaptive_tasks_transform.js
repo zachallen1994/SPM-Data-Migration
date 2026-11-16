@@ -4,7 +4,8 @@
 //   Transform Scripts: onBefore, Order 100 -> PART A (project + parent)   - TWO separate onBefore scripts:
 //   Field map: Status, Use source script, Choice action = ignore -> PART B
 //   Field map: state, Use source script                           -> PART C
-//   Field map: assigned_to, Use source script                     -> PART D
+//   Field map: assigned_to -> REMOVE (Adaptive Owner = the project manager; PART D kept below for reference only)
+//   Transform Scripts: onBefore, Order 400 -> PART I (Adaptive task Resources -> Additional assignee list)
 //   Transform Scripts: onBefore, Order 300 -> PART G (Planned effort from "Planned Effort" column, hours)
 //   Transform Scripts: onComplete          -> PART F (only with FAST_LOAD; no fix script needed)
 //   Transform Scripts: onBefore, Order 200 -> PART E (time constraint + constraint date from Adaptive; ASAP kept as
@@ -157,3 +158,29 @@ answer = (function transformEntry(source) {
     if (kids.hasNext()) return '';                                        // parent task: ServiceNow calculates it
     return String(Math.max(0, Math.min(100, Math.round(v))));
 })(source);
+
+// ---------- PART I: onBefore (Order 400) - Adaptive task "Resources" -> Additional assignee list ----------
+// Staging column "Resource Emails" (comma separated, filled by the tasks data source, TASK_RESOURCES = true).
+// Each email -> a ServiceNow user (email; same mailbox on another domain; unique active name is not available here).
+// Assigned to is cleared (Adaptive "Owner" is the project manager, not the task's person) - CLEAR_ASSIGNED_TO.
+(function runTransformScript(source, map, log, target) {
+    var CLEAR_ASSIGNED_TO = true;
+    if (CLEAR_ASSIGNED_TO) target.assigned_to = '';
+    var raw = (source.getValue('u_resource_emails') || '').toLowerCase();
+    if (!raw || raw == 'undefined') { target.additional_assignee_list = ''; return; }
+    var ids = [], missing = [];
+    raw.split(',').forEach(function (em) {
+        em = em.trim();
+        if (!em) return;
+        var u = new GlideRecord('sys_user');
+        if (u.get('email', em)) { ids.push(u.getUniqueValue()); return; }
+        u = new GlideRecord('sys_user');
+        u.addQuery('email', 'STARTSWITH', em.split('@')[0] + '@');
+        u.addQuery('active', true);
+        u.query();
+        if (u.getRowCount() == 1 && u.next()) ids.push(u.getUniqueValue());
+        else missing.push(em);
+    });
+    target.additional_assignee_list = ids.join(',');
+    if (missing.length) log.warn('No ServiceNow user for task resource(s) ' + missing.join(', ') + ' on ' + source.u_name);
+})(source, map, log, target);

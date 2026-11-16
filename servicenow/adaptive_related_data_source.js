@@ -16,6 +16,8 @@
     var PARENT_TABLES = ['pm_project', 'dmn_demand'];   // records already in ServiceNow that PROJECT_FIELD may point at
                                           // (Resources: ['pm_project'] - the project's own Resources list)
                                           // (Tasks / Milestones: ['pm_project'] - demands have no work plan)
+    var TASK_RESOURCES = true;      // Tasks only: the task's Adaptive "Resources" (RegularResourceLink on the task) into the
+                                    // column "Resource Emails" (String, 4000) -> additional assignees (tasks PART I)
     var ONLY = [];                  // test / batch: project or demand numbers or names, e.g. ['PRJ0010675']; [] = all
     var SINCE_FIELD = '';           // date cut-off, e.g. Status history: 'C_UpdatedOn' ('' = no cut-off)
     var SINCE = '';                 // yyyy-MM-dd: records dated before this are not loaded, e.g. '2025-01-01'
@@ -67,7 +69,7 @@
         'Schedule % Complete':    'PercentCompleted', // column label in the staging table (u_schedule___complete)
         'Task State':             'State',            // NOT "State": that label is the import set's own sys_import_state column
         'Status':                 'TrackStatus',      // Adaptive Task "Status" (e.g. On Track); comes back as a name
-        'Owner Email':            'Manager.Email',    // Adaptive "Owner" -> assigned_to
+        // 'Owner Email': 'Manager.Email',  // NOT used any more: Adaptive "Owner" is the project manager, not the task's people
         'Milestone':              '=false'      // Milestone Data Source: '=true'
     };
     // Presets (replace MAP for that entity; confirm names with the Discovery output):
@@ -275,6 +277,31 @@
         }
         pending.forEach(function (r, k) { r.d = depth(r); r.k = k; });
         pending.sort(function (a, b) { return a.d - b.d || a.k - b.k; });
+        // The task's people (Adaptive "Resources" column): one query per 50 tasks, emails joined with ","
+        var resCol = colByLabel['resource emails'];
+        if (TASK_RESOURCES && ENTITY == 'Task' && resCol && pending.length) {
+            var byTask = {};
+            for (var x = 0; x < pending.length; x += 50) {
+                var w = pending.slice(x, x + 50).map(function (r) { return "WorkItem = '" + r.id + "'"; }).join(' OR ');
+                var rp = { from: 0, limit: 100 };
+                while (true) {
+                    var rb;
+                    try { rb = post({ q: 'SELECT WorkItem, Resource.Email FROM RegularResourceLink WHERE ' + w, paging: rp }); }
+                    catch (err) { import_log.error(String(err) + ' -- task resources'); break; }
+                    rb.entities.forEach(function (l) {
+                        var tid = l.WorkItem && l.WorkItem.id, em = l.Resource && l.Resource.Email;
+                        if (!tid || !em) return;
+                        byTask[tid] = byTask[tid] || [];
+                        if (byTask[tid].indexOf(String(em).toLowerCase()) < 0) byTask[tid].push(String(em).toLowerCase());
+                    });
+                    if (!rb.paging || !rb.paging.hasMore) break;
+                    rp = rb.paging;
+                }
+            }
+            pending.forEach(function (r) { if (byTask[r.id]) r.row[resCol] = byTask[r.id].join(','); });
+        } else if (TASK_RESOURCES && ENTITY == 'Task' && !resCol && pending.length) {
+            import_log.warn('No column labelled "Resource Emails" - task resources not loaded (add it: String, 4000)');
+        }
         pending.forEach(function (r) { import_set_table.insert(r.row); count++; });
         pending = [];
     }
