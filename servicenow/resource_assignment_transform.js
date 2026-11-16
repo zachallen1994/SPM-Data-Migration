@@ -5,6 +5,7 @@
 //   Field map: Use source script, Target field = start_date, Date format yyyy-MM-dd -> PART C
 //   Field map: Use source script, Target field = end_date,   Date format yyyy-MM-dd -> PART D
 //   Field map: Use source script, Target field = operational_work_type (MANDATORY) -> PART F
+//   Field map: Use source script, Target field = effort (hours)                    -> PART G
 //   Transform Scripts: onBefore                                           -> PART E
 // Coalescing on task + resource means one assignment per person per project/task; re-runs update it.
 // Target fields (confirmed in the dictionary): task, user_resource, start_date, end_date, operational_work_type
@@ -103,4 +104,14 @@ answer = (function transformEntry(source) {
 answer = (function transformEntry(source) {
     var VALUE = '';
     return VALUE;
+})(source);
+
+// ---------- PART G: field map -> effort (hours) = Adaptive "Total Project Assignment" (Resource Planning View) ----------
+// Staging columns "Total Assignment" (TotalAssignment, hours), fallback "Work". ServiceNow then creates the
+// allocations (resource_allocation / _daily) by spreading the effort over start_date..end_date - the weekly hours.
+answer = (function transformEntry(source) {
+    var h = parseFloat(source.getValue('u_total_assignment'));
+    if (isNaN(h) || h <= 0) h = parseFloat(source.getValue('u_work'));
+    if (isNaN(h) || h <= 0) return '';
+    return String(Math.round(h * 100) / 100);
 })(source);
