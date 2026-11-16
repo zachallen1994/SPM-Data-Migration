@@ -280,28 +280,37 @@
         }
         pending.forEach(function (r, k) { r.d = depth(r); r.k = k; });
         pending.sort(function (a, b) { return a.d - b.d || a.k - b.k; });
-        // The task's people (Adaptive "Resources" column): one query per 50 tasks, emails joined with ","
+        // The task's people (Adaptive "Resources" column): one query per 20 tasks (one per task if a batch fails),
+        // emails joined with ","
         var resCol = colByLabel['resource emails'];
         if (TASK_RESOURCES && ENTITY == 'Task' && resCol && pending.length) {
-            var byTask = {};
-            for (var x = 0; x < pending.length; x += 50) {
-                var w = pending.slice(x, x + 50).map(function (r) { return "WorkItem = '" + r.id + "'"; }).join(' OR ');
+            var byTask = {}, resErr = '';
+            var fetchRes = function (ids) {
+                var w = ids.map(function (id) { return "WorkItem = '" + id + "'"; }).join(' OR ');
                 var rp = { from: 0, limit: 100 };
                 while (true) {
-                    var rb;
-                    try { rb = post({ q: 'SELECT WorkItem, Resource.Email FROM RegularResourceLink WHERE ' + w, paging: rp }); }
-                    catch (err) { import_log.error(String(err) + ' -- task resources'); break; }
-                    rb.entities.forEach(function (l) {
-                        var tid = l.WorkItem && l.WorkItem.id, em = l.Resource && l.Resource.Email;
-                        if (!tid || !em) return;
+                    var rb = post({ q: 'SELECT WorkItem, Resource.Email FROM RegularResourceLink WHERE ' + w, paging: rp });
+                    (rb.entities || []).forEach(function (l) {
+                        var tid = l.WorkItem && l.WorkItem.id ? l.WorkItem.id : l.WorkItem;
+                        var em = l.Resource && l.Resource.Email;
+                        if (!tid || !em || ids.indexOf(tid) < 0) return;
                         byTask[tid] = byTask[tid] || [];
                         if (byTask[tid].indexOf(String(em).toLowerCase()) < 0) byTask[tid].push(String(em).toLowerCase());
                     });
                     if (!rb.paging || !rb.paging.hasMore) break;
                     rp = rb.paging;
                 }
+            };
+            for (var x = 0; x < pending.length; x += 20) {
+                var ids = pending.slice(x, x + 20).map(function (r) { return r.id; });
+                try { fetchRes(ids); }
+                catch (err) {
+                    ids.forEach(function (one) { try { fetchRes([one]); } catch (e2) { resErr = String(e2); } });
+                }
             }
-            pending.forEach(function (r) { if (byTask[r.id]) r.row[resCol] = byTask[r.id].join(','); });
+            var withRes = 0;
+            pending.forEach(function (r) { if (byTask[r.id]) { r.row[resCol] = byTask[r.id].join(','); withRes++; } });
+            import_log.info('Task resources: ' + withRes + ' of ' + pending.length + ' tasks have resources' + (resErr ? ' - last error: ' + resErr : ''));
         } else if (TASK_RESOURCES && ENTITY == 'Task' && !resCol && pending.length) {
             import_log.warn('No column labelled "Resource Emails" - task resources not loaded (add it: String, 4000)');
         }
