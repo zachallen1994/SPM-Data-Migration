@@ -212,6 +212,7 @@ answer = (function transformEntry(source) {
 // Use source script = true, Choice action = ignore. Blank / no match -> left as is (logged).
 answer = (function transformEntry(source) {
     var v = (source.getValue('u_funding_type') || '').trim();
+    if (!v || v == 'undefined') v = (source.getValue('u_task_funding_type') || '').trim();   // custom Task Funding Type
     if (!v || v == 'undefined') return '';
     var c = new GlideRecord('sys_choice');
     c.addQuery('name', 'IN', 'pm_project_task,planned_task,task');
