@@ -60,6 +60,7 @@
         'Due Date':               'DueDate',
         'Actual Start Date':      'ActualStartDate',
         'Actual Effort':          'ActualEffort',     // hours
+        'Funding Type':           'ExpenseType',      // Adaptive task "Funding Type" (Capex / Opex) -> expense_type (tasks PART J)
         'Planned Effort':         'Work',             // Adaptive "Assigned Resource Effort" (hours) -> task Planned effort
         'Rate Card':              'RateCard.Name',    // task rate card (blank = the project's) -> rate model
         'Constraint Type':        'SchedulingType',   // e.g. As Soon As Possible -> time_constraint (tasks PART E)

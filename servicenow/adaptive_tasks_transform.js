@@ -206,3 +206,21 @@ answer = (function transformEntry(source) {
     target.additional_assignee_list = ids.join(',');
     if (missing.length) log.warn('No ServiceNow user for task resource(s) ' + missing.join(', ') + ' on ' + source.u_name);
 })(source, map, log, target);
+
+// ---------- PART J: field map -> expense_type (Expense type) from Adaptive task "Funding Type" ----------
+// Staging column "Funding Type" (Capex / Opex). Matched to the Expense type choices by label or value (any case).
+// Use source script = true, Choice action = ignore. Blank / no match -> left as is (logged).
+answer = (function transformEntry(source) {
+    var v = (source.getValue('u_funding_type') || '').trim();
+    if (!v || v == 'undefined') return '';
+    var c = new GlideRecord('sys_choice');
+    c.addQuery('name', 'IN', 'pm_project_task,planned_task,task');
+    c.addQuery('element', 'expense_type');
+    c.addQuery('inactive', false);
+    c.query();
+    while (c.next())
+        if ((c.getValue('label') || '').toLowerCase() == v.toLowerCase() || (c.getValue('value') || '').toLowerCase() == v.toLowerCase())
+            return c.getValue('value');
+    log.warn('Expense type: no choice matches Adaptive Funding Type "' + v + '" on ' + source.u_name);
+    return '';
+})(source);
