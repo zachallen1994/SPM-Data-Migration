@@ -50,9 +50,14 @@
             fr.addQuery('fiscal_period', fy);
             fr.query();
             var isNew = !fr.next();
+            var capex = Math.round(sums[pid][fy].capex * 100) / 100, opex = Math.round(sums[pid][fy].opex * 100) / 100;
+            if (fr.hasNext()) log.warn('More than one funding record for one project + fiscal year - remove the extra (project_funding_check.js)');
+            // unchanged -> do not save: a save makes the funding rules add the amounts to the project again
+            if (!isNew && Math.abs((parseFloat(fr.getValue('capex_budget')) || 0) - capex) < 0.01 &&
+                Math.abs((parseFloat(fr.getValue('opex_budget')) || 0) - opex) < 0.01) continue;
             if (isNew) { fr.initialize(); fr.setValue('task', pid); fr.setValue('fiscal_period', fy); }
-            fr.setValue('capex_budget', Math.round(sums[pid][fy].capex * 100) / 100);
-            fr.setValue('opex_budget', Math.round(sums[pid][fy].opex * 100) / 100);
+            fr.setValue('capex_budget', capex);
+            fr.setValue('opex_budget', opex);
             if (STATE) fr.setValue('state', STATE);
             if (isNew) fr.insert(); else fr.update();
             made++;

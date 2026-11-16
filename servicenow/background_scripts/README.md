@@ -66,6 +66,7 @@ None of these change data. Lines marked ✏️ at the top are the only things to
 | project_funding_check.js | Total Budget comes from project_funding: its fields, mandatory ones, choices, rules, an example record |
 | task_resources_check.js | Task Resources not in Additional assignee list: staging column, row value, Adaptive links, user match, PART I |
 | task_funding_type_check.js | Which Adaptive Task field holds the work plan's Funding Type, with values |
+| project_budget_check.js | A project's Total Budget vs its Project Funding records (duplicates, amounts) |
 | timecard_br_check.js | Insert rules on time_card / time_sheet that touch State; one card's time sheet |
 | attachment_check.js | What Adaptive returns for one record's files; does download work |
 | asana_scope_check.js | Active Asana projects per team |
