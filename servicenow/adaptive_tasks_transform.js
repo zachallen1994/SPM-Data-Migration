@@ -160,14 +160,36 @@ answer = (function transformEntry(source) {
 })(source);
 
 // ---------- PART I: onBefore (Order 400) - Adaptive task "Resources" -> Additional assignee list ----------
-// Staging column "Resource Emails" (comma separated, filled by the tasks data source, TASK_RESOURCES = true).
+// Staging column "Resource Emails" (comma separated, filled by the tasks data source, TASK_RESOURCES = true);
+// when it is empty this script asks Adaptive itself for the task's resources (one small call per task).
 // Each email -> a ServiceNow user (email; same mailbox on another domain; unique active name is not available here).
 // Assigned to is cleared (Adaptive "Owner" is the project manager, not the task's person) - CLEAR_ASSIGNED_TO.
 (function runTransformScript(source, map, log, target) {
     var CLEAR_ASSIGNED_TO = true;
     if (CLEAR_ASSIGNED_TO) target.assigned_to = '';
     var raw = (source.getValue('u_resource_emails') || '').toLowerCase();
-    if (!raw || raw == 'undefined') { target.additional_assignee_list = ''; return; }
+    if (raw == 'undefined') raw = '';
+    if (!raw) {                                    // staging column empty: ask Adaptive for this task's resources
+        try {
+            var r = new sn_ws.RESTMessageV2();
+            r.setHttpMethod('POST');
+            r.setEndpoint(gs.getProperty('x_mig.adaptive.url') + '/data/query');
+            r.setRequestHeader('Authorization', 'ApiKey ' + gs.getProperty('x_mig.adaptive.key'));
+            r.setRequestHeader('Content-Type', 'application/json');
+            var tid = (source.getValue('u_correlation_id') || '').replace('ADAPTIVE:', '');
+            r.setRequestBody(JSON.stringify({ q: "SELECT Resource.Email FROM RegularResourceLink WHERE WorkItem = '" + tid + "'", paging: { from: 0, limit: 100 } }));
+            var res = r.execute();
+            if (res.getStatusCode() == 200) {
+                var list = [];
+                (JSON.parse(res.getBody()).entities || []).forEach(function (l) {
+                    var em = l.Resource && l.Resource.Email ? String(l.Resource.Email).toLowerCase() : '';
+                    if (em && list.indexOf(em) < 0) list.push(em);
+                });
+                raw = list.join(',');
+            } else log.warn('Adaptive ' + res.getStatusCode() + ' reading resources of ' + source.u_name);
+        } catch (err) { log.warn('Task resources not read for ' + source.u_name + ': ' + err); }
+    }
+    if (!raw) { target.additional_assignee_list = ''; return; }
     var ids = [], missing = [];
     raw.split(',').forEach(function (em) {
         em = em.trim();
