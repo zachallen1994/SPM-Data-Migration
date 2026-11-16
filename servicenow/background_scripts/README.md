@@ -64,6 +64,7 @@ None of these change data. Lines marked ✏️ at the top are the only things to
 | total_budget_check.js | Where a project's Total Budget comes from: fields, rules, budget / funding tables for one project |
 | resource_planning_discovery.js | Adaptive Resource Planning View fields (hours, units, time-phased) vs ServiceNow resource assignment fields |
 | project_funding_check.js | Total Budget comes from project_funding: its fields, mandatory ones, choices, rules, an example record |
+| task_resources_check.js | Task Resources not in Additional assignee list: staging column, row value, Adaptive links, user match, PART I |
 | timecard_br_check.js | Insert rules on time_card / time_sheet that touch State; one card's time sheet |
 | attachment_check.js | What Adaptive returns for one record's files; does download work |
 | asana_scope_check.js | Active Asana projects per team |
