@@ -68,6 +68,7 @@ None of these change data. Lines marked ✏️ at the top are the only things to
 | task_funding_type_check.js | Which Adaptive Task field holds the work plan's Funding Type, with values |
 | project_budget_check.js | A project's Total Budget vs its Project Funding records (duplicates, amounts) |
 | project_financials_refresh.js | CHANGES DATA (DRY_RUN first): re-rolls a project's planned cost and Total Budget from its cost plans |
+| actuals_discovery.js | Where a project's Adaptive actuals (POs / invoices) are kept: time-phase actual fields, expense / PO / invoice entities |
 | timecard_br_check.js | Insert rules on time_card / time_sheet that touch State; one card's time sheet |
 | attachment_check.js | What Adaptive returns for one record's files; does download work |
 | asana_scope_check.js | Active Asana projects per team |
