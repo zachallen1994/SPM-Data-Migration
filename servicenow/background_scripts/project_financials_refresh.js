@@ -20,8 +20,8 @@ else {
     cp.query();
     while (cp.next()) {
         var amt = (parseFloat(cp.getValue('unit_cost')) || 0) * (parseFloat(cp.getValue('quantity')) || 1);
-        var fy = cp.start_fiscal_period.fiscal_year + '' || '';
-        if (!fy) {                                              // fiscal year of the start period, by its dates
+        var fy = '';
+        {                                              // fiscal year of the start period, by its dates
             var y = new GlideRecord('fiscal_period');
             y.addQuery('fiscal_type', 'year');
             y.addQuery('fiscal_start_date_time', '<=', cp.start_fiscal_period.fiscal_start_date_time + '');
