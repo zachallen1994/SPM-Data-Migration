@@ -70,6 +70,7 @@ None of these change data. Lines marked ✏️ at the top are the only things to
 | project_financials_refresh.js | CHANGES DATA (DRY_RUN first): re-rolls a project's planned cost and Total Budget from its cost plans |
 | actuals_discovery.js | Where a project's Adaptive actuals (POs / invoices) are kept: time-phase actual fields, expense / PO / invoice entities |
 | actuals_discovery2.js | Second pass: actual amounts on aggregated budget lines, resource links and the project itself |
+| actual_effort_double_check.js | Actual effort doubled: duplicate time cards vs cards counted twice, hours by state |
 | timecard_br_check.js | Insert rules on time_card / time_sheet that touch State; one card's time sheet |
 | attachment_check.js | What Adaptive returns for one record's files; does download work |
 | asana_scope_check.js | Active Asana projects per team |
