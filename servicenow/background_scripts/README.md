@@ -71,6 +71,7 @@ None of these change data. Lines marked ✏️ at the top are the only things to
 | actuals_discovery.js | Where a project's Adaptive actuals (POs / invoices) are kept: time-phase actual fields, expense / PO / invoice entities |
 | actuals_discovery2.js | Second pass: actual amounts on aggregated budget lines, resource links and the project itself |
 | actual_effort_double_check.js | Actual effort doubled: duplicate time cards vs cards counted twice, hours by state |
+| actual_effort_recalc.js | CHANGES DATA (DRY_RUN first): sets task Actual effort = sum of Approved / Processed cards, project rolls up |
 | timecard_br_check.js | Insert rules on time_card / time_sheet that touch State; one card's time sheet |
 | attachment_check.js | What Adaptive returns for one record's files; does download work |
 | asana_scope_check.js | Active Asana projects per team |

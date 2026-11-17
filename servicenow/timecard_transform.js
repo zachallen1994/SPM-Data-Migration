@@ -107,11 +107,15 @@ answer = (function transformEntry(source) {
         c.addQuery('name', 'time_card'); c.addQuery('element', 'state'); c.addQuery('label', 'Processed'); c.query();
         return c.next() ? c.getValue('value') : 'Processed';
     })();
+    var approvedStates = [processed];
+    var ap = new GlideRecord('sys_choice');
+    ap.addQuery('name', 'time_card'); ap.addQuery('element', 'state'); ap.addQuery('label', 'Approved'); ap.query();
+    if (ap.next()) approvedStates.push(ap.getValue('value'));
     var done = 0;
     for (var id in targets) {
         var sum = new GlideAggregate('time_card');
         sum.addQuery('task', id);
-        sum.addQuery('state', processed);
+        sum.addQuery('state', 'IN', approvedStates);                 // Approved and Processed cards count
         sum.addAggregate('SUM', 'total');
         sum.query();
         var hours = sum.next() ? parseFloat(sum.getAggregate('SUM', 'total')) || 0 : 0;
