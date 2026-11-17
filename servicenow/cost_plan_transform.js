@@ -28,10 +28,15 @@ answer = (function transformEntry(source) {
     return (source.u_cost_type + '').trim() + ' ' + (source.u_month + '').substring(0, 7);
 })(source);
 
-// ---------- PART C: field map -> resource_type (cost type, same names in Adaptive and ServiceNow) ----------
+// ---------- PART C: field map -> resource_type (cost type, same names in Adaptive and ServiceNow, or an alias) ----------
+// COST_TYPE_ALIASES: Adaptive cost types with no ServiceNow cost type of the same name -> the one to use (finance /
+// implementation team decide; keep the same list in PART F). Empty = names must match exactly.
 answer = (function transformEntry(source) {
+    var COST_TYPE_ALIASES = {};          // ✏️ e.g. { 'Other Opex': 'Contingency Opex', 'Other Capex': 'Contingency Capex' }
+    var name = (source.u_cost_type + '').trim();
     var t = new GlideRecord('resource_type_definition');
-    return t.get('name', (source.u_cost_type + '').trim()) ? t.getUniqueValue() : '';
+    if (t.get('name', name)) return t.getUniqueValue();
+    return COST_TYPE_ALIASES[name] && t.get('name', COST_TYPE_ALIASES[name]) ? t.getUniqueValue() : '';
 })(source);
 
 // ---------- PART D: field map -> currency ----------
@@ -63,8 +68,10 @@ answer = (function transformEntry(source) {
     if (!p) { ignore = true; return; }   // not migrated
     // Adaptive re-plans show as negative months (e.g. -24,509.50): keep them, or the line totals come out too high.
     if (!parseFloat(source.u_budget)) { ignore = true; return; }                                      // 0 budget (actual only)
+    var COST_TYPE_ALIASES = {};          // ✏️ same list as in PART C
+    var name = (source.u_cost_type + '').trim();
     var t = new GlideRecord('resource_type_definition');
-    if (!t.get('name', (source.u_cost_type + '').trim())) {
+    if (!t.get('name', name) && !(COST_TYPE_ALIASES[name] && t.get('name', COST_TYPE_ALIASES[name]))) {
         log.warn('No ServiceNow cost type "' + source.u_cost_type + '" - budget line skipped (' + source.u_budget + ', ' + source.u_month + ')');
         ignore = true;
     }
