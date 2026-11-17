@@ -9,18 +9,19 @@ var PROJECT = 'PRJ0012237';    // ✏️ project number in this instance
 // SET_PROCESSED = true: first move the project's Approved cards to Processed WITHOUT business rules (nothing is
 // added twice, no labor expense lines), then set the effort from the cards.
 var SET_PROCESSED = true;
-gs.print('actual_effort_recalc VERSION 2 | ' + (DRY_RUN ? 'DRY RUN' : 'UPDATING'));
+gs.print('actual_effort_recalc VERSION 3 | ' + (DRY_RUN ? 'DRY RUN' : 'UPDATING'));
 function states() {
     var v = [], c = new GlideRecord('sys_choice');
     c.addQuery('name', 'time_card'); c.addQuery('element', 'state'); c.addQuery('label', 'IN', 'Approved,Processed'); c.query();
     while (c.next()) v.push(c.getValue('value'));
     return v;
 }
-function hours(taskId, st) {
-    var g = new GlideAggregate('time_card');
+function hours(taskId, st) {                       // card by card (same way as actual_effort_double_check.js)
+    var h = 0, g = new GlideRecord('time_card');
     g.addQuery('task', taskId); g.addQuery('state', 'IN', st.join(','));
-    g.addAggregate('SUM', 'total'); g.query();
-    return g.next() ? parseFloat(g.getAggregate('SUM', 'total')) || 0 : 0;
+    g.query();
+    while (g.next()) h += parseFloat(g.getValue('total')) || 0;
+    return Math.round(h * 100) / 100;
 }
 var p = new GlideRecord('pm_project');
 if (!p.get('number', PROJECT)) gs.print('No project ' + PROJECT);
