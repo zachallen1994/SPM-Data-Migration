@@ -9,7 +9,7 @@ var PROJECT = 'PRJ0012237';    // ✏️ project number in this instance
 // SET_PROCESSED = true: first move the project's Approved cards to Processed WITHOUT business rules (nothing is
 // added twice, no labor expense lines), then set the effort from the cards.
 var SET_PROCESSED = true;
-gs.print('actual_effort_recalc VERSION 3 | ' + (DRY_RUN ? 'DRY RUN' : 'UPDATING'));
+gs.print('actual_effort_recalc VERSION 4 | ' + (DRY_RUN ? 'DRY RUN' : 'UPDATING'));
 function states() {
     var v = [], c = new GlideRecord('sys_choice');
     c.addQuery('name', 'time_card'); c.addQuery('element', 'state'); c.addQuery('label', 'IN', 'Approved,Processed'); c.query();
@@ -49,11 +49,14 @@ else {
     t.addQuery('top_task', p.getUniqueValue());
     t.query();
     while (t.next()) {
+        var kids = new GlideRecord('pm_project_task');               // parents are rolled up by ServiceNow: leave them,
+        kids.addQuery('parent', t.getUniqueValue()); kids.setLimit(1); kids.query();
+        if (kids.hasNext()) continue;                                 // only bottom-level tasks are set
         var h = hours(t.getUniqueValue(), st);
         total += h;
         if (!h && !t.getValue('work_effort')) continue;
         gs.print('  ' + t.getValue('number') + ' ' + t.getValue('short_description') + ' | now ' + t.getDisplayValue('work_effort') + ' -> ' + h + ' h');
-        if (!DRY_RUN) { t.work_effort.setDateNumericValue(Math.round(h * 3600000)); t.update(); }
+        if (!DRY_RUN) { t.work_effort.setDateNumericValue(Math.round(h * 3600000)); t.setForceUpdate(true); t.update(); }   // save = parents roll up
     }
     var onProject = hours(p.getUniqueValue(), st);
     gs.print('cards on tasks: ' + total + ' h | cards on the project itself: ' + onProject + ' h | expected project Actual effort: ' + (total + onProject) + ' h');
