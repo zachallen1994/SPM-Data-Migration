@@ -8,13 +8,21 @@ var PROJECTS = ['PRJ0012237'];            // ✏️ project numbers; [] = every 
 var STEPS = ['Confirmed', 'Allocated'];   // ✏️ state LABELS in order (check the choices printed below)
 var MAX = 200;                            // ✏️ assignments per run (run again until "left: 0")
 var TABLE = 'sn_plng_att_core_resource_assignment';
-gs.print('resource_assignments_allocate VERSION 1 | ' + (DRY_RUN ? 'DRY RUN' : 'UPDATING'));
+gs.print('resource_assignments_allocate VERSION 2 | ' + (DRY_RUN ? 'DRY RUN' : 'UPDATING'));
 
+// The "Resource status" field: 'state' is empty on these records (checked), so find the field that has the choices
+var FIELD = '';
+['status', 'resource_status', 'assignment_status', 'state'].forEach(function (f) {
+    if (FIELD) return;
+    var k = new GlideRecord('sys_choice'); k.addQuery('name', TABLE); k.addQuery('element', f); k.setLimit(1); k.query();
+    if (k.hasNext()) FIELD = f;
+});
+gs.print('status field: ' + (FIELD || 'NOT FOUND - check the dictionary of ' + TABLE));
 var labels = {}, c = new GlideRecord('sys_choice');
-c.addQuery('name', TABLE); c.addQuery('element', 'state'); c.orderBy('sequence'); c.query();
+c.addQuery('name', TABLE); c.addQuery('element', FIELD); c.orderBy('sequence'); c.query();
 while (c.next()) { labels[c.getValue('label')] = c.getValue('value'); gs.print('state choice: ' + c.getValue('value') + ' = ' + c.getValue('label')); }
 var steps = STEPS.map(function (l) { if (!labels[l]) gs.print('NO state labelled "' + l + '" - fix STEPS'); return labels[l]; });
-if (steps.indexOf(undefined) >= 0) { gs.print('Stopped.'); }
+if (!FIELD || steps.indexOf(undefined) >= 0) { gs.print('Stopped.'); }
 else {
     var target = steps[steps.length - 1];
     var allocTable = new GlideRecord('resource_allocation').isValid() ? 'resource_allocation' : '';
@@ -33,7 +41,7 @@ else {
     while (p.next()) {
         var r = new GlideRecord(TABLE);
         r.addQuery('task', p.getUniqueValue());
-        r.addQuery('state', '!=', target);
+        r.addQuery(FIELD, '!=', target);
         r.query();
         while (r.next()) {
             if (MAX && done >= MAX) { left++; continue; }
@@ -42,13 +50,13 @@ else {
             if (!DRY_RUN) {
                 steps.forEach(function (v) {
                     r.get(r.getUniqueValue());
-                    if (r.getValue('state') == v) return;
-                    r.setValue('state', v);
+                    if (r.getValue(FIELD) == v) return;
+                    r.setValue(FIELD, v);
                     r.update();
                 });
                 r.get(r.getUniqueValue());
             }
-            gs.print(p.getValue('number') + ' | ' + r.getDisplayValue('user_resource') + ' | state ' + r.getDisplayValue('state') +
+            gs.print(p.getValue('number') + ' | ' + r.getDisplayValue('user_resource') + ' | status ' + r.getDisplayValue(FIELD) +
                 ' | effort ' + r.getValue('effort') + ' | allocations before ' + before + (DRY_RUN ? '' : ' after ' + allocs(r.getUniqueValue())));
         }
     }
