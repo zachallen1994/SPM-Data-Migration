@@ -7,6 +7,7 @@
     // ======================= CONFIG ✏️ =======================
     var STATES = ['Active'];           // Adaptive program states to load
     var EXCLUDE = ['Test Program'];    // exact names to leave out
+    var INCLUDE = ['Construction Program'];   // ✏️ exact names loaded whatever their State (programs whose projects are migrated)
     var MAP = {                        // column LABEL : Adaptive Program field
         'Correlation ID':  'id',
         'Name':            'Name',
@@ -61,7 +62,8 @@
         if (res.getStatusCode() != 200) { import_log.error('Adaptive ' + res.getStatusCode() + ': ' + res.getBody() + ' -- query: ' + q); return; }
         var body = JSON.parse(res.getBody());
         body.entities.forEach(function (e) {
-            if (STATES.indexOf(get(e, 'State')) < 0 || EXCLUDE.indexOf(String(e.Name).trim()) >= 0) { skipped++; return; }
+            var nm = String(e.Name).trim();
+            if (EXCLUDE.indexOf(nm) >= 0 || (STATES.indexOf(get(e, 'State')) < 0 && INCLUDE.indexOf(nm) < 0)) { skipped++; return; }
             var row = {};
             for (var label in MAP) row[col[label.toLowerCase()]] = MAP[label] == 'id' ? 'ADAPTIVE:' + e.id : get(e, MAP[label]);
             import_set_table.insert(row);
