@@ -74,6 +74,7 @@ None of these change data. Lines marked ✏️ at the top are the only things to
 | actual_effort_recalc.js | CHANGES DATA (DRY_RUN first): sets task Actual effort = sum of Approved / Processed cards, project rolls up |
 | timecards_processed_and_rollup.js | CHANGES DATA (DRY_RUN first): time cards -> Processed without rules, then tasks re-saved so Actual effort rolls up once |
 | resource_assignments_allocate.js | CHANGES DATA (DRY_RUN first): migrated resource assignments -> Confirmed -> Allocated with business rules on, allocations shown |
+| resource_board_check.js | Form shows N resource assignments, workspace board fewer: per assignment state, effort, dates, allocation rows |
 | timecard_br_check.js | Insert rules on time_card / time_sheet that touch State; one card's time sheet |
 | attachment_check.js | What Adaptive returns for one record's files; does download work |
 | asana_scope_check.js | Active Asana projects per team |
