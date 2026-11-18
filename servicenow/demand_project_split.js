@@ -6,14 +6,18 @@
 // The CURRENT phase decides: a record that moved from demand to project in Adaptive (or back) becomes the right
 // type, and the record of the other type from an earlier load is removed (REMOVE_OTHER), with a log line.
 // Its related records (tasks, risks, time...) are loaded again under the new record by the later steps.
+// ALWAYS_PROJECT: Adaptive project types that are always a project, whatever the phase (BA: Construction).
+// Needs the staging column "Project Type" (projects data source).
 
 // ---------- PART A: onBefore on the PROJECT map ----------
 (function runTransformScript(source, map, log, target) {
     var DEMAND = ['pending portfolio assignment', 'in portfolio discovery', 'on hold pending requestor', 'on hold pending requester',
                   'on hold estimate complete - with ocio', 'on hold estimate complete - pending sow'];
     var PROJECT = ['ready for pm assignment', 'pm assigned', 'analyst run'];
+    var ALWAYS_PROJECT = ['construction'];
+    var type = (source.getValue('u_project_type') || '').toLowerCase().trim();
     var phase = (source.u_portfolio_phase + '').toLowerCase().replace(/[–—-]/g, '-').replace(/\s+/g, ' ').trim();
-    if (PROJECT.indexOf(phase) > -1) {                                        // load as project
+    if (PROJECT.indexOf(phase) > -1 || ALWAYS_PROJECT.indexOf(type) > -1) {  // load as project
         var REMOVE_OTHER = true;                                              // ✏️ remove the demand from an earlier load
         var dm = new GlideRecord('dmn_demand');
         if (dm.get('correlation_id', source.u_correlation_id + '')) {
@@ -31,6 +35,8 @@
 (function runTransformScript(source, map, log, target) {
     var DEMAND = ['pending portfolio assignment', 'in portfolio discovery', 'on hold pending requestor', 'on hold pending requester',
                   'on hold estimate complete - with ocio', 'on hold estimate complete - pending sow'];
+    var ALWAYS_PROJECT = ['construction'];                                    // same list as PART A
+    if (ALWAYS_PROJECT.indexOf((source.getValue('u_project_type') || '').toLowerCase().trim()) > -1) { ignore = true; return; }
     var phase = (source.u_portfolio_phase + '').toLowerCase().replace(/[–—-]/g, '-').replace(/\s+/g, ' ').trim();
     if (DEMAND.indexOf(phase) > -1) {                                         // load as demand
         var REMOVE_OTHER = true;                                              // ✏️ remove the project from an earlier load

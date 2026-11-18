@@ -51,6 +51,7 @@
         'Portfolio Phase':      'C_PortfolioPhase',         // decides Demand vs Project (demand_project_split.js)
         'Project Pool':         'C_ProjectPool',            // Yes / No
         'Groups':               'C_Groups',                 // multi-pick list (C_WorkItemGroups), comma separated
+        'Project Type':         'ProjectType',              // Construction -> always a project (demand_project_split.js)
         'Rate Card':            'RateCard.Name'             // e.g. BSMH, Default Rate Card -> rate model (reference_by_name_field_map.js)
     };
 
