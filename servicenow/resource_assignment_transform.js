@@ -30,7 +30,7 @@ answer = (function transformEntry(source) {
     var email = (source.getValue('u_resource_email') || '').toLowerCase().trim();
     var name = (source.getValue('u_resource_name') || '').trim();
     var u = new GlideRecord('sys_user');
-    if (email && email != 'undefined' && u.get('email', email)) return u.getUniqueValue();
+    if (email && email != 'undefined' && (u.addQuery('email', email), u.orderByDesc('active'), u.setLimit(1), u.query(), u.next())) return u.getUniqueValue();
     if (email && email.indexOf('@') > 0) {                     // same mailbox name, other domain
         u = new GlideRecord('sys_user');
         u.addQuery('email', 'STARTSWITH', email.split('@')[0] + '@');
@@ -84,7 +84,7 @@ answer = (function transformEntry(source) {
     var email = (source.getValue('u_resource_email') || '').toLowerCase().trim();
     var name = (source.getValue('u_resource_name') || '').trim();
     var ok = false, u = new GlideRecord('sys_user');
-    if (email && email != 'undefined' && u.get('email', email)) ok = true;
+    if (email && email != 'undefined' && (u.addQuery('email', email), u.orderByDesc('active'), u.setLimit(1), u.query(), u.next())) ok = true;
     if (!ok && email.indexOf('@') > 0) {
         u = new GlideRecord('sys_user'); u.addQuery('email', 'STARTSWITH', email.split('@')[0] + '@'); u.addQuery('active', true); u.query();
         ok = u.getRowCount() == 1;

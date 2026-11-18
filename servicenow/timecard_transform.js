@@ -14,7 +14,7 @@
 // ---------- PART A: field map -> user ----------
 answer = (function transformEntry(source) {
     var u = new GlideRecord('sys_user');
-    return u.get('email', (source.u_resource_email + '').toLowerCase().trim()) ? u.getUniqueValue() : '';
+    return (u.addQuery('email', (source.u_resource_email + '').toLowerCase().trim()), u.orderByDesc('active'), u.setLimit(1), u.query(), u.next()) ? u.getUniqueValue() : '';
 })(source);
 
 // ---------- PART B: field map -> task (the project task, the project, or the demand) ----------
@@ -40,7 +40,7 @@ answer = (function transformEntry(source) {
 // ---------- PART D: onBefore - skip what cannot become a card ----------
 (function runTransformScript(source, map, log, target) {
     var u = new GlideRecord('sys_user');
-    if (!u.get('email', (source.u_resource_email + '').toLowerCase().trim())) {
+    if (!(u.addQuery('email', (source.u_resource_email + '').toLowerCase().trim()), u.orderByDesc('active'), u.setLimit(1), u.query(), u.next())) {
         log.warn('No ServiceNow user for ' + source.u_resource_email + ' - time skipped (' + source.u_total + ' h, week ' + source.u_week_starts_on + ')');
         ignore = true;
         return;

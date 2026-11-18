@@ -97,7 +97,7 @@ answer = (function transformEntry(source) {
     var email = (source.u_assigned_to_email + '').toLowerCase().trim();
     if (!email || email == 'undefined' || email == 'null') return '';
     var u = new GlideRecord('sys_user');
-    if (u.get('email', email)) return u.getUniqueValue();
+    if ((u.addQuery('email', email), u.orderByDesc('active'), u.setLimit(1), u.query(), u.next())) return u.getUniqueValue();
     log.warn('No ServiceNow user for Adaptive assignee ' + email + ' on ' + source.u_correlation_id + ' - left blank');
     return '';
 })(source);

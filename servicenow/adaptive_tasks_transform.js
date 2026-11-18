@@ -59,7 +59,7 @@ answer = (function transformEntry(source) {
     var email = (source.u_owner_email + '').toLowerCase().trim();
     if (!email || email == 'undefined' || email == 'null') return '';
     var u = new GlideRecord('sys_user');
-    if (u.get('email', email)) return u.getUniqueValue();
+    if ((u.addQuery('email', email), u.orderByDesc('active'), u.setLimit(1), u.query(), u.next())) return u.getUniqueValue();
     log.warn('No ServiceNow user for task owner ' + email + ' on ' + source.u_correlation_id);
     return '';
 })(source);
@@ -197,7 +197,7 @@ answer = (function transformEntry(source) {
         em = em.trim();
         if (!em) return;
         var u = new GlideRecord('sys_user');
-        if (u.get('email', em)) { ids.push(u.getUniqueValue()); return; }
+        if ((u.addQuery('email', em), u.orderByDesc('active'), u.setLimit(1), u.query(), u.next())) { ids.push(u.getUniqueValue()); return; }
         u = new GlideRecord('sys_user');
         u.addQuery('email', 'STARTSWITH', em.split('@')[0] + '@');
         u.addQuery('active', true);

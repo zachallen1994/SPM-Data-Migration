@@ -27,7 +27,7 @@ answer = (function transformEntry(source) {
 (function runTransformScript(source, map, log, target) {
     if (action == 'insert') { ignore = true; return; }                  // not a migrated task (or a project link)
     var u = new GlideRecord('sys_user');
-    if (!u.get('email', (source.u_resource_email + '').toLowerCase())) {
+    if (!(u.addQuery('email', (source.u_resource_email + '').toLowerCase()), u.orderByDesc('active'), u.setLimit(1), u.query(), u.next())) {
         log.warn('No user for ' + source.u_resource_email + ' on ' + source.u_project_correlation_id);
         ignore = true;
         return;
@@ -44,7 +44,7 @@ answer = (function transformEntry(source) {
 (function runTransformScript(source, map, log, target) {
     if (action == 'insert') { ignore = true; return; }                  // not a migrated project (or a task link)
     var u = new GlideRecord('sys_user');
-    if (!u.get('email', (source.u_resource_email + '').toLowerCase())) {
+    if (!(u.addQuery('email', (source.u_resource_email + '').toLowerCase()), u.orderByDesc('active'), u.setLimit(1), u.query(), u.next())) {
         log.warn('No user for ' + source.u_resource_email + ' on ' + source.u_project_correlation_id);
         ignore = true;
         return;

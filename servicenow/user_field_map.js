@@ -14,7 +14,7 @@ answer = (function transformEntry(source) {
     }
     var email = val(EMAIL_COLUMN).toLowerCase(), name = val(NAME_COLUMN);
     var u = new GlideRecord('sys_user');
-    if (email && u.get('email', email)) return u.getUniqueValue();
+    if (email && (u.addQuery('email', email), u.orderByDesc('active'), u.setLimit(1), u.query(), u.next())) return u.getUniqueValue();
     if (name) {
         u = new GlideRecord('sys_user');
         u.addQuery('name', name);

@@ -21,7 +21,7 @@
 answer = (function transformEntry(source) {
     var email = (source.u_manager_email + '').toLowerCase().trim();
     var u = new GlideRecord('sys_user');
-    if (email && u.get('email', email)) return u.getUniqueValue();
+    if (email && (u.addQuery('email', email), u.orderByDesc('active'), u.setLimit(1), u.query(), u.next())) return u.getUniqueValue();
     if (email) log.warn('No ServiceNow user for program manager ' + email + ' on ' + source.u_name);
     return '';
 })(source);
