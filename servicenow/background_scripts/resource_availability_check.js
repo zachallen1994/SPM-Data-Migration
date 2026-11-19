@@ -8,6 +8,7 @@
 // If it errors with "ResourceProfile is not defined": set the script's scope to "SPM Planning Attributes Core" and run again.
 var ISET = 'ISET23875960';     // ✏️ the import set number of the Adaptive Resources load
 var TABLE = 'u_import_adaptive_resources';
+var USE_PROJECT_START = false;   // ✏️ true = test with the OLD start date (project start, as loaded yesterday) instead of Added On
 
 function parent(corr) {
     var t = ['pm_project', 'dmn_demand', 'pm_project_task'];
@@ -39,6 +40,7 @@ while (r.next()) {
     if (!u) { counts.noUser++; gs.print('NO USER      | ' + who); continue; }
     var start = (r.getValue('u_start_date') || '').substring(0, 10), pStart = (p.getValue('start_date') || '').substring(0, 10);
     var added = (r.getValue('u_added_on') || '').substring(0, 10);
+    if (!start && USE_PROJECT_START) start = pStart;
     if (!start) start = (/^\d{4}-\d{2}-\d{2}$/.test(added) && (!pStart || added > pStart)) ? added : pStart;
     var end = (r.getValue('u_end_date') || '').substring(0, 10) || (p.getValue('end_date') || '').substring(0, 10);
     // a blank assignment record, only to hand the rule's API the same kind of date fields (nothing is saved)
