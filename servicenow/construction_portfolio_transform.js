@@ -11,7 +11,7 @@
     if (!name) return;                                      // not a construction project: portfolio left as it is
     if (!FIELD) {
         var d = new GlideRecord('sys_dictionary');
-        d.addQuery('name', 'IN', new GlideTableHierarchy(target.getTableName()).getTables().join(','));
+        d.addQuery('name', 'IN', 'pm_project,planned_task,task');     // the project table and the tables it extends
         d.addQuery('internal_type', 'reference');
         d.addQuery('reference', 'pm_portfolio');
         d.query();

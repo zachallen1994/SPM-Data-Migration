@@ -3,7 +3,7 @@
 // and the construction projects / program already in ServiceNow with their current portfolio.
 var NAME = 'Construction';    // ✏️ the ServiceNow portfolio name
 ['pm_project', 'pm_program'].forEach(function (table) {
-    var tables = new GlideTableHierarchy(table).getTables();
+    var tables = [table, 'planned_task', 'task'];          // the table and the tables it extends
     var d = new GlideRecord('sys_dictionary');
     d.addQuery('name', 'IN', tables.join(','));
     d.addQuery('internal_type', 'reference');
