@@ -16,6 +16,7 @@ Every step = run the **Data Source** (Load All Records) -> open its import set -
 | A7 | Email / notifications suppressed for the load window | Platform team | ☐ |
 | A8 | Someone with **fix script / background script** rights in PROD for the attachments step and checks | Platform team | ☐ |
 | A9 | Adaptive change freeze agreed (no edits during the load) | Client | ☐ |
+| A10 | Users' personal **Schedule** (sys_user.schedule) holds only old on-call entries for hundreds of active users (PROD too): rule "Validate Resource availability" finds 0 working days and cancels their resource assignments. Clear or replace those schedules before step 4 (check: `sys_user_list.do?sysparm_query=active=true^scheduleISNOTEMPTY`). Employee profiles exist in PROD. | Implementation / platform team | ☐ |
 
 ## B. Go-live day
 
@@ -25,7 +26,7 @@ Every step = run the **Data Source** (Load All Records) -> open its import set -
 | 1 | Adaptive Programs - API | Import Adaptive Programs | ~5 programs, no date errors | minutes |
 | 2 | Adaptive Projects - API | Import Adaptive Projects **and** Import Adaptive Demands | "skipped by State", unmapped phases, no errors | ~15 min |
 | 3 | Adaptive Tasks (`PARENT_TABLES = ['pm_project']`) | Import Adaptive Project Tasks (**once**) | errors; "Validate ... dates" rows for the BA | hours (run overnight) |
-| 4 | Adaptive Resources (project level) | Import Adaptive Resources | "No ServiceNow user" names | hours |
+| 4 | Adaptive Resources (project level) - only after A10; can also run after go-live day (re-runs update) | Import Adaptive Resources | "No ServiceNow user" names; "aborted by Business Rule 'Validate Resource availability'" = A10 not done for that person | hours |
 | 5 | Issues, Risks, Lessons Learned, Status History (Jan 2025+, one per day) | each one's own map | counts per project | ~2 h status history |
 | 6 | Adaptive Budget Lines - API | Budget Lines (100) **and** Actuals (200) | "No ServiceNow cost type" lines | minutes |
 | 7 | Adaptive Time Entries - API | Import Adaptive Time Cards | users / work items skipped; cards Processed | longest step |
