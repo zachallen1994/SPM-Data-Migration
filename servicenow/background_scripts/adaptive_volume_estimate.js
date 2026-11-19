@@ -7,6 +7,10 @@
 var BATCHES = 7;              // ✏️ the number of batches you would split the projects into (x_mig.adaptive.batch = n/7)
 var TIME = true;              // ✏️ false = skip time entries (the slowest part of this script)
 var STATUS_SINCE = '2025-01-01';
+// The result is ALSO written to the System Log (System Logs > All, Source = adaptive_volume_estimate), so it is not lost
+// when the browser shows "Failed to fetch" on a long run - the script keeps running on the server.
+var OUT = [];
+function out(x) { gs.print(x); OUT.push(x); }
 var TIME_STATES = ['Approved'];
 function prop(n, d) { var v = (gs.getProperty(n, '') + '').trim(); return !v ? d : /^all$/i.test(v) ? [] : v.split(/\s*;\s*/); }
 var STATES = prop('x_mig.adaptive.states', ['Active']), TYPES = prop('x_mig.adaptive.project_types', ['Project']);
@@ -42,7 +46,7 @@ try {
     proj.sort(function (a, b) { return a.id < b.id ? -1 : a.id > b.id ? 1 : 0; });
     var byId = {};
     proj.forEach(function (p) { byId[p.id] = p; });
-    gs.print('Projects in scope: ' + proj.length + ' (states ' + STATES.join(',') + ' | types ' + TYPES.join(',') + ')');
+    out('Projects in scope: ' + proj.length + ' (states ' + STATES.join(',') + ' | types ' + TYPES.join(',') + ')');
     // 2) per project counts, 20 projects per query
     var statusDays = {}, cardKeys = {};
     for (var i = 0; i < proj.length; i += 20) {
@@ -71,16 +75,17 @@ try {
     var LBL = { tasks: 'Tasks', res: 'Resources (project level)', status: 'Status history (1/day, 2025+)', budget: 'Budget lines', cards: 'Time cards (rows)', entries: 'Time entries (Approved)' };
     function sum(list) { var t = {}; F.forEach(function (f) { t[f] = 0; list.forEach(function (p) { t[f] += p[f]; }); }); return t; }
     var all = sum(proj);
-    gs.print('TOTAL rows to load:');
-    F.forEach(function (f) { gs.print('   ' + LBL[f] + ': ' + all[f] + ' | average per project ' + (proj.length ? (all[f] / proj.length).toFixed(1) : 0)); });
+    out('TOTAL rows to load:');
+    F.forEach(function (f) { out('   ' + LBL[f] + ': ' + all[f] + ' | average per project ' + (proj.length ? (all[f] / proj.length).toFixed(1) : 0)); });
     var size = Math.ceil(proj.length / BATCHES);
-    gs.print('PER BATCH (x_mig.adaptive.batch = n/' + BATCHES + ', ' + size + ' projects each):');
+    out('PER BATCH (x_mig.adaptive.batch = n/' + BATCHES + ', ' + size + ' projects each):');
     for (var b = 0; b < BATCHES; b++) {
         var t = sum(proj.slice(b * size, (b + 1) * size));
-        gs.print('   batch ' + (b + 1) + '/' + BATCHES + ': ' + F.map(function (f) { return f + ' ' + t[f]; }).join(' | '));
+        out('   batch ' + (b + 1) + '/' + BATCHES + ': ' + F.map(function (f) { return f + ' ' + t[f]; }).join(' | '));
     }
-    gs.print('BIGGEST 15 PROJECTS (by time cards, then tasks):');
+    out('BIGGEST 15 PROJECTS (by time cards, then tasks):');
     proj.slice().sort(function (a, b) { return (b.cards - a.cards) || (b.tasks - a.tasks); }).slice(0, 15).forEach(function (p) {
-        gs.print('   ' + p.name + ' | ' + F.map(function (f) { return f + ' ' + p[f]; }).join(' | '));
+        out('   ' + p.name + ' | ' + F.map(function (f) { return f + ' ' + p[f]; }).join(' | '));
     });
-} catch (err) { gs.print('ERROR: ' + err); }
+} catch (err) { out('ERROR: ' + err); }
+gs.info(OUT.join('\n'), 'adaptive_volume_estimate');
