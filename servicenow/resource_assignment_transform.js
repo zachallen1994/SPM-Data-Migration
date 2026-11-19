@@ -10,7 +10,7 @@
 // Coalescing on task + resource means one assignment per person per project/task; re-runs update it.
 // Target fields (confirmed in the dictionary): task, user_resource, start_date, end_date, operational_work_type
 // (start_date, end_date and operational_work_type are mandatory).
-// Staging columns used: u_project_correlation_id (the project or task), u_resource_email, u_resource_name, u_start_date, u_end_date.
+// Staging columns used: u_project_correlation_id (the project or task), u_resource_email, u_resource_name, u_start_date, u_end_date, u_added_on.
 // This replaces PARTS B and C of resources_time_transform.js (assigned_to / project team).
 
 // ---------- PART A: field map -> task ----------
@@ -48,16 +48,22 @@ answer = (function transformEntry(source) {
     return '';
 })(source);
 
-// ---------- PART C: field map -> start_date (Adaptive capacity start, else the project/task start) ----------
+// ---------- PART C: field map -> start_date ----------
+// Adaptive Start Date when filled; else the date the person was added to the project (Adaptive "Created On" of the
+// resource link - Adaptive spreads the assignment from then to the project finish, e.g. Andrea Smith 2026-08-17);
+// never before the project start. Staging column "Added On" (data source MAP 'Added On': 'CreatedOn').
 answer = (function transformEntry(source) {
     var v = (source.u_start_date + '').trim();
     if (v && v != 'undefined') return v;
+    var start = '';
     var t = ['pm_project', 'dmn_demand', 'pm_project_task'];
-    for (var i = 0; i < t.length; i++) {
+    for (var i = 0; i < t.length && !start; i++) {
         var gr = new GlideRecord(t[i]);
-        if (gr.get('correlation_id', source.u_project_correlation_id + '')) return (gr.getValue('start_date') || '').substring(0, 10);
+        if (gr.get('correlation_id', source.u_project_correlation_id + '')) start = (gr.getValue('start_date') || '').substring(0, 10);
     }
-    return '';
+    var added = (source.getValue('u_added_on') || '').substring(0, 10);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(added) && (!start || added > start)) return added;
+    return start;
 })(source);
 
 // ---------- PART D: field map -> end_date (Adaptive capacity end, else the project/task end) ----------

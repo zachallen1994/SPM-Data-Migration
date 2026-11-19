@@ -84,7 +84,7 @@
     //              project; adding 'pm_project_task' loads every person on every task, 52k rows in TEST), MAP =
     //              { 'Correlation ID':'@id', 'Project Correlation ID':'@WorkItem', 'Resource Email':'Resource.Email',
     //                'Resource Name':'Resource.Name', 'Start Date':'StartDate', 'End Date':'InactiveDate',
-    //                'Total Assignment':'TotalAssignment', 'Work':'Work', 'Units':'Units' }
+    //                'Total Assignment':'TotalAssignment', 'Work':'Work', 'Units':'Units', 'Added On':'CreatedOn' }
     //              (Resource Planning View: "Total Project Assignment" hours -> assignment effort; ServiceNow spreads
     //               it over start..end itself = the per-week hours)   -> resource_assignment_transform.js
     //  Issues:     ENTITY = 'Issue', PROJECT_FIELD = 'PlannedFor', MAP =
