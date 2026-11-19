@@ -3,10 +3,10 @@
 // (after the demand/project split onBefore, demand_project_split.js PART A). Paste the whole script below.
 // Uses the staging column "Project Type" (already loaded by the projects data source).
 // The portfolio field is found from the dictionary (the reference field on the project that points to pm_portfolio);
-// set FIELD only if background_scripts/portfolio_check.js printed more than one.
+// DEV check (portfolio_check.js): pm_project has primary_portfolio ("Portfolio") and top_portfolio ("Top portfolio").
 (function runTransformScript(source, map, log, target) {
     var PORTFOLIOS = { 'construction': 'Construction' };   // ✏️ Adaptive Project Type (lower case) : ServiceNow portfolio name
-    var FIELD = '';                                         // ✏️ blank = found automatically
+    var FIELD = 'primary_portfolio';                        // project field "Portfolio" (DEV check; top_portfolio is the roll-up, not set here)
     var name = PORTFOLIOS[(source.getValue('u_project_type') || '').toLowerCase().trim()];
     if (!name) return;                                      // not a construction project: portfolio left as it is
     if (!FIELD) {
