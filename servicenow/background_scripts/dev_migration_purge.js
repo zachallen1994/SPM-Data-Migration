@@ -50,7 +50,7 @@ else {
         done[table + '.' + field] = true;
         var g = new GlideRecord(table);
         if (!g.isValid() || !g.isValidField(field)) continue;
-        if (g.isValidField('correlation_id')) g.addQuery('correlation_id', 'NOT LIKE', PREFIX + '%');   // migrated tasks themselves: step 2
+        if (g.isValidField('correlation_id')) g.addEncodedQuery('correlation_idNOT LIKE' + PREFIX + '^ORcorrelation_idISEMPTY');   // migrated tasks themselves: step 2
         if (table == 'task' || table == 'planned_task') continue;                                       // covered by step 2 / 3
         g.addQuery(field + '.correlation_id', 'STARTSWITH', PREFIX);
         try { run('1) ' + table + '.' + field, g); } catch (e) { gs.print('   skipped ' + table + '.' + field + ': ' + e); }
