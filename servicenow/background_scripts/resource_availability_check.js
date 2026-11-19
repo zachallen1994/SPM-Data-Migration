@@ -58,5 +58,14 @@ while (r.next()) {
     if (profile == 'NO') counts.noProfile++; else if (days == 0 || days == '0') counts.notAvailable++; else counts.ok++;
     gs.print(verdict + ' | ' + who + ' | user active ' + u.getValue('active') + ' | schedule ' + (u.getDisplayValue('schedule') || '(none)') +
         ' | ' + start + ' -> ' + end + ' | employee profile ' + profile + ' | working days ' + days + ' | on ' + p.getDisplayValue());
+    if (verdict.indexOf('ok') != 0) {       // blocked: is there an INACTIVE duplicate user (same email) that would have passed?
+        var tw = new GlideRecord('sys_user');
+        tw.addQuery('email', u.getValue('email')); tw.addQuery('active', false); tw.query();
+        while (tw.next()) {
+            counts.inactiveTwin = (counts.inactiveTwin || 0) + 1;
+            if (!tw.getValue('schedule')) counts.inactiveTwinNoSchedule = (counts.inactiveTwinNoSchedule || 0) + 1;
+            gs.print('      inactive duplicate ' + tw.getValue('user_name') + ' | schedule ' + (tw.getDisplayValue('schedule') || '(none)'));
+        }
+    }
 }
 gs.print('SUMMARY ' + JSON.stringify(counts) + (RP && CAP ? '' : ' (planning APIs not reachable from this scope - see the note at the top)'));
