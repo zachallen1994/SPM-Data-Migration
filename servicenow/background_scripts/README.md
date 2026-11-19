@@ -76,6 +76,7 @@ None of these change data. Lines marked ✏️ at the top are the only things to
 | resource_assignments_allocate.js | CHANGES DATA (DRY_RUN first): migrated resource assignments -> Confirmed -> Allocated with business rules on, allocations shown |
 | resource_board_check.js | Form shows N resource assignments, workspace board fewer: per assignment state, effort, dates, allocation rows |
 | construction_check.js | Construction Program / projects: what is in ServiceNow (project vs program) and their Adaptive type, state, parent |
+| resource_assignments_active_user.js | CHANGES DATA (DRY_RUN first): assignments on an inactive duplicate user -> the active user with the same email |
 | timecard_br_check.js | Insert rules on time_card / time_sheet that touch State; one card's time sheet |
 | attachment_check.js | What Adaptive returns for one record's files; does download work |
 | asana_scope_check.js | Active Asana projects per team |
