@@ -5,6 +5,7 @@
 // test task again (KEEP = false). Nothing else is changed.
 var ISET = 'ISET23876503';     // ✏️ the Adaptive Tasks import set
 var KEEP = false;              // ✏️ true = keep the tasks that save fine (they are then real migrated tasks)
+var WITH_ACTUAL_START = true;  // ✏️ true = test the fix: send an actual start (Adaptive has none on these tasks)
 var r = new GlideRecord('u_import_adaptive_project_tasks');
 r.addQuery('sys_import_set.number', ISET);
 r.addQuery('sys_import_state', 'error');
@@ -26,6 +27,11 @@ while (r.next()) {
     if (r.getValue('u_start_date')) t.start_date.setDisplayValue(r.getValue('u_start_date') + ' 08:00:00', 'yyyy-MM-dd HH:mm:ss');
     if (r.getValue('u_due_date')) t.end_date.setDisplayValue(r.getValue('u_due_date') + ' 17:00:00', 'yyyy-MM-dd HH:mm:ss');
     if (r.getValue('u_actual_end_date')) t.work_end.setDisplayValue(r.getValue('u_actual_end_date') + ' 17:00:00', 'yyyy-MM-dd HH:mm:ss');
+    if (WITH_ACTUAL_START) {   // the proposed fix (tasks PART K): actual start = Adaptive actual start, else planned start (never after actual end)
+        var a = (r.getValue('u_actual_start_date') || '').substring(0, 10), plan = (r.getValue('u_start_date') || '').substring(0, 10), end = (r.getValue('u_actual_end_date') || '').substring(0, 10);
+        if (!a) a = (plan && end && plan > end) ? end : (plan || end);
+        if (a) t.work_start.setDisplayValue(a + ' 08:00:00', 'yyyy-MM-dd HH:mm:ss');
+    }
     t.setValue('state', '3');
     gs.flushMessages();
     var id = t.insert();

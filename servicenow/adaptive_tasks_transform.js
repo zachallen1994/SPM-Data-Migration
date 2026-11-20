@@ -13,7 +13,7 @@
 //   Direct field maps (add the staging columns if missing):
 //     u_description -> description,   percent_complete: script field map -> PART H,
 //     u_start_date (Start Date) -> start_date, u_due_date (Due Date) -> end_date (Date format yyyy-MM-dd),
-//     u_actual_start_date -> work_start, u_actual_end_date -> work_end (Date format yyyy-MM-dd)
+//     u_actual_end_date -> work_end (Date format yyyy-MM-dd); work_start: script field map -> PART K (Date format yyyy-MM-dd)
 // The data source writes parents before children, so ONE transform run links every task to its parent.
 // (A second run is harmless - updates only, thanks to the coalesce - and fixes any task whose parent came later.)
 
@@ -226,4 +226,20 @@ answer = (function transformEntry(source) {
             return c.getValue('value');
     log.warn('Expense type: no choice matches Adaptive Funding Type "' + v + '" on ' + source.u_name);
     return '';
+})(source);
+
+// ---------- PART K: field map -> work_start (Actual start), Use source script, Date format yyyy-MM-dd ----------
+// Replaces the direct map u_actual_start_date -> work_start. Adaptive often has NO actual start on a Completed /
+// Cancelled task (only an actual end). ServiceNow then calculates one backwards over the project schedule and refuses
+// the task ("Set Close Data On Inactive": schedule_has_more_than_three_consecutive_weeks_as_holidays). So for a closed
+// task without an actual start, send the planned start (never after the actual end). Open tasks: unchanged.
+answer = (function transformEntry(source) {
+    var a = (source.getValue('u_actual_start_date') || '').substring(0, 10);
+    if (a) return a;
+    var st = (source.u_task_state + '').toLowerCase().trim();
+    if (st != 'completed' && st != 'cancelled') return '';
+    var end = (source.getValue('u_actual_end_date') || '').substring(0, 10);
+    var plan = (source.getValue('u_start_date') || '').substring(0, 10);
+    if (plan && end && plan > end) return end;
+    return plan || end;
 })(source);
