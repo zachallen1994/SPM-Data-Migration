@@ -2,8 +2,8 @@
 // Transform Map "Import Adaptive Resources - Assignments": u_import_adaptive_resources -> sn_plng_att_core_resource_assignment
 //   Field map: Use source script, Target field = task,     Coalesce = true -> PART A
 //   Field map: Use source script, Target field = user_resource, Coalesce = true -> PART B
-//   Field map: Use source script, Target field = start_date, Date format yyyy-MM-dd -> PART C
-//   Field map: Use source script, Target field = end_date,   Date format yyyy-MM-dd -> PART D
+//   Field map: Use source script, Target field = start_date, Date format yyyy-MM-dd -> PART C/D (FIELD = 'start')
+//   Field map: Use source script, Target field = end_date,   Date format yyyy-MM-dd -> PART C/D (FIELD = 'end')
 //   Field map: Use source script, Target field = operational_work_type (MANDATORY) -> PART F
 //   Field map: Use source script, Target field = effort (hours)                    -> PART G
 //   Transform Scripts: onBefore                                           -> PART E
@@ -49,40 +49,33 @@ answer = (function transformEntry(source) {
 })(source);
 
 // ---------- PART C: field map -> start_date ----------
-// Adaptive Start Date when filled; else the date the person was added to the project (Adaptive "Created On" of the
-// resource link - Adaptive spreads the assignment from then to the project finish, e.g. Andrea Smith 2026-08-17);
-// never before the project start. Staging column "Added On" (data source MAP 'Added On': 'CreatedOn').
+// ---------- PART D: field map -> end_date ----------
+// ONE script for both field maps: set FIELD = 'start' in the start_date map and FIELD = 'end' in the end_date map.
+// Rule "Validate start end dates of assignments" (sn_plng_att_core) refuses an assignment whose start is before the
+// task's (or project's) start, whose end is after its end, or whose end is before its start. So both dates are kept
+// INSIDE the parent's dates:
+//   start = Adaptive Start Date, else Added On (Adaptive "Created On" of the link), else the parent start
+//   end   = Adaptive end (InactiveDate), else the parent end
+//   then: start >= parent start, end <= parent end, start <= end (else start = parent start)
 answer = (function transformEntry(source) {
-    var v = (source.u_start_date + '').trim();
-    if (v && v != 'undefined') return v;
-    var start = '', end = '';
+    var FIELD = 'start';                                   // ✏️ 'start' in the start_date map, 'end' in the end_date map
+    function d(v) { v = (v + '').trim().substring(0, 10); return /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : ''; }
+    var ps = '', pe = '';
     var t = ['pm_project', 'dmn_demand', 'pm_project_task'];
-    for (var i = 0; i < t.length && !start; i++) {
+    for (var i = 0; i < t.length && !ps; i++) {
         var gr = new GlideRecord(t[i]);
         if (gr.get('correlation_id', source.u_project_correlation_id + '')) {
-            start = (gr.getValue('start_date') || '').substring(0, 10);
-            end = (gr.getValue('end_date') || '').substring(0, 10);
+            ps = d(gr.start_date.getDisplayValue());       // the user's (instance) time zone, as the rule compares
+            pe = d(gr.end_date.getDisplayValue());
         }
     }
-    var e = (source.u_end_date + '').trim();
-    if (e && e != 'undefined') end = e.substring(0, 10);        // same end as PART D
-    var added = (source.getValue('u_added_on') || '').substring(0, 10);
-    // Added On only when it falls inside the window: a person added to a task AFTER it ended (common on completed
-    // tasks) would give start > end, which "Validate start end dates of assignments" refuses -> use the task start.
-    if (/^\d{4}-\d{2}-\d{2}$/.test(added) && (!start || added > start) && (!end || added <= end)) return added;
-    return start;
-})(source);
-
-// ---------- PART D: field map -> end_date (Adaptive capacity end, else the project/task end) ----------
-answer = (function transformEntry(source) {
-    var v = (source.u_end_date + '').trim();
-    if (v && v != 'undefined') return v;
-    var t = ['pm_project', 'dmn_demand', 'pm_project_task'];
-    for (var i = 0; i < t.length; i++) {
-        var gr = new GlideRecord(t[i]);
-        if (gr.get('correlation_id', source.u_project_correlation_id + '')) return (gr.getValue('end_date') || '').substring(0, 10);
-    }
-    return '';
+    var start = d(source.u_start_date) || d(source.u_added_on) || ps;
+    var end = d(source.u_end_date) || pe;
+    if (ps && start < ps) start = ps;
+    if (pe && end > pe) end = pe;
+    if (pe && start > pe) start = ps;
+    if (end && start > end) start = ps && ps <= end ? ps : end;
+    return FIELD == 'end' ? end : start;
 })(source);
 
 // ---------- PART E: onBefore - skip what cannot be assigned ----------
@@ -93,6 +86,10 @@ answer = (function transformEntry(source) {
         found = gr.get('correlation_id', source.u_project_correlation_id + '');
     }
     if (!found) { ignore = true; return; }                                  // project/task not migrated
+    if (gr.start_date.nil() || gr.end_date.nil()) {                          // the dates rule refuses these
+        log.warn('No start / end date on ' + gr.getDisplayValue() + ' - assignment of ' + source.u_resource_name + ' skipped');
+        ignore = true; return;
+    }
     // same lookup as PART B (email, same mailbox on another domain, unique active name)
     var email = (source.getValue('u_resource_email') || '').toLowerCase().trim();
     var name = (source.getValue('u_resource_name') || '').trim();
