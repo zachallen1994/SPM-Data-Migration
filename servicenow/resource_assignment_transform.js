@@ -2,8 +2,8 @@
 // Transform Map "Import Adaptive Resources - Assignments": u_import_adaptive_resources -> sn_plng_att_core_resource_assignment
 //   Field map: Use source script, Target field = task,     Coalesce = true -> PART A
 //   Field map: Use source script, Target field = user_resource, Coalesce = true -> PART B
-//   Field map: Use source script, Target field = start_date, Date format yyyy-MM-dd -> PART C/D (FIELD = 'start')
-//   Field map: Use source script, Target field = end_date,   Date format yyyy-MM-dd -> PART C/D (FIELD = 'end')
+//   Field map: Use source script, Target field = start_date, Date format yyyy-MM-dd HH:mm:ss -> PART C/D (FIELD = 'start')
+//   Field map: Use source script, Target field = end_date,   Date format yyyy-MM-dd HH:mm:ss -> PART C/D (FIELD = 'end')
 //   Field map: Use source script, Target field = operational_work_type (MANDATORY) -> PART F
 //   Field map: Use source script, Target field = effort (hours)                    -> PART G
 //   Transform Scripts: onBefore                                           -> PART E
@@ -77,7 +77,11 @@ answer = (function transformEntry(source) {
     if (pe && end > pe) end = pe;
     if (pe && start > pe) start = ps;
     if (end && start > end) start = ps && ps <= end ? ps : end;
-    return FIELD == 'end' ? end : start;
+    // NOON, not midnight: a bare date is saved as 00:00 UTC = the evening BEFORE in US time, so an assignment starting on
+    // the task's first day came out one day early and "Validate start end dates of assignments" refused it.
+    // Field map Date format for both maps: yyyy-MM-dd HH:mm:ss
+    var v = FIELD == 'end' ? end : start;
+    return v ? v + ' 12:00:00' : '';
 })(source);
 
 // ---------- PART E: onBefore - skip what cannot be assigned ----------
