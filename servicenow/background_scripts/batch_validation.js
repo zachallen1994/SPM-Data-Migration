@@ -96,7 +96,7 @@ while (sp.next()) {
     tally('PROJECT', okP);
     var pid = rec.getUniqueValue();
     // TASKS (projects only)
-    if (isP && TASKS) {
+    if (isP && TASKS && TASKS[corr]) {   // only projects in the latest tasks load (a one-project re-run checks just that one)
         var want = (TASKS[corr] || []).length, ga = new GlideAggregate('pm_project_task');
         ga.addQuery('top_task', pid); ga.addQuery('correlation_id', 'STARTSWITH', 'ADAPTIVE:'); ga.addAggregate('COUNT'); ga.query();
         var have = ga.next() ? parseInt(ga.getAggregate('COUNT'), 10) : 0;
