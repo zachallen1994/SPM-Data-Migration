@@ -65,8 +65,10 @@ answer = (function transformEntry(source) {
     for (var i = 0; i < t.length && !ps; i++) {
         var gr = new GlideRecord(t[i]);
         if (gr.get('correlation_id', source.u_project_correlation_id + '')) {
-            ps = d(gr.start_date.getDisplayValue());       // the user's (instance) time zone, as the rule compares
-            pe = d(gr.end_date.getDisplayValue());
+            // local date (yyyy-MM-dd in the user's time zone, as the rule compares) - not getDisplayValue(), whose
+            // format follows the user's preference (e.g. 11-19-2026)
+            if (!gr.start_date.nil()) ps = d(gr.start_date.getGlideObject().getLocalDate().getValue());
+            if (!gr.end_date.nil()) pe = d(gr.end_date.getGlideObject().getLocalDate().getValue());
         }
     }
     var start = d(source.u_start_date) || d(source.u_added_on) || ps;
