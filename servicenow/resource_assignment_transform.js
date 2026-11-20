@@ -55,14 +55,21 @@ answer = (function transformEntry(source) {
 answer = (function transformEntry(source) {
     var v = (source.u_start_date + '').trim();
     if (v && v != 'undefined') return v;
-    var start = '';
+    var start = '', end = '';
     var t = ['pm_project', 'dmn_demand', 'pm_project_task'];
     for (var i = 0; i < t.length && !start; i++) {
         var gr = new GlideRecord(t[i]);
-        if (gr.get('correlation_id', source.u_project_correlation_id + '')) start = (gr.getValue('start_date') || '').substring(0, 10);
+        if (gr.get('correlation_id', source.u_project_correlation_id + '')) {
+            start = (gr.getValue('start_date') || '').substring(0, 10);
+            end = (gr.getValue('end_date') || '').substring(0, 10);
+        }
     }
+    var e = (source.u_end_date + '').trim();
+    if (e && e != 'undefined') end = e.substring(0, 10);        // same end as PART D
     var added = (source.getValue('u_added_on') || '').substring(0, 10);
-    if (/^\d{4}-\d{2}-\d{2}$/.test(added) && (!start || added > start)) return added;
+    // Added On only when it falls inside the window: a person added to a task AFTER it ended (common on completed
+    // tasks) would give start > end, which "Validate start end dates of assignments" refuses -> use the task start.
+    if (/^\d{4}-\d{2}-\d{2}$/.test(added) && (!start || added > start) && (!end || added <= end)) return added;
     return start;
 })(source);
 
