@@ -3,10 +3,12 @@
 // A re-run of the transform cannot clear them (blank is not copied: "Copy empty fields" is off), so this does it once.
 // DRY_RUN = true first: it only lists what it would clear.
 var DRY_RUN = true;                                          // ✏️ false to clear
+var PREFIX = 'ADAPTIVE:';                                    // ✏️ 'ADAPTIVE:' or 'ASANA:'
 var TABLE = 'pm_project';                                    // ✏️ 'pm_project' or 'dmn_demand'
-var FIELDS = ['u_executive_sponsor', 'u_business_category']; // ✏️ fields to clean (demands: ['demand_manager'])
+var FIELDS = ['u_executive_sponsor', 'u_business_category']; // ✏️ fields to clean (demands: ['demand_manager']; Asana projects:
+                                                             //    ['project_manager','assigned_to','u_business_owner','u_project_category','u_it_required','u_sites'])
 var p = new GlideRecord(TABLE);
-p.addQuery('correlation_id', 'STARTSWITH', 'ADAPTIVE:');
+p.addQuery('correlation_id', 'STARTSWITH', PREFIX);
 var qc = null;
 FIELDS.forEach(function (f) { if (p.isValidField(f)) qc = qc ? qc.addOrCondition(f, 'undefined') : p.addQuery(f, 'undefined'); });
 p.query();
