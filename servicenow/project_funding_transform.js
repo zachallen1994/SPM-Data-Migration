@@ -12,6 +12,8 @@
     var sums = {};                                     // project sys_id -> fiscal year sys_id -> { capex, opex }
     var years = {};                                    // 'yyyy-MM-dd' -> fiscal year sys_id (cache)
     function fiscalYear(day) {
+        if (!/^\d{4}-\d{2}/.test(day)) return '';
+        day = day.substring(0, 7) + '-15';             // mid-month: periods are stored in UTC, the 1st can fall in the previous year
         if (years.hasOwnProperty(day)) return years[day];
         var f = new GlideRecord('fiscal_period');
         f.addQuery('fiscal_type', 'year');
@@ -68,6 +70,23 @@
             made++;
         }
     }
+    // a fiscal year a project no longer has budget in (e.g. January lines moved by the mid-month fix, or an Adaptive
+    // re-plan): set its funding record to 0, so the project's Total Budget does not count it any more
+    var zeroed = 0;
+    for (var pz in sums) {
+        var old = new GlideRecord('project_funding');
+        old.addQuery('task', pz);
+        old.query();
+        while (old.next()) {
+            if (sums[pz][old.getValue('fiscal_period')]) continue;
+            if (!(parseFloat(old.getValue('capex_budget')) || 0) && !(parseFloat(old.getValue('opex_budget')) || 0)) continue;
+            old.setValue('capex_budget', 0);
+            old.setValue('opex_budget', 0);
+            old.update();
+            zeroed++;
+        }
+    }
+    if (zeroed) log.warn('Project funding: ' + zeroed + ' records of fiscal years with no budget lines any more set to 0');
     log.info('Project funding: ' + made + ' records (project x fiscal year) written' +
         (noYear ? '; ' + noYear + ' budget rows with no fiscal year in ServiceNow' : '') +
         (noProject ? '; ' + noProject + ' budget rows for projects not migrated' : '') +

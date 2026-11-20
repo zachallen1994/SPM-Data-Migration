@@ -48,7 +48,11 @@ answer = (function transformEntry(source) {
 // ---------- PART E: field maps -> start_fiscal_period AND end_fiscal_period (the fiscal month of u_month) ----------
 // fiscal_period field names (fiscal_type, fiscal_start_date_time, fiscal_end_date_time): confirm in the dictionary.
 answer = (function transformEntry(source) {
-    var day = (source.u_month + '').substring(0, 10);
+    // the 15th of the month: fiscal periods are stored in UTC, so the 1st also falls inside the PREVIOUS month's period
+    // (e.g. February ends 2026-03-01 04:59 UTC) and the cost plan landed one month early (2026-03 -> FY26: M02)
+    var m = (source.u_month + '').substring(0, 7);
+    if (!/^\d{4}-\d{2}$/.test(m)) return '';
+    var day = m + '-15';
     var f = new GlideRecord('fiscal_period');
     f.addQuery('fiscal_type', 'month');
     f.addQuery('fiscal_start_date_time', '<=', day + ' 23:59:59');
