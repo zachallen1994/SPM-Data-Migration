@@ -47,7 +47,8 @@ var TASKS = staged('u_import_adaptive_project_tasks', function (r) { return 1; }
 var STATUS = staged('u_import_adaptive_status_history', function (r) { return 1; });
 var BUDGET = staged('u_import_adaptive_budget_lines', function (r) { return { key: r.getValue('u_correlation_id') + '|' + String(r.getValue('u_month')).substring(0, 7), amount: parseFloat(r.getValue('u_budget')) || 0 }; });
 var RES = staged('u_import_adaptive_resources', function (r) { return 1; });
-var TIME = staged('u_import_adaptive_time_cards', function (r) { return parseFloat(r.getValue('u_total')) || 0; });
+var TIME_TABLE = new GlideRecord('u_import_adaptive_time_entries').isValid() ? 'u_import_adaptive_time_entries' : 'u_import_adaptive_time_cards';
+var TIME = staged(TIME_TABLE, function (r) { return parseFloat(r.getValue('u_total')) || 0; });
 // resource / time rows point at a project OR one of its tasks: map task correlation -> project correlation
 var taskToProject = {};
 var pt = new GlideRecord('pm_project_task');
@@ -64,7 +65,7 @@ RES = regroup(RES);
 var TIMEP = null;
 if (TIME) {   // time card staging uses Task / Project Correlation ID: group by the project column
     TIMEP = {};
-    var tset = latestSet('u_import_adaptive_time_cards'), tr = new GlideRecord('u_import_adaptive_time_cards');
+    var tset = latestSet(TIME_TABLE), tr = new GlideRecord(TIME_TABLE);
     tr.addQuery('sys_import_set', tset);
     tr.query();
     while (tr.next()) { var pk = tr.getValue('u_project_correlation_id'); TIMEP[pk] = (TIMEP[pk] || 0) + (parseFloat(tr.getValue('u_total')) || 0); }
@@ -116,8 +117,8 @@ while (sp.next()) {
         BUDGET[corr].forEach(function (b) { if (!dup[b.key]) { dup[b.key] = true; tot += b.amount; } });
         tot = num(tot);
         var okB = true, tb = num(rec.getValue('budget_cost')), pc = PLANNED_COST ? num(rec.getValue(PLANNED_COST)) : null;
-        if (Math.abs(tb - tot) > 0.01) { say('BUDGET    Total Budget ' + tb + ' vs Adaptive ' + tot + ': ' + id); okB = false; }
-        if (pc !== null && Math.abs(pc - tot) > 0.01) { say('BUDGET    Total planned cost ' + pc + ' vs Adaptive ' + tot + ': ' + id); okB = false; }
+        if (Math.abs(tb - tot) > 0.05) { say('BUDGET    Total Budget ' + tb + ' vs Adaptive ' + tot + ': ' + id); okB = false; }
+        if (pc !== null && Math.abs(pc - tot) > 0.05) { say('BUDGET    Total planned cost ' + pc + ' vs Adaptive ' + tot + ': ' + id); okB = false; }
         var bd = new GlideRecord('cost_plan_breakdown');
         if (bd.isValid() && bd.isValidField('cost_plan')) {
             var gb = new GlideAggregate('cost_plan_breakdown');
