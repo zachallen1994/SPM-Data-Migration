@@ -1,6 +1,7 @@
 // Background Script (read-only): what is in scope from Asana, with a LINK to open each item in Asana.
 // A. The HR tracker ("HR Project Portfolio 2026") - one line per row: name, status, PM, subtasks, link
 // B. Regular Asana projects (active, same rule as the data source) - one line per project: name, team, link
+// C. Possible doubles if both are loaded (tracker row and a regular project with a similar name).
 // Each line also says whether it is already a ServiceNow project (and its number).
 // Paste a link into the browser while logged into Asana. If Asana says you have no access, your own account
 // cannot see it (the migration token can) - ask the Asana owner to add you to the tracker.
@@ -49,6 +50,22 @@ try {
             out('B. ' + p.name + ' | team ' + (p.team ? p.team.name : '-') + ' | SN ' + inSN(p.gid) + ' | https://app.asana.com/0/' + p.gid + '/list');
         });
         out('B. regular active projects: ' + b);
+        // C. possible doubles with SOURCE = 'both': an active tracker row and a regular project with a similar name
+        // (often the row's own detailed plan project) would become TWO ServiceNow projects.
+        function n(x) { return (x || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim(); }
+        var c = 0;
+        rows.forEach(function (t) {
+            if (t.completed || SKIP_STATUS.indexOf(cf(t, 'Project Status')) >= 0) return;
+            var tn = n(t.name);
+            if (tn.length < 5) return;
+            ps.forEach(function (p) {
+                var pn = n(p.name);
+                if (p.gid != TRACKER && pn && (pn.indexOf(tn) > -1 || tn.indexOf(pn) > -1)) {
+                    c++; out('C. "' + t.name + '" (tracker) ~ "' + p.name + '" (project) | https://app.asana.com/0/' + p.gid + '/list');
+                }
+            });
+        });
+        out('C. possible doubles: ' + c);
     }
 } catch (e) { out('ERROR: ' + e); }
 gs.info(OUT.join('\n'), 'asana_scope_links');
