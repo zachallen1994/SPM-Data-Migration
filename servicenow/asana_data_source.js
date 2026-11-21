@@ -190,7 +190,7 @@
                             if (t.num_subtasks) walk(t, m.gid);
                         });
                     });
-                } else {
+                } else if (SOURCE != 'tracker') {                   // regular projects only when they are in scope
                     all('/projects/' + m.gid + '/tasks?limit=100&opt_fields=' + FIELDS).forEach(function (t) {
                         insertTask(t, m.gid, m.name, m.gid);         // real project: its tasks...
                         if (t.num_subtasks) walk(t, m.gid);          // ...and their subtasks
