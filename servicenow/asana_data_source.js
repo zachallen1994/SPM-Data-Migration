@@ -14,7 +14,7 @@
 
     // ======================= CONFIG ✏️ =======================
     var MODE = 'projects';                       // 'projects' or 'tasks'
-    var PILOT = ['Flu Program', 'Annual Enrollment', 'Respiratory Fit Testing'];   // test: only these names; [] = all active
+    var PILOT = ['Flu Program', 'Annual Enrollment', 'Respiratory Fit Testing'];   // test: only these names (part of the name is enough, any case/dash); [] = all active
     var TEAMS = [];                              // Asana team names to include, e.g. ['HR Technology']; [] = all teams
     var SOURCE = 'tracker';                      // 'tracker'  = rows of HR Project Portfolio 2026 (HR PMO initiatives)
                                                  // 'projects' = real Asana projects in the workspace
@@ -34,6 +34,11 @@
         var x = pair.split(':');
         if (x.length == 2 && x[0] && x[1]) { (PLAN[x[0].trim()] = PLAN[x[0].trim()] || []).push(x[1].trim()); IS_PLAN[x[1].trim()] = true; }
     });
+
+    // PILOT match: case, dashes (- vs en/em dash) and extra spaces do not matter; part of the name is enough
+    function norm(x) { return String(x || '').toLowerCase().replace(/[\u2010-\u2015\-]/g, '-').replace(/\s+/g, ' ').trim(); }
+    var PILOT_N = PILOT.map(norm);
+    function inPilot(name) { var n = norm(name); return !PILOT_N.length || PILOT_N.some(function (x) { return n.indexOf(x) > -1; }); }
 
     var BASE = 'https://app.asana.com/api/1.0';
     var FIELDS = 'gid,name,notes,num_subtasks,start_on,due_on,completed,assignee.name,assignee.email,parent.name,' +
@@ -129,7 +134,7 @@
             (SOURCE == 'tracker' ? [] : all('/workspaces/' + WORKSPACE + '/projects?archived=false&limit=100&opt_fields=' + PROJECT_FIELDS)).forEach(function (p) {
                 if (p.gid == trackerGid) return;                                           // the tracker list itself
                 if (INCLUDE_TRACKER_ITEMS && IS_PLAN[p.gid]) { linked++; return; }         // plan of a tracker row: loaded under that row
-                if (PILOT.length && PILOT.indexOf(p.name.trim()) < 0) return;
+                if (!inPilot(p.name)) return;
                 if (TEAMS.length && (!p.team || TEAMS.indexOf(p.team.name) < 0)) return;
                 var status = p.current_status_update ? p.current_status_update.status_type : '';
                 if (p.archived || p.completed || status == 'complete' ||
@@ -149,8 +154,12 @@
             });
             if (INCLUDE_TRACKER_ITEMS) {
                 tracker.forEach(function (t) {
-                    if (PILOT.length && PILOT.indexOf(t.name.trim()) < 0) return;
-                    if (t.completed || SKIP_STATUS.indexOf(custom(t, 'Project Status')) >= 0) { skipped++; return; }
+                    if (!inPilot(t.name)) return;
+                    if (t.completed || SKIP_STATUS.indexOf(custom(t, 'Project Status')) >= 0) {
+                        skipped++;
+                        if (PILOT.length) import_log.warn('PILOT item found but not active (completed / status ' + custom(t, 'Project Status') + '): ' + t.name);
+                        return;
+                    }
                     insert({
                         'correlation id': 'ASANA:' + t.gid,
                         'name': t.name.trim(),
@@ -167,6 +176,7 @@
                     count++;
                 });
             }
+            if (PILOT.length && !count) import_log.warn('No PILOT name matched. Tracker rows: ' + tracker.map(function (t) { return t.name; }).join(' | ').substring(0, 3000));
             import_log.info('Asana projects skipped as not active: ' + skipped + ' | plan projects loaded under their tracker row: ' + linked);
         } else {
             // only work plans of projects already migrated (pm_project.correlation_id = ASANA:<gid>)
