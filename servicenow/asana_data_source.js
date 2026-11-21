@@ -22,6 +22,7 @@
     var INCLUDE_TRACKER_ITEMS = (SOURCE == 'tracker' || SOURCE == 'both');
     var SKIP_STATUS = ['Completed', 'Cancelled'];   // Project Status custom field values that mean "not active"
     var WORKSPACE = '5286451799521';
+    var ONLY = [];                               // MODE 'tasks' test: ServiceNow project numbers or names, e.g. ['PRJ0011499']; [] = all
     // =========================================================
 
     var BASE = 'https://app.asana.com/api/1.0';
@@ -162,7 +163,10 @@
             var pr = new GlideRecord('pm_project');
             pr.addQuery('correlation_id', 'STARTSWITH', 'ASANA:');
             pr.query();
-            while (pr.next()) migrated.push({ gid: pr.getValue('correlation_id').substring(6), name: pr.getValue('short_description') });
+            while (pr.next()) {
+                if (ONLY.length && ONLY.indexOf(pr.getValue('number')) < 0 && ONLY.indexOf(pr.getValue('short_description')) < 0) continue;
+                migrated.push({ gid: pr.getValue('correlation_id').substring(6), name: pr.getValue('short_description') });
+            }
             if (!migrated.length) { import_log.warn('No Asana projects in pm_project yet - load projects first'); return; }
 
             var trackerGids = tracker.map(function (t) { return t.gid; });
