@@ -25,6 +25,16 @@
     var ONLY = [];                               // MODE 'tasks' test: ServiceNow project numbers or names, e.g. ['PRJ0011499']; [] = all
     // =========================================================
 
+    // Tracker rows whose detailed plan is a separate Asana project (system property x_mig.asana.plan_links,
+    // "trackerRowGid:planProjectGid;..." - from asana_scope_links.js section C, checked by hand). With SOURCE 'both':
+    //   projects: the plan project is NOT loaded as its own project (no double) - the tracker row is the project
+    //   tasks:    the tracker row's work plan = its subtasks PLUS the plan project's tasks
+    var PLAN = {}, IS_PLAN = {};
+    (gs.getProperty('x_mig.asana.plan_links', '') + '').split(/\s*;\s*/).forEach(function (pair) {
+        var x = pair.split(':');
+        if (x.length == 2 && x[0] && x[1]) { (PLAN[x[0].trim()] = PLAN[x[0].trim()] || []).push(x[1].trim()); IS_PLAN[x[1].trim()] = true; }
+    });
+
     var BASE = 'https://app.asana.com/api/1.0';
     var FIELDS = 'gid,name,notes,num_subtasks,start_on,due_on,completed,assignee.name,assignee.email,parent.name,' +
                  'tags.name,followers.name,memberships.section.name,custom_fields.name,custom_fields.display_value';
@@ -115,9 +125,10 @@
 
         if (MODE == 'projects') {
             var trackerGid = gs.getProperty('x_mig.asana.project_gid');
-            var skipped = 0;
+            var skipped = 0, linked = 0;
             (SOURCE == 'tracker' ? [] : all('/workspaces/' + WORKSPACE + '/projects?archived=false&limit=100&opt_fields=' + PROJECT_FIELDS)).forEach(function (p) {
                 if (p.gid == trackerGid) return;                                           // the tracker list itself
+                if (INCLUDE_TRACKER_ITEMS && IS_PLAN[p.gid]) { linked++; return; }         // plan of a tracker row: loaded under that row
                 if (PILOT.length && PILOT.indexOf(p.name.trim()) < 0) return;
                 if (TEAMS.length && (!p.team || TEAMS.indexOf(p.team.name) < 0)) return;
                 var status = p.current_status_update ? p.current_status_update.status_type : '';
@@ -156,7 +167,7 @@
                     count++;
                 });
             }
-            import_log.info('Asana projects skipped as not active: ' + skipped);
+            import_log.info('Asana projects skipped as not active: ' + skipped + ' | plan projects loaded under their tracker row: ' + linked);
         } else {
             // only work plans of projects already migrated (pm_project.correlation_id = ASANA:<gid>)
             var migrated = [];
@@ -173,6 +184,12 @@
             migrated.forEach(function (m) {
                 if (trackerGids.indexOf(m.gid) >= 0) {
                     walk(m, m.gid);                                  // tracker item: its subtasks
+                    (PLAN[m.gid] || []).forEach(function (planGid) {  // + its linked plan project's tasks
+                        all('/projects/' + planGid + '/tasks?limit=100&opt_fields=' + FIELDS).forEach(function (t) {
+                            insertTask(t, m.gid, m.name, m.gid);
+                            if (t.num_subtasks) walk(t, m.gid);
+                        });
+                    });
                 } else {
                     all('/projects/' + m.gid + '/tasks?limit=100&opt_fields=' + FIELDS).forEach(function (t) {
                         insertTask(t, m.gid, m.name, m.gid);         // real project: its tasks...

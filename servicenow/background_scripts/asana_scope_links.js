@@ -53,7 +53,7 @@ try {
         // C. possible doubles with SOURCE = 'both': an active tracker row and a regular project with a similar name
         // (often the row's own detailed plan project) would become TWO ServiceNow projects.
         function n(x) { return (x || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim(); }
-        var c = 0;
+        var c = 0, pairs = [];
         rows.forEach(function (t) {
             if (t.completed || SKIP_STATUS.indexOf(cf(t, 'Project Status')) >= 0) return;
             var tn = n(t.name);
@@ -61,11 +61,15 @@ try {
             ps.forEach(function (p) {
                 var pn = n(p.name);
                 if (p.gid != TRACKER && pn && (pn.indexOf(tn) > -1 || tn.indexOf(pn) > -1)) {
-                    c++; out('C. "' + t.name + '" (tracker) ~ "' + p.name + '" (project) | https://app.asana.com/0/' + p.gid + '/list');
+                    c++; pairs.push(t.gid + ':' + p.gid);
+                    out('C. ' + t.gid + ':' + p.gid + ' | "' + t.name + '" (tracker, subtasks ' + (t.num_subtasks || 0) + ') ~ "' + p.name +
+                        '" (project) | https://app.asana.com/0/' + p.gid + '/list');
                 }
             });
         });
         out('C. possible doubles: ' + c);
+        out('C. value for property x_mig.asana.plan_links (remove any pair that is NOT the same initiative first):');
+        out(pairs.join(';'));
     }
 } catch (e) { out('ERROR: ' + e); }
 gs.info(OUT.join('\n'), 'asana_scope_links');
