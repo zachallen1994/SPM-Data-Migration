@@ -60,7 +60,7 @@ try {
             if (tn.length < 5) return;
             ps.forEach(function (p) {
                 var pn = n(p.name);
-                if (p.gid != TRACKER && pn && (pn.indexOf(tn) > -1 || tn.indexOf(pn) > -1)) {
+                if (p.gid != TRACKER && pn.length >= 5 && (pn.indexOf(tn) > -1 || tn.indexOf(pn) > -1)) {   // short names like "CON" / "RCH" matched by accident
                     c++; pairs.push(t.gid + ':' + p.gid);
                     out('C. ' + t.gid + ':' + p.gid + ' | "' + t.name + '" (tracker, subtasks ' + (t.num_subtasks || 0) + ') ~ "' + p.name +
                         '" (project) | https://app.asana.com/0/' + p.gid + '/list');
