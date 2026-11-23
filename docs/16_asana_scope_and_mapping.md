@@ -7,8 +7,9 @@ answered. Every later change starts here.
 
 | # | Requirement | Source of truth | Status |
 |---|---|---|---|
-| R1 | **Every row of the "HR Project Portfolio 2026" Asana project is a ServiceNow project** (the rows in the Excel export `Asana_Project_Fields.xlsx`), except rows that have a parent task (those are project tasks - R5). | Excel export = Asana register | Confirmed |
-| R2 | **Other Asana projects** (not the register) are in scope when **active** and **owned by** one of the HR PMs or Richard Becker (rbecker0@mercy.com). | Asana owner / "PM Assigned" | Confirmed rule - **list to be confirmed** (section 5) |
+| R1 | **Every row of the "HR Project Portfolio 2026" Asana project is a ServiceNow project - INCLUDING rows marked complete** (the Excel export `Asana_Project_Fields.xlsx`), except rows that have a parent task (those are project tasks). Rows with no PM Assigned load with Project manager empty. | Excel export = Asana register | Confirmed 2026-11-23 |
+| R2 | **Other Asana projects** (not the register) are in scope when **active** (not marked complete / archived - completed subtasks do not matter) and **owned by** one of the HR PMs or Richard Becker (rbecker0@mercy.com). Start dates in 2025 are included - no date filter. | Asana owner / "PM Assigned" | Confirmed 2026-11-23 - **list to be confirmed** (section 5) |
+| R2a | Not projects, excluded: Asana's automatic "<name>'s previously assigned tasks" projects, "Sample ..." test projects, names starting "(Closed)" | Proposed - Richard to confirm | Open |
 | R3 | An R1 row and an R2 project that are the same initiative become ONE ServiceNow project (row's fields, project's tasks). | Pairs confirmed by Richard | Open (D3) |
 
 HR PMs: Jennifer Angle, Carrie Lynn, Keith McClure, Katie McDearmon, Lynne Hayes, Matthew Caldwell, Ian Whitis,
@@ -60,8 +61,12 @@ are read from an ordered list of names.
 | Assigned to | Asana assignee (by email) |
 | Description | notes + free-text "Assigned To" (e.g. "Billie") + Asana status |
 
-Attachments: files stored in Asana are copied to the matching project / task; linked files (Drive, Box, OneDrive) are
-kept as a link in work notes.
+## 4a. Attachments (required - confirmed 2026-11-23)
+
+EVERY file on an in-scope project, task or subtask (any level) is brought over: files stored in Asana are copied to
+the matching ServiceNow project / task; linked files (Drive, Box, OneDrive) are kept as a link in work notes.
+Not reachable through the task API and to be confirmed: files on project Messages / the project Overview (brief).
+All tasks are loaded, completed ones included, so their files have a record to land on.
 
 ## 5. How the scope list is produced and confirmed (no Asana UI access needed)
 
@@ -76,12 +81,14 @@ kept as a link in work notes.
 
 | # | Decision | Owner |
 |---|---|---|
-| D1 | R1: ALL register rows, or only active ones (rows marked complete in Asana)? | Richard |
-| D2 | R1: rows with no listed PM (Well-being Program "N/A", Ireland rows) are in scope - confirm | Richard |
+| D1 | ~~R1: all rows or only active~~ -> ALL rows, completed included (decided 2026-11-23) | done |
+| D2 | ~~Rows with no PM~~ -> in scope, PM empty (decided 2026-11-23) | done |
 | D3 | R3: which register rows have their plan in a separate Asana project (e.g. AMR / "2026 AMR (Jen)", Job Profiles / 3 phase projects, Pay Practice Optimization) | Richard / Jen Angle |
 | D4 | Sites value for "BSMH" | BA |
 | D5 | State for normal projects (no status field in Asana) | BA |
 | D6 | Is the extra-project list (section 5) complete - anything owned by someone else that must come? | Richard |
+| D7 | R2a exclusions (previously-assigned-tasks, Sample, (Closed)) | Richard |
+| D8 | Files on project Messages / Overview: needed? (separate API) | Richard |
 
 ## 7. Confirmed scope list
 
@@ -99,3 +106,12 @@ kept as a link in work notes.
 
 Data source: servicenow/asana_data_source.js (one script, MODE projects / tasks).
 Maps: built by background_scripts/asana_projects_map_setup.js and asana_tasks_map_setup.js (no manual pasting).
+
+## 10. Build changes these decisions require (to apply after D3, D6, D7 are answered)
+
+| Change | Piece |
+|---|---|
+| Register rows: load completed rows too (state Closed Complete) | data source: completed filter off for register rows |
+| No date filter for R2 | data source: FROM / TO removed |
+| R2a exclusions by name | data source: skip list |
+| Attachments on every task / subtask of every in-scope project | attachments script: already covers projects + tasks loaded; run after the full task load |
