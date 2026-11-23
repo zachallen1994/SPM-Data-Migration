@@ -37,7 +37,9 @@ try {
         chk('Due', t.due_on || '', (p.getValue('end_date') || '').substring(0, 10), !t.due_on ||
             (!p.end_date.nil() && p.end_date.getGlideObject().getLocalDate().getValue() == t.due_on));
         var sec = (t.memberships || []).map(function (m) { return m.section ? m.section.name : ''; }).join('');
-        chk('Program (Section)', sec, p.getDisplayValue('primary_program'), !sec || p.getDisplayValue('primary_program') == sec);
+        // the section now drives Functional Area (not Program); blank = no matching choice (see the import log)
+        chk('Functional Area (Section)', sec, p.getDisplayValue('u_functional_area'), !sec || !p.isValidField('u_functional_area') || !!p.getValue('u_functional_area'));
+        chk('Portfolio', 'HR', p.getDisplayValue('primary_portfolio'), p.getDisplayValue('primary_portfolio') == 'HR');
         chk('Description', cf(t, 'Strategy Focus') || '(notes/fields)', (p.getValue('description') || '').substring(0, 30), !!p.getValue('description'));
         var f = p.getFields(), und = [];
         for (var i = 0; i < f.size(); i++) if (f.get(i).getDisplayValue() == 'undefined') und.push(f.get(i).getLabel());
