@@ -23,6 +23,18 @@
     var SKIP_STATUS = ['Completed', 'Cancelled'];   // Project Status custom field values that mean "not active"
     var WORKSPACE = '5286451799521';
     var ONLY = [];                               // MODE 'tasks' test: ServiceNow project numbers or names, e.g. ['PRJ0011499']; [] = all
+    // HR PMO scope (Richard Becker, HR PM list): only projects of THESE project managers, dated in the WINDOW.
+    //   regular project: its Asana owner's email is in PM_EMAILS (either domain)
+    //   tracker row:     its "PM Assigned" names one of PM_NAMES (e.g. "Jen Angle/Carrie Lynn" counts)
+    //   window:          start..due overlaps FROM..TO (no dates at all = included, logged)
+    // [] = no PM filter. System property x_mig.asana.pm_emails (emails separated by ;) overrides PM_EMAILS.
+    var PM_EMAILS = ['jennifer.angle@bsmhealth.org', 'jennifer.angle@mercy.com', 'carrie_lynn@bsmhealth.org', 'carrie_lynn@mercy.com',
+                     'kamcclure@bsmhealth.org', 'kamcclure@mercy.com', 'kmcdearmon@mercy.com', 'lhayes@mercy.com', 'mcaldwell4@mercy.com',
+                     'iwhitis@bsmhealth.org', 'iwhitis@mercy.com', 'awarfield@bsmhealth.org', 'awarfield@mercy.com',
+                     'menims@bsmhealth.org', 'menims@mercy.com'];
+    var PM_NAMES = ['angle', 'lynn', 'mcclure', 'mcdearmon', 'hayes', 'caldwell', 'whitis', 'warfield', 'trucksis'];   // last names
+    var FROM = '2025-01-01', TO = '2026-12-31';
+    var INCLUDE_COMPLETED = false;               // ✏️ true = also projects completed in the window (confirm with HR PMO)
     // =========================================================
 
     // Tracker rows whose detailed plan is a separate Asana project (system property x_mig.asana.plan_links,
@@ -39,6 +51,22 @@
     function norm(x) { return String(x || '').toLowerCase().replace(/[\u2010-\u2015\-]/g, '-').replace(/\s+/g, ' ').trim(); }
     var PILOT_N = PILOT.map(norm);
     function inPilot(name) { var n = norm(name); return !PILOT_N.length || PILOT_N.some(function (x) { return n.indexOf(x) > -1; }); }
+
+    var pmProp = (gs.getProperty('x_mig.asana.pm_emails', '') + '').trim();
+    if (pmProp) PM_EMAILS = pmProp.toLowerCase().split(/\s*;\s*/).filter(function (x) { return x; });
+    PM_EMAILS = PM_EMAILS.map(function (x) { return x.toLowerCase(); });
+    function pmEmailOk(email) { return !PM_EMAILS.length || PM_EMAILS.indexOf(String(email || '').toLowerCase()) > -1; }
+    function pmNameOk(text) {
+        if (!PM_NAMES.length) return true;
+        var words = String(text || '').toLowerCase().split(/[^a-z]+/);
+        return PM_NAMES.some(function (n) { return words.indexOf(n) > -1; });
+    }
+    var noDates = 0, outOfWindow = 0, otherPm = 0;
+    function inWindow(start, due) {
+        if (!start && !due) { noDates++; return true; }
+        var s0 = start || due, e0 = due || start;
+        return !(e0 < FROM || s0 > TO);
+    }
 
     var BASE = 'https://app.asana.com/api/1.0';
     var FIELDS = 'gid,name,notes,num_subtasks,start_on,due_on,completed,assignee.name,assignee.email,parent.name,' +
@@ -136,9 +164,11 @@
                 if (INCLUDE_TRACKER_ITEMS && IS_PLAN[p.gid]) { linked++; return; }         // plan of a tracker row: loaded under that row
                 if (!inPilot(p.name)) return;
                 if (TEAMS.length && (!p.team || TEAMS.indexOf(p.team.name) < 0)) return;
+                if (!pmEmailOk(p.owner ? p.owner.email : '') && !pmNameOk(custom(p, 'PM Assigned'))) { otherPm++; return; }
+                if (!inWindow(p.start_on, p.due_on)) { outOfWindow++; return; }
                 var status = p.current_status_update ? p.current_status_update.status_type : '';
-                if (p.archived || p.completed || status == 'complete' ||
-                    SKIP_STATUS.indexOf(custom(p, 'Project Status')) >= 0) { skipped++; return; }  // not active
+                if (!INCLUDE_COMPLETED && (p.completed || status == 'complete' ||
+                    SKIP_STATUS.indexOf(custom(p, 'Project Status')) >= 0)) { skipped++; return; }  // not active
                 insert({
                     'correlation id': 'ASANA:' + p.gid,
                     'name': p.name.trim(),
@@ -155,7 +185,9 @@
             if (INCLUDE_TRACKER_ITEMS) {
                 tracker.forEach(function (t) {
                     if (!inPilot(t.name)) return;
-                    if (t.completed || SKIP_STATUS.indexOf(custom(t, 'Project Status')) >= 0) {
+                    if (!pmNameOk(custom(t, 'PM Assigned')) && !pmEmailOk(t.assignee ? t.assignee.email : '')) { otherPm++; return; }
+                    if (!inWindow(t.start_on, t.due_on)) { outOfWindow++; return; }
+                    if (!INCLUDE_COMPLETED && (t.completed || SKIP_STATUS.indexOf(custom(t, 'Project Status')) >= 0)) {
                         skipped++;
                         if (PILOT.length) import_log.warn('PILOT item found but not active (completed / status ' + custom(t, 'Project Status') + '): ' + t.name);
                         return;
@@ -177,6 +209,7 @@
                 });
             }
             if (PILOT.length && !count) import_log.warn('No PILOT name matched. Tracker rows: ' + tracker.map(function (t) { return t.name; }).join(' | ').substring(0, 3000));
+            import_log.info('Asana scope: other PM ' + otherPm + ' | outside ' + FROM + '..' + TO + ' ' + outOfWindow + ' | loaded with no dates ' + noDates);
             import_log.info('Asana projects skipped as not active: ' + skipped + ' | plan projects loaded under their tracker row: ' + linked);
         } else {
             // only work plans of projects already migrated (pm_project.correlation_id = ASANA:<gid>)

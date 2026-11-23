@@ -1,4 +1,5 @@
 // Background Script (CHANGES DATA - DRY_RUN first): remove Asana projects that are NOT rows of the HR Project
+// !! SCOPE CHANGED (HR PM list): do NOT run until asana_pm_scope_preview.js confirms regular projects are out of scope.
 // Portfolio 2026 tracker (they came in from earlier runs with SOURCE 'projects' / 'both').
 // Confirmed scope: the tracker is the HR portfolio; each ROW is a project, its subtasks are the project tasks.
 // Keeps every project whose correlation id is ASANA:<gid of a tracker row> (active or not). Deletes the others
