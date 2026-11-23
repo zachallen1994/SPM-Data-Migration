@@ -3,13 +3,14 @@
 // Asana "I&T Integrations Needed" (column u_i_t_integrations_needed) -> the IT Required choice with the same label.
 // DEV choices: No Integrations | Yes - New Integrations | Yes - Modify Existing Integrations
 // ("No Integrations, but IT is engaged to support" -> No Integrations; "TBD" -> blank).
+// Choices are stored on dmn_demand.u_it_required: no_integrations, yes_new_integrations, yes_modify_integrations.
 // v2: finds where the field's choices are really stored (the dictionary can point the choices to another table /
 // field), instead of assuming pm_project.u_it_required - v1 found nothing in DEV.
 answer = (function transformEntry(source) {
     var raw = (source.getValue('u_i_t_integrations_needed') || '').trim();
     if (!raw || raw == 'undefined' || /^tbd$/i.test(raw)) return '';
     var label = (/^no integrations/i.test(raw) ? 'No Integrations' : raw).toLowerCase();
-    var tables = ['pm_project', 'planned_task', 'task'], element = 'u_it_required';
+    var tables = ['pm_project', 'dmn_demand', 'planned_task', 'task'], element = 'u_it_required';   // choices live on dmn_demand (seen in TEST)
     var d = new GlideRecord('sys_dictionary');
     d.addQuery('name', 'IN', tables.join(','));
     d.addQuery('element', element);
