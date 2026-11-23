@@ -60,12 +60,14 @@ are read from an ordered list of names.
 |---|---|
 | Name | task name |
 | Parent | parent task, else its section (normal projects), else the project |
-| Planned start / end | start date (built-in, else custom "Start Date") / due date; only a due date = one-day task; no dates = placed by ServiceNow within its parent |
+| Planned start / end | start date (built-in, else custom "Start Date") / due date; only a due date = one-day task; no dates = the parent task's dates, else the project's |
 | State | completed box, status "Complete", or name starting "(Closed)" = Closed Complete; "In Progress" = Work in Progress; else Open |
 | % complete | custom "% Complete"; closed = 100 |
 | Actual start / end (closed tasks) | planned start / due date |
 | Assigned to | Asana assignee (by email) |
 | Description | notes + free-text "Assigned To" (e.g. "Billie") + Asana status |
+
+Subtasks stay project tasks (not checklists): they can hold attachments, dates and assignees (decided 2026-11-23).
 
 ## 4a. Attachments (required - confirmed 2026-11-23)
 
