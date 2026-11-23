@@ -11,7 +11,7 @@ var FROM = '2025-01-01', TO = '2026-12-31';
 var INCLUDE_COMPLETED = false;      // ✏️ true = show completed projects in the window too
 var WORKSPACE = '5286451799521', TRACKER = gs.getProperty('x_mig.asana.project_gid', '');
 var SKIP_STATUS = ['Completed', 'Cancelled'];
-var OUT = [], perPm = {}, n = { tracker: 0, projects: 0, completedLeftOut: 0 };
+var OUT = [], TR = [], PR = [], perPm = {}, n = { tracker: 0, projects: 0, completedLeftOut: 0 };
 function out(x) { gs.print(x); OUT.push(x); }
 function all(path) {
     var list = [], url = 'https://app.asana.com/api/1.0' + path;
@@ -42,7 +42,7 @@ try {
         var pm = pmOf(t.assignee ? t.assignee.email : '', cf(t, 'PM Assigned'));
         if (!pm || !inWindow(t.start_on, t.due_on)) return;
         if (done(t) && !INCLUDE_COMPLETED) { n.completedLeftOut++; return; }
-        n.tracker++; perPm[pm] = (perPm[pm] || 0) + 1;
+        n.tracker++; perPm[pm] = (perPm[pm] || 0) + 1; TR.push(t);
         out('TRACKER | ' + t.name + ' | PM ' + cf(t, 'PM Assigned') + ' | ' + (t.start_on || '-') + ' -> ' + (t.due_on || '-') + ' | ' + (cf(t, 'Project Status') || '-') +
             ' | SN ' + inSN(t.gid) + ' | https://app.asana.com/0/' + TRACKER + '/' + t.gid);
     });
@@ -51,10 +51,24 @@ try {
         var pm = pmOf(p.owner ? p.owner.email : '', cf(p, 'PM Assigned'));
         if (!pm || !inWindow(p.start_on, p.due_on)) return;
         if (done(p) && !INCLUDE_COMPLETED) { n.completedLeftOut++; return; }
-        n.projects++; perPm[pm] = (perPm[pm] || 0) + 1;
+        n.projects++; perPm[pm] = (perPm[pm] || 0) + 1; PR.push(p);
         out('PROJECT | ' + p.name + ' | owner ' + (p.owner ? p.owner.name : '-') + ' | team ' + (p.team ? p.team.name : '-') + ' | ' + (p.start_on || '-') + ' -> ' + (p.due_on || '-') +
             ' | SN ' + inSN(p.gid) + ' | https://app.asana.com/0/' + p.gid + '/list');
     });
 } catch (e) { out('ERROR: ' + e); }
+// doubles: an in-scope tracker row and an in-scope regular project for the same initiative (name contains the other,
+// ignoring "(Jen)", years and punctuation) -> pairs for property x_mig.asana.plan_links
+function key(x) { return String(x || '').toLowerCase().replace(/\([^)]*\)/g, ' ').replace(/\b20\d\d\b/g, ' ').replace(/[^a-z0-9]+/g, ' ').trim(); }
+var pairs = [];
+TR.forEach(function (t) {
+    var a = key(t.name); if (a.length < 3) return;
+    PR.forEach(function (p) {
+        var b = key(p.name); if (b.length < 3) return;
+        if (a == b || (a.length >= 6 && b.indexOf(a) > -1) || (b.length >= 6 && a.indexOf(b) > -1)) {
+            pairs.push(t.gid + ':' + p.gid); out('DOUBLE? tracker "' + t.name + '" ~ project "' + p.name + '"');
+        }
+    });
+});
+out('DOUBLES ' + pairs.length + ' | x_mig.asana.plan_links value (remove pairs that are not the same initiative): ' + pairs.join(';'));
 out('SUMMARY tracker rows ' + n.tracker + ' | regular projects ' + n.projects + ' | completed left out ' + n.completedLeftOut + ' | per PM ' + JSON.stringify(perPm));
 gs.info(OUT.join('\n'), 'asana_pm_scope_preview');
