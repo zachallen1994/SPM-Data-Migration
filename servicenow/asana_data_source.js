@@ -37,6 +37,10 @@
     // Asana projects ALWAYS in scope (when active), whoever owns them - confirmed by the HR PMO. Exact names.
     // System property x_mig.asana.include (names separated by ;) overrides this list.
     var INCLUDE = ['Project Warren'];
+    // Not real projects (docs/18_asana_scope_review.csv) - skipped. Name patterns, any case. Property x_mig.asana.exclude
+    // (patterns separated by ;) overrides this list once Richard has confirmed it.
+    var EXCLUDE = ["previously assigned tasks", '^sample', 'sample project', 'template', '^upload 2$', '^hr project portfolio 20',
+                   'duplicate of', '^pm capacity$', '^weekly reports$', '^asana follow up items$', '^\\(closed\\)'];
     var INCLUDE_COMPLETED = false;               // ✏️ true = also completed projects. A name starting "(Closed)" counts as completed.
     // =========================================================
 
@@ -71,6 +75,10 @@
         return !(e0 < FROM || s0 > TO);
     }
 
+    var excProp = (gs.getProperty('x_mig.asana.exclude', '') + '').trim();
+    if (excProp) EXCLUDE = excProp.split(/\s*;\s*/).filter(function (x) { return x; });
+    function excluded(name) { var n = String(name || '').toLowerCase().trim(); return EXCLUDE.some(function (x) { return new RegExp(x, 'i').test(n); }); }
+    var excludedCount = 0;
     var incProp = (gs.getProperty('x_mig.asana.include', '') + '').trim();
     if (incProp) INCLUDE = incProp.split(/\s*;\s*/).filter(function (x) { return x; });
 
@@ -185,7 +193,7 @@
     try {
         var tracker = all('/projects/' + gs.getProperty('x_mig.asana.project_gid') + '/tasks?limit=100&opt_fields=' + FIELDS);
         var withFields = tracker.filter(function (t) { return (t.custom_fields || []).length; }).length;
-        import_log.info('Tracker rows read: ' + tracker.length + ' | with custom fields: ' + withFields + ' | script version 2026-11-24g');
+        import_log.info('Tracker rows read: ' + tracker.length + ' | with custom fields: ' + withFields + ' | script version 2026-11-24h');
         if (tracker.length && !withFields) import_log.error('Asana returned NO custom fields for the tracker rows - check the token (x_mig.asana.token) has access to the HR Project Portfolio 2026 project');
 
         if (MODE == 'projects') {
@@ -204,6 +212,7 @@
                 if (!inPilot(p.name)) return;
                 if (TEAMS.length && (!p.team || TEAMS.indexOf(p.team.name) < 0)) return;
                 var forced = INCLUDE.map(norm).indexOf(norm(p.name)) > -1;
+                if (!forced && excluded(p.name)) { excludedCount++; return; }        // not a real project
                 if (!forced && !pmEmailOk(p.owner ? p.owner.email : '') && !pmNameOk(custom(p, 'PM Assigned'))) {
                     otherPm++;
                     if (PILOT.length) import_log.warn('PILOT project skipped - owner ' + (p.owner ? p.owner.email : '(none)') + ' is not on the HR PM list (add it to INCLUDE if in scope): ' + p.name);
@@ -253,6 +262,7 @@
                 });
             }
             if (PILOT.length && !count) import_log.warn('No PILOT name matched. Tracker rows: ' + tracker.map(function (t) { return t.name; }).join(' | ').substring(0, 3000));
+            import_log.info('Asana projects skipped as not real projects (EXCLUDE): ' + excludedCount);
             import_log.info('Asana scope: other PM ' + otherPm + ' | outside ' + FROM + '..' + TO + ' ' + outOfWindow + ' | loaded with no dates ' + noDates);
             import_log.info('Asana projects skipped as not active: ' + skipped + ' | plan projects loaded under their tracker row: ' + linked);
         } else {
