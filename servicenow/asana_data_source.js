@@ -185,7 +185,7 @@
     try {
         var tracker = all('/projects/' + gs.getProperty('x_mig.asana.project_gid') + '/tasks?limit=100&opt_fields=' + FIELDS);
         var withFields = tracker.filter(function (t) { return (t.custom_fields || []).length; }).length;
-        import_log.info('Tracker rows read: ' + tracker.length + ' | with custom fields: ' + withFields + ' | script version 2026-11-24d');
+        import_log.info('Tracker rows read: ' + tracker.length + ' | with custom fields: ' + withFields + ' | script version 2026-11-24e');
         if (tracker.length && !withFields) import_log.error('Asana returned NO custom fields for the tracker rows - check the token (x_mig.asana.token) has access to the HR Project Portfolio 2026 project');
 
         if (MODE == 'projects') {
@@ -265,6 +265,24 @@
             while (pr.next()) {
                 if (ONLY.length && ONLY.indexOf(pr.getValue('number')) < 0 && ONLY.indexOf(pr.getValue('short_description')) < 0) continue;
                 migrated.push({ gid: pr.getValue('correlation_id').substring(6), name: pr.getValue('short_description') });
+            }
+            // only projects of the LATEST Asana projects load (the current scope) - older Asana projects still in
+            // ServiceNow from earlier loads (e.g. TEST before the scope was fixed) are left out, and listed
+            var LATEST_ONLY = true;                       // ✏️ false = every Asana project in ServiceNow
+            if (LATEST_ONLY && !ONLY.length) {
+                var ls = new GlideRecord('sys_import_set');
+                ls.addQuery('table_name', 'u_import_asana_hr_project_portfolio');
+                ls.orderByDesc('sys_created_on'); ls.setLimit(1); ls.query();
+                if (ls.next()) {
+                    var inLoad = {}, lr = new GlideRecord('u_import_asana_hr_project_portfolio');
+                    lr.addQuery('sys_import_set', ls.getUniqueValue()); lr.query();
+                    while (lr.next()) inLoad[(lr.getValue('u_correlation_id') || '').substring(6)] = true;
+                    var stale = migrated.filter(function (m) { return !inLoad[m.gid]; });
+                    migrated = migrated.filter(function (m) { return inLoad[m.gid]; });
+                    import_log.info('Scope = latest Asana projects load ' + ls.getValue('number') + ': ' + migrated.length + ' projects');
+                    if (stale.length) import_log.warn(stale.length + ' older Asana projects in ServiceNow are NOT in the current scope (no tasks loaded) - remove them: ' +
+                        stale.map(function (m) { return m.name; }).join('; ').substring(0, 3000));
+                }
             }
             if (!migrated.length) { import_log.warn('No matching Asana project in ServiceNow yet (ONLY ' + JSON.stringify(ONLY) + ') - run the Asana PROJECTS load and its transform first'); return; }
             import_log.info('Task plans to load for: ' + migrated.map(function (m) { return m.name; }).join('; ').substring(0, 2000));
