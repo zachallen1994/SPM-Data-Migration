@@ -34,7 +34,7 @@
                      'menims@bsmhealth.org', 'menims@mercy.com'];
     var PM_NAMES = ['angle', 'lynn', 'mcclure', 'mcdearmon', 'hayes', 'caldwell', 'whitis', 'warfield', 'trucksis'];   // last names
     var FROM = '2025-01-01', TO = '2026-12-31';
-    var INCLUDE_COMPLETED = false;               // ✏️ true = also projects completed in the window (confirm with HR PMO)
+    var INCLUDE_COMPLETED = false;               // ✏️ true = also completed projects. A name starting "(Closed)" counts as completed.
     // =========================================================
 
     // Tracker rows whose detailed plan is a separate Asana project (system property x_mig.asana.plan_links,
@@ -167,7 +167,7 @@
                 if (!pmEmailOk(p.owner ? p.owner.email : '') && !pmNameOk(custom(p, 'PM Assigned'))) { otherPm++; return; }
                 if (!inWindow(p.start_on, p.due_on)) { outOfWindow++; return; }
                 var status = p.current_status_update ? p.current_status_update.status_type : '';
-                if (!INCLUDE_COMPLETED && (p.completed || status == 'complete' ||
+                if (!INCLUDE_COMPLETED && (p.completed || status == 'complete' || /^\s*\(closed\)/i.test(p.name) ||
                     SKIP_STATUS.indexOf(custom(p, 'Project Status')) >= 0)) { skipped++; return; }  // not active
                 insert({
                     'correlation id': 'ASANA:' + p.gid,
@@ -187,7 +187,7 @@
                     if (!inPilot(t.name)) return;
                     if (!pmNameOk(custom(t, 'PM Assigned')) && !pmEmailOk(t.assignee ? t.assignee.email : '')) { otherPm++; return; }
                     if (!inWindow(t.start_on, t.due_on)) { outOfWindow++; return; }
-                    if (!INCLUDE_COMPLETED && (t.completed || SKIP_STATUS.indexOf(custom(t, 'Project Status')) >= 0)) {
+                    if (!INCLUDE_COMPLETED && (t.completed || /^\s*\(closed\)/i.test(t.name) || SKIP_STATUS.indexOf(custom(t, 'Project Status')) >= 0)) {
                         skipped++;
                         if (PILOT.length) import_log.warn('PILOT item found but not active (completed / status ' + custom(t, 'Project Status') + '): ' + t.name);
                         return;

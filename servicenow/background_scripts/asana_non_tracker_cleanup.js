@@ -31,7 +31,7 @@ function pmOk(email, text) {
     return PM_NAMES.some(function (x) { return w.indexOf(x) > -1; });
 }
 function inWindow(s, d) { if (!s && !d) return true; var a = s || d, b = d || s; return !(b < FROM || a > TO); }
-function active(t) { var st = t.current_status_update ? t.current_status_update.status_type : ''; return !t.completed && st != 'complete' && SKIP_STATUS.indexOf(cf(t, 'Project Status')) < 0; }
+function active(t) { var st = t.current_status_update ? t.current_status_update.status_type : ''; return !t.completed && st != 'complete' && !/^\s*\(closed\)/i.test(t.name) && SKIP_STATUS.indexOf(cf(t, 'Project Status')) < 0; }
 try {
     var keep = {}, found = 0;
     all('/projects/' + TRACKER + '/tasks?limit=100&opt_fields=name,completed,start_on,due_on,assignee.email,custom_fields.name,custom_fields.display_value').forEach(function (t) {

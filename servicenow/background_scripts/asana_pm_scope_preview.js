@@ -34,7 +34,7 @@ function pmOf(email, text) {
     return hit;
 }
 function inWindow(s, d) { if (!s && !d) return true; var a = s || d, b = d || s; return !(b < FROM || a > TO); }
-function done(t) { var st = t.current_status_update ? t.current_status_update.status_type : ''; return t.completed || st == 'complete' || SKIP_STATUS.indexOf(cf(t, 'Project Status')) >= 0; }
+function done(t) { var st = t.current_status_update ? t.current_status_update.status_type : ''; return t.completed || st == 'complete' || /^\s*\(closed\)/i.test(t.name) || SKIP_STATUS.indexOf(cf(t, 'Project Status')) >= 0; }
 function inSN(gid) { var p = new GlideRecord('pm_project'); return p.get('correlation_id', 'ASANA:' + gid) ? p.getValue('number') : '-'; }
 try {
     out('Scope: PMs on the HR PM list | ' + FROM + '..' + TO + ' | ' + (INCLUDE_COMPLETED ? 'active + completed' : 'active only'));
