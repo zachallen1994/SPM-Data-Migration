@@ -11,7 +11,7 @@ var PM_EMAILS = ['jennifer.angle@bsmhealth.org', 'jennifer.angle@mercy.com', 'ca
                  'iwhitis@bsmhealth.org', 'iwhitis@mercy.com', 'awarfield@bsmhealth.org', 'awarfield@mercy.com',
                  'menims@bsmhealth.org', 'menims@mercy.com'];
 var PM_NAMES = ['angle', 'lynn', 'mcclure', 'mcdearmon', 'hayes', 'caldwell', 'whitis', 'warfield', 'trucksis'];
-var FROM = '2025-01-01', TO = '2026-12-31', SKIP_STATUS = ['Completed', 'Cancelled'];
+var FROM = '2025-01-01', TO = '2099-12-31', SKIP_STATUS = ['Completed', 'Cancelled'];
 function all(path) {
     var list = [], url = 'https://app.asana.com/api/1.0' + path;
     while (url) {

@@ -33,7 +33,7 @@
                      'iwhitis@bsmhealth.org', 'iwhitis@mercy.com', 'awarfield@bsmhealth.org', 'awarfield@mercy.com',
                      'menims@bsmhealth.org', 'menims@mercy.com'];
     var PM_NAMES = ['angle', 'lynn', 'mcclure', 'mcdearmon', 'hayes', 'caldwell', 'whitis', 'warfield', 'trucksis'];   // last names
-    var FROM = '2025-01-01', TO = '2026-12-31';
+    var FROM = '2025-01-01', TO = '2099-12-31';
     var INCLUDE_COMPLETED = false;               // ✏️ true = also completed projects. A name starting "(Closed)" counts as completed.
     // =========================================================
 
