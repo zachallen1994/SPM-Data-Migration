@@ -1,4 +1,6 @@
 // Fix Script: copy attachments from Asana / Adaptive onto the migrated ServiceNow records.
+// Run LAST, after all records exist. Works pasted into Scripts - Background too (TEST / PROD: no fix scripts) -
+// use ONLY to run a few projects at a time there.
 // Run LAST, after all records exist. Safe to re-run: a file already attached (same name) is skipped.
 // Start with DRY_RUN = true: it only logs what it would do (System Logs, source "x_mig.attachments").
 var DRY_RUN = true;
@@ -16,7 +18,7 @@ var ADAPTIVE_DOWNLOAD = '/files/download?documentId={doc}&redirect=false';
 
 var LOG = 'x_mig.attachments';
 var VERSION = 'v3 (StorageType File = copy, all pages)';   // printed first, so you can see which copy ran
-var stats = { found: 0, copied: 0, skipped: 0, linked: 0, failed: 0 };   // found = files stored in Asana/Adaptive
+var stats = { found: 0, copied: 0, skipped: 0, linked: 0, failed: 0, sections: 0 };   // found = files stored in Asana/Adaptive
 
 function already(table, sysId, fileName) {
     var a = new GlideRecord('sys_attachment');
@@ -131,7 +133,13 @@ TABLES.forEach(function (table) {
         var corr = gr.getValue('correlation_id') || '';
         if (!corr) continue;
         try {
-            if (corr.indexOf('ASANA:') == 0) asanaFiles(gr, corr.substring(6));
+            if (corr.indexOf('ASANA:') == 0) {
+                try { asanaFiles(gr, corr.substring(6)); }
+                catch (e) {   // Asana SECTIONS are loaded as tasks (ASANA:<section gid>) and cannot hold files: 400 = nothing to copy
+                    if (String(e).indexOf('400') == 0) { stats.sections = (stats.sections || 0) + 1; }
+                    else throw e;
+                }
+            }
             else adaptiveFiles(gr, corr.substring(9));
         } catch (err) {
             stats.failed++;
