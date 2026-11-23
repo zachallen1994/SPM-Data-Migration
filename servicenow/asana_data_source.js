@@ -34,6 +34,9 @@
                      'menims@bsmhealth.org', 'menims@mercy.com'];
     var PM_NAMES = ['angle', 'lynn', 'mcclure', 'mcdearmon', 'hayes', 'caldwell', 'whitis', 'warfield', 'trucksis'];   // last names
     var FROM = '2025-01-01', TO = '2099-12-31';
+    // Asana projects ALWAYS in scope (when active), whoever owns them - confirmed by the HR PMO. Exact names.
+    // System property x_mig.asana.include (names separated by ;) overrides this list.
+    var INCLUDE = ['Project Warren'];
     var INCLUDE_COMPLETED = false;               // ✏️ true = also completed projects. A name starting "(Closed)" counts as completed.
     // =========================================================
 
@@ -67,6 +70,9 @@
         var s0 = start || due, e0 = due || start;
         return !(e0 < FROM || s0 > TO);
     }
+
+    var incProp = (gs.getProperty('x_mig.asana.include', '') + '').trim();
+    if (incProp) INCLUDE = incProp.split(/\s*;\s*/).filter(function (x) { return x; });
 
     var BASE = 'https://app.asana.com/api/1.0';
     var FIELDS = 'gid,name,notes,num_subtasks,start_on,due_on,completed,assignee.name,assignee.email,parent.name,' +
@@ -179,7 +185,7 @@
     try {
         var tracker = all('/projects/' + gs.getProperty('x_mig.asana.project_gid') + '/tasks?limit=100&opt_fields=' + FIELDS);
         var withFields = tracker.filter(function (t) { return (t.custom_fields || []).length; }).length;
-        import_log.info('Tracker rows read: ' + tracker.length + ' | with custom fields: ' + withFields + ' | script version 2026-11-24a');
+        import_log.info('Tracker rows read: ' + tracker.length + ' | with custom fields: ' + withFields + ' | script version 2026-11-24b');
         if (tracker.length && !withFields) import_log.error('Asana returned NO custom fields for the tracker rows - check the token (x_mig.asana.token) has access to the HR Project Portfolio 2026 project');
 
         if (MODE == 'projects') {
@@ -190,7 +196,12 @@
                 if (INCLUDE_TRACKER_ITEMS && IS_PLAN[p.gid]) { linked++; return; }         // plan of a tracker row: loaded under that row
                 if (!inPilot(p.name)) return;
                 if (TEAMS.length && (!p.team || TEAMS.indexOf(p.team.name) < 0)) return;
-                if (!pmEmailOk(p.owner ? p.owner.email : '') && !pmNameOk(custom(p, 'PM Assigned'))) { otherPm++; return; }
+                var forced = INCLUDE.map(norm).indexOf(norm(p.name)) > -1;
+                if (!forced && !pmEmailOk(p.owner ? p.owner.email : '') && !pmNameOk(custom(p, 'PM Assigned'))) {
+                    otherPm++;
+                    if (PILOT.length) import_log.warn('PILOT project skipped - owner ' + (p.owner ? p.owner.email : '(none)') + ' is not on the HR PM list (add it to INCLUDE if in scope): ' + p.name);
+                    return;
+                }
                 if (!inWindow(p.start_on, p.due_on)) { outOfWindow++; return; }
                 var status = p.current_status_update ? p.current_status_update.status_type : '';
                 if (!INCLUDE_COMPLETED && (p.completed || status == 'complete' || /^\s*\(closed\)/i.test(p.name) ||
