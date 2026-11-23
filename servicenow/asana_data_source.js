@@ -96,7 +96,8 @@
         while (url) {
             var page = get(url);
             out = out.concat(page.data);
-            url = page.next_page ? page.next_page.uri : null;
+            // next page: same request (same opt_fields) + Asana's offset - never rely on next_page.uri keeping opt_fields
+            url = page.next_page && page.next_page.offset ? path + (path.indexOf('?') > -1 ? '&' : '?') + 'offset=' + encodeURIComponent(page.next_page.offset) : null;
         }
         return out;
     }
@@ -155,6 +156,9 @@
 
     try {
         var tracker = all('/projects/' + gs.getProperty('x_mig.asana.project_gid') + '/tasks?limit=100&opt_fields=' + FIELDS);
+        var withFields = tracker.filter(function (t) { return (t.custom_fields || []).length; }).length;
+        import_log.info('Tracker rows read: ' + tracker.length + ' | with custom fields: ' + withFields + ' | script version 2026-11-23b');
+        if (tracker.length && !withFields) import_log.error('Asana returned NO custom fields for the tracker rows - check the token (x_mig.asana.token) has access to the HR Project Portfolio 2026 project');
 
         if (MODE == 'projects') {
             var trackerGid = gs.getProperty('x_mig.asana.project_gid');
