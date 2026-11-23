@@ -3,7 +3,7 @@
 // use ONLY to run a few projects at a time there.
 // Run LAST, after all records exist. Safe to re-run: a file already attached (same name) is skipped.
 // Start with DRY_RUN = true: it only logs what it would do (System Logs, source "x_mig.attachments").
-var DRY_RUN = true;
+var DRY_RUN = false;   // FULL LOAD setting (true = list only)
 var TABLES = ['pm_project', 'pm_project_task', 'dmn_demand', 'issue', 'risk'];   // records with an ASANA:/ADAPTIVE: correlation_id
 var ONLY = [];   // ✏️ test on a few records first: correlation_ids, e.g. ['ADAPTIVE:/Project/{05506AB6-...}', 'ASANA:1219075311754614']
                 //    [] = every migrated record

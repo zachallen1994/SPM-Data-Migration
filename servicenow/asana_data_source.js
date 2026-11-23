@@ -14,9 +14,9 @@
 
     // ======================= CONFIG ✏️ =======================
     var MODE = 'projects';                       // 'projects' or 'tasks'
-    var PILOT = ['Flu Program', 'Annual Enrollment', 'Respiratory Fit Testing'];   // test: only these names (part of the name is enough, any case/dash); [] = all active
+    var PILOT = [];   // test: only these names (part of the name is enough, any case/dash); [] = all active
     var TEAMS = [];                              // Asana team names to include, e.g. ['HR Technology']; [] = all teams
-    var SOURCE = 'tracker';                      // 'tracker'  = rows of HR Project Portfolio 2026 (HR PMO initiatives)
+    var SOURCE = 'both';                      // 'tracker'  = rows of HR Project Portfolio 2026 (HR PMO initiatives)
                                                  // 'projects' = real Asana projects in the workspace
                                                  // 'both'     = both, as separate records
     var INCLUDE_TRACKER_ITEMS = (SOURCE == 'tracker' || SOURCE == 'both');
