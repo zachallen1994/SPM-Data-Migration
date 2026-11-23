@@ -13,7 +13,7 @@
 //
 // CHECKLIST - the map must have exactly these (delete any other field map / script on this map):
 //   Field map  u_correlation_id -> correlation_id        direct, Coalesce = true
-//   Field map  u_name           -> short_description     direct   (task name column)
+//   Field map  u_task_name      -> short_description     direct   (task name column)
 //   Field map  [script] -> state                         PART C
 //   Field map  [script] -> percent_complete              PART D
 //   Field map  [script] -> work_start                    PART E   Date format yyyy-MM-dd
@@ -29,7 +29,7 @@
 (function runTransformScript(source, map, log, target) {
     var project = new GlideRecord('pm_project');
     if (!project.get('correlation_id', source.getValue('u_project_correlation_id'))) {
-        log.warn('Asana project not migrated: ' + source.getValue('u_project_correlation_id') + ' - task skipped: ' + source.getValue('u_name'));
+        log.warn('Asana project not migrated: ' + source.getValue('u_project_correlation_id') + ' - task skipped: ' + (source.getValue('u_task_name') || source.getValue('u_name')));
         ignore = true;
         return;
     }
@@ -68,7 +68,8 @@
 // box NOT ticked -> Work in Progress.
 answer = (function transformEntry(source) {
     var s = (source.getValue('u_task_status') || '').toLowerCase().trim();
-    if ((source.getValue('u_completed') || '') == 'true' || /^(complete|completed|done)$/.test(s)) return '3';
+    var nm = (source.getValue('u_task_name') || source.getValue('u_name') || '');
+    if ((source.getValue('u_completed') || '') == 'true' || /^(complete|completed|done)$/.test(s) || /^\s*\(closed\)/i.test(nm)) return '3';
     if (s.indexOf('cancel') > -1) return '4';
     if (s.indexOf('progress') > -1 || s.indexOf('started/') > -1 || s.indexOf('scoping') > -1 || s.indexOf('delayed') > -1) return '2';
     return '1';
@@ -78,7 +79,8 @@ answer = (function transformEntry(source) {
 // Asana "% Complete" ("50%" or 0.5) -> 50. Closed Complete -> 100. Nothing -> blank (ServiceNow keeps 0).
 answer = (function transformEntry(source) {
     var s = (source.getValue('u_task_status') || '').toLowerCase().trim();
-    if ((source.getValue('u_completed') || '') == 'true' || /^(complete|completed|done)$/.test(s)) return '100';
+    var nm = (source.getValue('u_task_name') || source.getValue('u_name') || '');
+    if ((source.getValue('u_completed') || '') == 'true' || /^(complete|completed|done)$/.test(s) || /^\s*\(closed\)/i.test(nm)) return '100';
     var col = '';
     var d = new GlideRecord('sys_dictionary');               // the "% Complete" column, found by its label
     d.addQuery('name', source.getTableName()); d.addQuery('column_label', '% Complete'); d.query();
@@ -95,7 +97,8 @@ answer = (function transformEntry(source) {
 // Closed tasks need an actual start (else "Set Close Data On Inactive" refuses them): planned start, else due date.
 answer = (function transformEntry(source) {
     var s = (source.getValue('u_task_status') || '').toLowerCase().trim();
-    var closed = (source.getValue('u_completed') || '') == 'true' || /^(complete|completed|done)$/.test(s) || s.indexOf('cancel') > -1;
+    var closed = (source.getValue('u_completed') || '') == 'true' || /^(complete|completed|done)$/.test(s) || s.indexOf('cancel') > -1 ||
+        /^\s*\(closed\)/i.test(source.getValue('u_task_name') || source.getValue('u_name') || '');
     if (!closed) return '';
     return (source.getValue('u_start_date') || source.getValue('u_due_date') || '').substring(0, 10);
 })(source);
@@ -103,7 +106,8 @@ answer = (function transformEntry(source) {
 // ---------- PART F: field map -> work_end (Actual end), Date format yyyy-MM-dd ----------
 answer = (function transformEntry(source) {
     var s = (source.getValue('u_task_status') || '').toLowerCase().trim();
-    var closed = (source.getValue('u_completed') || '') == 'true' || /^(complete|completed|done)$/.test(s) || s.indexOf('cancel') > -1;
+    var closed = (source.getValue('u_completed') || '') == 'true' || /^(complete|completed|done)$/.test(s) || s.indexOf('cancel') > -1 ||
+        /^\s*\(closed\)/i.test(source.getValue('u_task_name') || source.getValue('u_name') || '');
     if (!closed) return '';
     return (source.getValue('u_due_date') || source.getValue('u_start_date') || '').substring(0, 10);
 })(source);
@@ -117,7 +121,7 @@ answer = (function transformEntry(source) {
     var u = new GlideRecord('sys_user');
     u.addQuery('email', em); u.orderByDesc('active'); u.setLimit(1); u.query();
     if (u.next()) return u.getUniqueValue();
-    log.warn('Asana task assignee ' + em + ' has no ServiceNow user - left blank on ' + source.getValue('u_name'));
+    log.warn('Asana task assignee ' + em + ' has no ServiceNow user - left blank on ' + (source.getValue('u_task_name') || source.getValue('u_name')));
     return '';
 })(source);
 
