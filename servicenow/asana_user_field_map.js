@@ -3,14 +3,25 @@
 //   "PM Assigned"            (u_pm_assigned, filled 51/55)          -> project_manager (and assigned_to)
 //   "HRSP / SME / Project Lead" (u_hrsp___sme___project_lead, 6/55) -> u_business_owner
 // Values seen: "Jen Angle", "Jen Angle/Carrie Lynn" (first person used), "N/A", "TBD", "DJE", "Protiviti".
+// Regular Asana projects have no "PM Assigned": the owner's email (column Assignee Email) is used instead.
 // Match: exact active name; else last name + first name starting with the Asana first name ("Jen" -> "Jennifer"),
 // only when exactly ONE active user matches. No match -> blank + a log line (never "undefined").
 // In the field map: Use source script = true, Choice action = ignore. ✏️ COLUMN per field map.
 answer = (function transformEntry(source) {
     var COLUMN = 'u_pm_assigned';               // ✏️ 'u_pm_assigned' or 'u_hrsp___sme___project_lead'
+    var FALLBACK_EMAIL = true;                 // ✏️ PM field blank -> the Asana owner/assignee email (regular Asana projects:
+                                               //    the project OWNER is the PM and has no "PM Assigned" field)
     var raw = (source.getValue(COLUMN) || '').trim();
     var name = raw.split(/\s*[\/,;&]\s*|\s+and\s+/i)[0].trim();
-    if (!name || /^(n\/?a|tbd|none|undefined)$/i.test(name)) return '';
+    if (!name || /^(n\/?a|tbd|none|undefined)$/i.test(name)) {
+        var em = (source.getValue('u_assignee_email') || '').toLowerCase().trim();
+        if (!FALLBACK_EMAIL || !em || em == 'undefined') return '';
+        var ue = new GlideRecord('sys_user');
+        ue.addQuery('email', em); ue.orderByDesc('active'); ue.setLimit(1); ue.query();
+        if (ue.next()) return ue.getUniqueValue();
+        log.warn('Asana: no ServiceNow user with email ' + em + ' on ' + source.getValue('u_name'));
+        return '';
+    }
     var u = new GlideRecord('sys_user');
     u.addQuery('name', name); u.addQuery('active', true); u.query();
     if (u.getRowCount() == 1 && u.next()) return u.getUniqueValue();
