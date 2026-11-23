@@ -1,12 +1,17 @@
-// Background Script (CHANGES DATA - DRY_RUN first): remove Asana projects that are NOT rows of the HR Project
-// !! SCOPE CHANGED (HR PM list): do NOT run until asana_pm_scope_preview.js confirms regular projects are out of scope.
-// Portfolio 2026 tracker (they came in from earlier runs with SOURCE 'projects' / 'both').
-// Confirmed scope: the tracker is the HR portfolio; each ROW is a project, its subtasks are the project tasks.
-// Keeps every project whose correlation id is ASANA:<gid of a tracker row> (active or not). Deletes the others
-// with their project tasks, business rules ON. Large volumes: MAX per run, run again until "left: 0".
+// Background Script (CHANGES DATA - DRY_RUN first): remove Asana projects that are OUT OF SCOPE.
+// Scope (HR PMO, Richard Becker): ACTIVE projects of the PMs on the HR PM list, dated 2025-2026 - tracker rows
+// ("PM Assigned") and regular Asana projects (owner email). Same rules as asana_data_source.js.
+// Keeps every in-scope project; deletes other ASANA: projects with their project tasks, business rules ON.
+// MAX per run - run again until "left: 0". Stops without deleting if Asana returns nothing.
 var DRY_RUN = true;     // ✏️ false = delete
 var MAX = 50;           // ✏️ projects per run
-var TRACKER = gs.getProperty('x_mig.asana.project_gid', '');
+var TRACKER = gs.getProperty('x_mig.asana.project_gid', ''), WORKSPACE = '5286451799521';
+var PM_EMAILS = ['jennifer.angle@bsmhealth.org', 'jennifer.angle@mercy.com', 'carrie_lynn@bsmhealth.org', 'carrie_lynn@mercy.com',
+                 'kamcclure@bsmhealth.org', 'kamcclure@mercy.com', 'kmcdearmon@mercy.com', 'lhayes@mercy.com', 'mcaldwell4@mercy.com',
+                 'iwhitis@bsmhealth.org', 'iwhitis@mercy.com', 'awarfield@bsmhealth.org', 'awarfield@mercy.com',
+                 'menims@bsmhealth.org', 'menims@mercy.com'];
+var PM_NAMES = ['angle', 'lynn', 'mcclure', 'mcdearmon', 'hayes', 'caldwell', 'whitis', 'warfield', 'trucksis'];
+var FROM = '2025-01-01', TO = '2026-12-31', SKIP_STATUS = ['Completed', 'Cancelled'];
 function all(path) {
     var list = [], url = 'https://app.asana.com/api/1.0' + path;
     while (url) {
@@ -19,10 +24,25 @@ function all(path) {
     }
     return list;
 }
+function cf(t, n) { var v = ''; (t.custom_fields || []).forEach(function (f) { if ((f.name || '').trim() == n) v = f.display_value || ''; }); return v; }
+function pmOk(email, text) {
+    if (PM_EMAILS.indexOf(String(email || '').toLowerCase()) > -1) return true;
+    var w = String(text || '').toLowerCase().split(/[^a-z]+/);
+    return PM_NAMES.some(function (x) { return w.indexOf(x) > -1; });
+}
+function inWindow(s, d) { if (!s && !d) return true; var a = s || d, b = d || s; return !(b < FROM || a > TO); }
+function active(t) { var st = t.current_status_update ? t.current_status_update.status_type : ''; return !t.completed && st != 'complete' && SKIP_STATUS.indexOf(cf(t, 'Project Status')) < 0; }
 try {
-    var keep = {};
-    all('/projects/' + TRACKER + '/tasks?limit=100&opt_fields=name').forEach(function (t) { keep['ASANA:' + t.gid] = true; });
-    if (Object.keys(keep).length < 10) throw 'Tracker returned too few rows - stopped (nothing deleted)';
+    var keep = {}, found = 0;
+    all('/projects/' + TRACKER + '/tasks?limit=100&opt_fields=name,completed,start_on,due_on,assignee.email,custom_fields.name,custom_fields.display_value').forEach(function (t) {
+        found++;
+        if (pmOk(t.assignee ? t.assignee.email : '', cf(t, 'PM Assigned')) && inWindow(t.start_on, t.due_on) && active(t)) keep['ASANA:' + t.gid] = true;
+    });
+    all('/workspaces/' + WORKSPACE + '/projects?archived=false&limit=100&opt_fields=name,completed,start_on,due_on,owner.email,current_status_update.status_type,custom_fields.name,custom_fields.display_value').forEach(function (p) {
+        found++;
+        if (pmOk(p.owner ? p.owner.email : '', cf(p, 'PM Assigned')) && inWindow(p.start_on, p.due_on) && active(p)) keep['ASANA:' + p.gid] = true;
+    });
+    if (found < 50) throw 'Asana returned too little (' + found + ') - stopped, nothing deleted';
     var p = new GlideRecord('pm_project');
     p.addQuery('correlation_id', 'STARTSWITH', 'ASANA:');
     p.query();
@@ -42,5 +62,5 @@ try {
         }
         done++;
     }
-    gs.print((DRY_RUN ? 'DRY RUN | ' : '') + 'kept (tracker rows): ' + kept + ' | ' + (DRY_RUN ? 'to delete this run: ' : 'deleted: ') + done + ' | left: ' + left);
+    gs.print((DRY_RUN ? 'DRY RUN | ' : '') + 'in scope (kept): ' + kept + ' | ' + (DRY_RUN ? 'to delete this run: ' : 'deleted: ') + done + ' | left: ' + left);
 } catch (e) { gs.print('ERROR: ' + e); }
