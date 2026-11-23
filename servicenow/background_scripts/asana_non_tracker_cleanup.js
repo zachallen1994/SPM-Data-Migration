@@ -42,6 +42,10 @@ try {
         found++;
         if (pmOk(p.owner ? p.owner.email : '', cf(p, 'PM Assigned')) && inWindow(p.start_on, p.due_on) && active(p)) keep['ASANA:' + p.gid] = true;
     });
+    // linked plan projects (property x_mig.asana.plan_links) load UNDER their tracker row: remove the separate copy
+    (gs.getProperty('x_mig.asana.plan_links', '') + '').split(/\s*;\s*/).forEach(function (pair) {
+        var x = pair.split(':'); if (x.length == 2 && x[1]) delete keep['ASANA:' + x[1].trim()];
+    });
     if (found < 50) throw 'Asana returned too little (' + found + ') - stopped, nothing deleted';
     var p = new GlideRecord('pm_project');
     p.addQuery('correlation_id', 'STARTSWITH', 'ASANA:');
