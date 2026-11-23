@@ -32,3 +32,22 @@ answer = (function transformEntry(source) {
     if (!closed) return '';
     return (source.getValue('u_due_date') || source.getValue('u_start_date') || '').substring(0, 10);
 })(source);
+
+// ---------- PART D: onBefore (Transform Scripts > New, When = onBefore, Order 200) - keep the Asana dates ----------
+// Without a constraint the planning engine places a new task itself (seen: every Annual Enrollment subtask became
+// 12-31-2026 05:00 PM, 0 seconds). Same approach as the Adaptive tasks: "Start on specific date" + the Asana dates.
+// Dates at 08:00 / 17:00 so they do not shift a day (midnight UTC = the evening before in US time).
+(function runTransformScript(source, map, log, target) {
+    var s = (source.getValue('u_start_date') || '').substring(0, 10);
+    var e = (source.getValue('u_due_date') || '').substring(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) s = e;                   // Asana: often only a due date -> one-day task
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(e)) e = s;
+    if (!s) { log.warn('Asana task without dates (planning engine places it): ' + source.getValue('u_name')); return; }
+    if (e < s) e = s;
+    var gs0 = new GlideDateTime(); gs0.setDisplayValue(s + ' 08:00:00', 'yyyy-MM-dd HH:mm:ss');
+    var ge = new GlideDateTime(); ge.setDisplayValue(e + ' 17:00:00', 'yyyy-MM-dd HH:mm:ss');
+    target.time_constraint = 'start_on';
+    if (target.isValidField('constraint_date')) target.constraint_date = gs0;
+    target.start_date = gs0;
+    target.end_date = ge;
+})(source, map, log, target);
