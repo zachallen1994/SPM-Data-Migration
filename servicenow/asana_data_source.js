@@ -185,13 +185,20 @@
     try {
         var tracker = all('/projects/' + gs.getProperty('x_mig.asana.project_gid') + '/tasks?limit=100&opt_fields=' + FIELDS);
         var withFields = tracker.filter(function (t) { return (t.custom_fields || []).length; }).length;
-        import_log.info('Tracker rows read: ' + tracker.length + ' | with custom fields: ' + withFields + ' | script version 2026-11-24b');
+        import_log.info('Tracker rows read: ' + tracker.length + ' | with custom fields: ' + withFields + ' | script version 2026-11-24c');
         if (tracker.length && !withFields) import_log.error('Asana returned NO custom fields for the tracker rows - check the token (x_mig.asana.token) has access to the HR Project Portfolio 2026 project');
 
         if (MODE == 'projects') {
             var trackerGid = gs.getProperty('x_mig.asana.project_gid');
             var skipped = 0, linked = 0;
-            (SOURCE == 'tracker' ? [] : all('/workspaces/' + WORKSPACE + '/projects?archived=false&limit=100&opt_fields=' + PROJECT_FIELDS)).forEach(function (p) {
+            var regular = SOURCE == 'tracker' ? [] : all('/workspaces/' + WORKSPACE + '/projects?archived=false&limit=100&opt_fields=' + PROJECT_FIELDS);
+            import_log.info('Regular Asana projects the token can see (not archived): ' + regular.length);
+            if (PILOT.length) PILOT.forEach(function (x) {
+                var hit = regular.filter(function (p) { return norm(p.name).indexOf(norm(x)) > -1; });
+                import_log.info('PILOT "' + x + '": ' + (hit.length ? hit.map(function (p) { return p.name + ' (owner ' + (p.owner ? p.owner.email : 'none') +
+                    ', completed ' + p.completed + ')'; }).join('; ') : 'NOT among the projects the token can see - archived, or the token user is not a member'));
+            });
+            regular.forEach(function (p) {
                 if (p.gid == trackerGid) return;                                           // the tracker list itself
                 if (INCLUDE_TRACKER_ITEMS && IS_PLAN[p.gid]) { linked++; return; }         // plan of a tracker row: loaded under that row
                 if (!inPilot(p.name)) return;
@@ -259,7 +266,8 @@
                 if (ONLY.length && ONLY.indexOf(pr.getValue('number')) < 0 && ONLY.indexOf(pr.getValue('short_description')) < 0) continue;
                 migrated.push({ gid: pr.getValue('correlation_id').substring(6), name: pr.getValue('short_description') });
             }
-            if (!migrated.length) { import_log.warn('No Asana projects in pm_project yet - load projects first'); return; }
+            if (!migrated.length) { import_log.warn('No matching Asana project in ServiceNow yet (ONLY ' + JSON.stringify(ONLY) + ') - run the Asana PROJECTS load and its transform first'); return; }
+            import_log.info('Task plans to load for: ' + migrated.map(function (m) { return m.name; }).join('; ').substring(0, 2000));
 
             var trackerGids = tracker.map(function (t) { return t.gid; });
             migrated.forEach(function (m) {
