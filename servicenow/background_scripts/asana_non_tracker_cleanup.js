@@ -36,11 +36,11 @@ try {
     var keep = {}, found = 0;
     all('/projects/' + TRACKER + '/tasks?limit=100&opt_fields=name,completed,start_on,due_on,assignee.email,custom_fields.name,custom_fields.display_value').forEach(function (t) {
         found++;
-        if (inWindow(t.start_on, t.due_on) && active(t))   /* tracker rows: no PM filter */ keep['ASANA:' + t.gid] = true;
+        /* register rows: ALL */ keep['ASANA:' + t.gid] = true;
     });
     all('/workspaces/' + WORKSPACE + '/projects?archived=false&limit=100&opt_fields=name,completed,start_on,due_on,owner.email,current_status_update.status_type,custom_fields.name,custom_fields.display_value').forEach(function (p) {
         found++;
-        if (pmOk(p.owner ? p.owner.email : '', cf(p, 'PM Assigned')) && inWindow(p.start_on, p.due_on) && active(p)) keep['ASANA:' + p.gid] = true;
+        if (pmOk(p.owner ? p.owner.email : '', cf(p, 'PM Assigned')) && active(p)) keep['ASANA:' + p.gid] = true;
     });
     // linked plan projects (property x_mig.asana.plan_links) load UNDER their tracker row: remove the separate copy
     (gs.getProperty('x_mig.asana.plan_links', '') + '').split(/\s*;\s*/).forEach(function (pair) {

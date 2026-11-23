@@ -185,7 +185,7 @@
     try {
         var tracker = all('/projects/' + gs.getProperty('x_mig.asana.project_gid') + '/tasks?limit=100&opt_fields=' + FIELDS);
         var withFields = tracker.filter(function (t) { return (t.custom_fields || []).length; }).length;
-        import_log.info('Tracker rows read: ' + tracker.length + ' | with custom fields: ' + withFields + ' | script version 2026-11-24f');
+        import_log.info('Tracker rows read: ' + tracker.length + ' | with custom fields: ' + withFields + ' | script version 2026-11-24g');
         if (tracker.length && !withFields) import_log.error('Asana returned NO custom fields for the tracker rows - check the token (x_mig.asana.token) has access to the HR Project Portfolio 2026 project');
 
         if (MODE == 'projects') {
@@ -209,7 +209,6 @@
                     if (PILOT.length) import_log.warn('PILOT project skipped - owner ' + (p.owner ? p.owner.email : '(none)') + ' is not on the HR PM list (add it to INCLUDE if in scope): ' + p.name);
                     return;
                 }
-                if (!inWindow(p.start_on, p.due_on)) { outOfWindow++; return; }
                 var status = p.current_status_update ? p.current_status_update.status_type : '';
                 if (!INCLUDE_COMPLETED && (p.completed || status == 'complete' || /^\s*\(closed\)/i.test(p.name) ||
                     SKIP_STATUS.indexOf(custom(p, 'Project Status')) >= 0)) { skipped++; return; }  // not active
@@ -231,8 +230,8 @@
                     if (!inPilot(t.name)) return;
                     // tracker rows = the HR portfolio itself: every active row is in scope, whoever the PM is (or none,
                     // e.g. the Ireland rows). The PM list applies to regular Asana projects only.
-                    if (!inWindow(t.start_on, t.due_on)) { outOfWindow++; return; }
-                    if (!INCLUDE_COMPLETED && (t.completed || /^\s*\(closed\)/i.test(t.name) || SKIP_STATUS.indexOf(custom(t, 'Project Status')) >= 0)) {
+                    // R1: EVERY register row, completed ones included (they load as Closed Complete) - no date filter
+                    if (false) {
                         skipped++;
                         if (PILOT.length) import_log.warn('PILOT item found but not active (completed / status ' + custom(t, 'Project Status') + '): ' + t.name);
                         return;

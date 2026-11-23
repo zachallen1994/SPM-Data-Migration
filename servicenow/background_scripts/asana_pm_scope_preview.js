@@ -40,9 +40,9 @@ try {
     out('Scope: PMs on the HR PM list | ' + FROM + '..' + TO + ' | ' + (INCLUDE_COMPLETED ? 'active + completed' : 'active only'));
     all('/projects/' + TRACKER + '/tasks?limit=100&opt_fields=name,completed,start_on,due_on,assignee.email,custom_fields.name,custom_fields.display_value').forEach(function (t) {
         var pm = pmOf(t.assignee ? t.assignee.email : '', cf(t, 'PM Assigned'));
-        if (!inWindow(t.start_on, t.due_on)) return;          // tracker rows: no PM filter (HR portfolio)
+        // register rows: ALL (completed included, no date filter) - R1
         pm = pm || '(tracker, PM ' + (cf(t, 'PM Assigned') || 'blank') + ')';
-        if (done(t) && !INCLUDE_COMPLETED) { n.completedLeftOut++; return; }
+        if (done(t)) n.registerCompleted = (n.registerCompleted || 0) + 1;
         n.tracker++; perPm[pm] = (perPm[pm] || 0) + 1; TR.push(t);
         out('TRACKER | ' + t.name + ' | PM ' + cf(t, 'PM Assigned') + ' | ' + (t.start_on || '-') + ' -> ' + (t.due_on || '-') + ' | ' + (cf(t, 'Project Status') || '-') +
             ' | SN ' + inSN(t.gid) + ' | https://app.asana.com/0/' + TRACKER + '/' + t.gid);
@@ -50,7 +50,7 @@ try {
     all('/workspaces/' + WORKSPACE + '/projects?archived=false&limit=100&opt_fields=name,completed,start_on,due_on,owner.name,owner.email,team.name,current_status_update.status_type,custom_fields.name,custom_fields.display_value').forEach(function (p) {
         if (p.gid == TRACKER) return;
         var pm = pmOf(p.owner ? p.owner.email : '', cf(p, 'PM Assigned'));
-        if (!pm || !inWindow(p.start_on, p.due_on)) return;
+        if (!pm) return;                                    // R2: no date filter
         if (done(p) && !INCLUDE_COMPLETED) { n.completedLeftOut++; return; }
         n.projects++; perPm[pm] = (perPm[pm] || 0) + 1; PR.push(p);
         out('PROJECT | ' + p.name + ' | owner ' + (p.owner ? p.owner.name : '-') + ' | team ' + (p.team ? p.team.name : '-') + ' | ' + (p.start_on || '-') + ' -> ' + (p.due_on || '-') +

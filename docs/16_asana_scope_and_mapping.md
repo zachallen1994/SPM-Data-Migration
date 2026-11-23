@@ -3,6 +3,12 @@
 Status: REQUIREMENTS - reorganized 2026-11-23. No configuration changes until the open decisions (section 6) are
 answered. Every later change starts here.
 
+## 0. Priority (confirmed 2026-11-23)
+
+1. EVERY row of HR Project Portfolio 2026 (the Excel file) - project + its subtasks.
+2. Other real projects (e.g. Project Warren) - project + sections / tasks / subtasks as project tasks.
+3. ALL attachments on all of them (project, task, subtask).
+
 ## 1. Scope - which Asana items become ServiceNow PROJECTS
 
 | # | Requirement | Source of truth | Status |
