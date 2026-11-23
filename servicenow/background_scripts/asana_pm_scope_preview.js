@@ -5,8 +5,8 @@
 var PM_EMAILS = ['jennifer.angle@bsmhealth.org', 'jennifer.angle@mercy.com', 'carrie_lynn@bsmhealth.org', 'carrie_lynn@mercy.com',
                  'kamcclure@bsmhealth.org', 'kamcclure@mercy.com', 'kmcdearmon@mercy.com', 'lhayes@mercy.com', 'mcaldwell4@mercy.com',
                  'iwhitis@bsmhealth.org', 'iwhitis@mercy.com', 'awarfield@bsmhealth.org', 'awarfield@mercy.com',
-                 'menims@bsmhealth.org', 'menims@mercy.com'];
-var PM_NAMES = ['angle', 'lynn', 'mcclure', 'mcdearmon', 'hayes', 'caldwell', 'whitis', 'warfield', 'trucksis'];
+                 'menims@bsmhealth.org', 'menims@mercy.com', 'rbecker0@mercy.com', 'rbecker0@bsmhealth.org'];
+var PM_NAMES = ['angle', 'lynn', 'mcclure', 'mcdearmon', 'hayes', 'caldwell', 'whitis', 'warfield', 'trucksis', 'becker'];
 var FROM = '2025-01-01', TO = '2099-12-31';
 var INCLUDE_COMPLETED = false;      // ✏️ true = show completed projects in the window too
 var WORKSPACE = '5286451799521', TRACKER = gs.getProperty('x_mig.asana.project_gid', '');

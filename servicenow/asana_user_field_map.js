@@ -26,7 +26,8 @@ answer = (function transformEntry(source) {
     var PM = { angle: ['jennifer.angle@bsmhealth.org', 'jennifer.angle@mercy.com'], lynn: ['carrie_lynn@bsmhealth.org', 'carrie_lynn@mercy.com'],
         mcclure: ['kamcclure@bsmhealth.org', 'kamcclure@mercy.com'], mcdearmon: ['kmcdearmon@mercy.com'], hayes: ['lhayes@mercy.com'],
         caldwell: ['mcaldwell4@mercy.com'], whitis: ['iwhitis@bsmhealth.org', 'iwhitis@mercy.com'],
-        warfield: ['awarfield@bsmhealth.org', 'awarfield@mercy.com'], trucksis: ['menims@bsmhealth.org', 'menims@mercy.com'] };
+        warfield: ['awarfield@bsmhealth.org', 'awarfield@mercy.com'], trucksis: ['menims@bsmhealth.org', 'menims@mercy.com'],
+        becker: ['rbecker0@mercy.com', 'rbecker0@bsmhealth.org'] };
     var last = name.toLowerCase().split(/\s+/).pop();
     if (PM[last]) {
         var up = new GlideRecord('sys_user');

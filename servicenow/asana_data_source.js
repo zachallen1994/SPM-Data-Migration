@@ -31,8 +31,8 @@
     var PM_EMAILS = ['jennifer.angle@bsmhealth.org', 'jennifer.angle@mercy.com', 'carrie_lynn@bsmhealth.org', 'carrie_lynn@mercy.com',
                      'kamcclure@bsmhealth.org', 'kamcclure@mercy.com', 'kmcdearmon@mercy.com', 'lhayes@mercy.com', 'mcaldwell4@mercy.com',
                      'iwhitis@bsmhealth.org', 'iwhitis@mercy.com', 'awarfield@bsmhealth.org', 'awarfield@mercy.com',
-                     'menims@bsmhealth.org', 'menims@mercy.com'];
-    var PM_NAMES = ['angle', 'lynn', 'mcclure', 'mcdearmon', 'hayes', 'caldwell', 'whitis', 'warfield', 'trucksis'];   // last names
+                     'menims@bsmhealth.org', 'menims@mercy.com', 'rbecker0@mercy.com', 'rbecker0@bsmhealth.org'];
+    var PM_NAMES = ['angle', 'lynn', 'mcclure', 'mcdearmon', 'hayes', 'caldwell', 'whitis', 'warfield', 'trucksis', 'becker'];   // last names
     var FROM = '2025-01-01', TO = '2099-12-31';
     // Asana projects ALWAYS in scope (when active), whoever owns them - confirmed by the HR PMO. Exact names.
     // System property x_mig.asana.include (names separated by ;) overrides this list.
@@ -185,7 +185,7 @@
     try {
         var tracker = all('/projects/' + gs.getProperty('x_mig.asana.project_gid') + '/tasks?limit=100&opt_fields=' + FIELDS);
         var withFields = tracker.filter(function (t) { return (t.custom_fields || []).length; }).length;
-        import_log.info('Tracker rows read: ' + tracker.length + ' | with custom fields: ' + withFields + ' | script version 2026-11-24e');
+        import_log.info('Tracker rows read: ' + tracker.length + ' | with custom fields: ' + withFields + ' | script version 2026-11-24f');
         if (tracker.length && !withFields) import_log.error('Asana returned NO custom fields for the tracker rows - check the token (x_mig.asana.token) has access to the HR Project Portfolio 2026 project');
 
         if (MODE == 'projects') {
