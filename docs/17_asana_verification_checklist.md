@@ -7,8 +7,8 @@ Do it in DEV, with the update set "Asana migration - final" selected. For each r
 
 | Data source | Marker in script | CONFIG |
 |---|---|---|
-| Asana Projects - API | `script version 2026-11-24c` | MODE 'projects', SOURCE 'both', PILOT [], INCLUDE ['Project Warren'] |
-| Asana Project Tasks - API | `script version 2026-11-24c` | MODE 'tasks', SOURCE 'both', ONLY [] |
+| Asana Projects - API | `script version 2026-11-24h` | MODE 'projects', SOURCE 'both', PILOT [], INCLUDE ['Project Warren'] |
+| Asana Project Tasks - API | `script version 2026-11-24h` | MODE 'tasks', SOURCE 'both', ONLY [] |
 
 ## 2. Import Asana HR Project Portfolio Transform Map (-> pm_project)
 
@@ -35,10 +35,23 @@ All script field maps: Use source script ticked, Choice action = ignore. Transfo
 
 ## 3. Import Asana Project Tasks Transform Map (-> pm_project_task)
 
-Exactly as the checklist at the top of servicenow/asana_tasks_transform.js - nothing more:
-8 field maps (correlation_id coalesce, short_description, state C, percent_complete D, work_start E, work_end F
-both yyyy-MM-dd, assigned_to G, description H) and 2 onBefore scripts (Order 100 PART A, Order 200 PART B).
-NO field maps for start_date, end_date, parent, top_task.
+File: servicenow/asana_tasks_transform.js (NOT asana_task_state_field_map.js - superseded). Exactly these, nothing more:
+
+| Record | Source | Marker / setting |
+|---|---|---|
+| Field map u_correlation_id -> correlation_id | direct | Coalesce = true |
+| Field map u_task_name -> short_description | direct | |
+| Field map [script] -> state | PART C | `(closed\\)` ; Choice action ignore |
+| Field map [script] -> percent_complete | PART D | `% Complete` |
+| Field map [script] -> work_start | PART E | Date format yyyy-MM-dd |
+| Field map [script] -> work_end | PART F | Date format yyyy-MM-dd |
+| Field map [script] -> assigned_to | PART G | `u_assignee_email` ; Choice action ignore |
+| Field map [script] -> description | PART H | `Assigned To (Asana)` |
+| Transform script onBefore, Order 100, active | PART A | `Asana project not migrated` |
+| Transform script onBefore, Order 200, active | PART B | `time_constraint = 'start_on'` |
+
+DELETE on this map: field maps to start_date, end_date, additional_assignee_list, work_notes, parent, top_task, and
+any other transform script (e.g. one logging "Asana task without dates (planning engine places it)").
 
 ## 4. NOT in the update set - set by hand in each instance
 
