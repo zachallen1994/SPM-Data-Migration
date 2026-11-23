@@ -70,7 +70,7 @@
 
     var BASE = 'https://app.asana.com/api/1.0';
     var FIELDS = 'gid,name,notes,num_subtasks,start_on,due_on,completed,assignee.name,assignee.email,parent.name,' +
-                 'tags.name,followers.name,memberships.section.name,custom_fields.name,custom_fields.display_value';
+                 'tags.name,followers.name,memberships.section.name,memberships.section.gid,memberships.project.gid,custom_fields.name,custom_fields.display_value';
     var PROJECT_FIELDS = 'gid,name,notes,start_on,due_on,completed,archived,owner.name,owner.email,team.name,' +
                          'current_status_update.status_type,custom_fields.name,custom_fields.display_value';
 
@@ -125,7 +125,8 @@
 
     var count = 0;
     function insertTask(s, parentGid, parentName, projectGid) {
-        var status = custom(s, 'Task Status') || custom(s, 'Project Status');
+        // status: "PMO Status" (e.g. Project Warren: Not Started / In Progress / Complete) or "Task Status"
+        var status = custom(s, 'PMO Status') || custom(s, 'Task Status') || custom(s, 'Project Status');
         insert({
             'correlation id': 'ASANA:' + s.gid,
             'parent correlation id': 'ASANA:' + parentGid,
@@ -136,7 +137,7 @@
             'assigned to': s.assignee ? s.assignee.name : '',
             'assignee': s.assignee ? s.assignee.name : '',
             'assignee email': s.assignee ? s.assignee.email : '',
-            'start date': s.start_on,
+            'start date': s.start_on || custom(s, 'Start Date'),   // Asana start date, else the custom "Start Date" field
             'due date': s.due_on,
             'task status': status || (s.completed ? 'Completed' : ''),
             'completed': s.completed ? 'true' : 'false',
@@ -146,6 +147,27 @@
             'collaborators': names(s.followers)
         }, s);
         count++;
+    }
+    // A whole Asana project plan under ServiceNow project projectGid: each SECTION (except "Untitled section") becomes a
+    // task under the project, its tasks under it, then every level of subtasks. Parents are written before children.
+    function loadPlan(planGid, projectGid, projectName) {
+        var secs = {};
+        all('/projects/' + planGid + '/sections?limit=100&opt_fields=gid,name').forEach(function (sec) {
+            if (!sec.name || /^untitled section$/i.test(sec.name.trim())) return;
+            secs[sec.gid] = sec.name.trim();
+            insert({
+                'correlation id': 'ASANA:' + sec.gid, 'parent correlation id': 'ASANA:' + projectGid,
+                'project correlation id': 'ASANA:' + projectGid, 'task name': sec.name.trim(), 'name': sec.name.trim(),
+                'section/column': sec.name.trim(), 'completed': 'false', 'parent task': projectName
+            }, {});
+            count++;
+        });
+        all('/projects/' + planGid + '/tasks?limit=100&opt_fields=' + FIELDS).forEach(function (t) {
+            var secGid = '';
+            (t.memberships || []).forEach(function (m) { if (m.project && m.project.gid == planGid && m.section && secs[m.section.gid]) secGid = m.section.gid; });
+            insertTask(t, secGid || projectGid, secGid ? secs[secGid] : projectName, projectGid);
+            if (t.num_subtasks) walk(t, projectGid);
+        });
     }
     function walk(parent, projectGid) {          // every level of subtasks
         all('/tasks/' + parent.gid + '/subtasks?limit=100&opt_fields=' + FIELDS).forEach(function (s) {
@@ -157,7 +179,7 @@
     try {
         var tracker = all('/projects/' + gs.getProperty('x_mig.asana.project_gid') + '/tasks?limit=100&opt_fields=' + FIELDS);
         var withFields = tracker.filter(function (t) { return (t.custom_fields || []).length; }).length;
-        import_log.info('Tracker rows read: ' + tracker.length + ' | with custom fields: ' + withFields + ' | script version 2026-11-23b');
+        import_log.info('Tracker rows read: ' + tracker.length + ' | with custom fields: ' + withFields + ' | script version 2026-11-24a');
         if (tracker.length && !withFields) import_log.error('Asana returned NO custom fields for the tracker rows - check the token (x_mig.asana.token) has access to the HR Project Portfolio 2026 project');
 
         if (MODE == 'projects') {
@@ -232,17 +254,9 @@
             migrated.forEach(function (m) {
                 if (trackerGids.indexOf(m.gid) >= 0) {
                     walk(m, m.gid);                                  // tracker item: its subtasks
-                    (PLAN[m.gid] || []).forEach(function (planGid) {  // + its linked plan project's tasks
-                        all('/projects/' + planGid + '/tasks?limit=100&opt_fields=' + FIELDS).forEach(function (t) {
-                            insertTask(t, m.gid, m.name, m.gid);
-                            if (t.num_subtasks) walk(t, m.gid);
-                        });
-                    });
-                } else if (SOURCE != 'tracker') {                   // regular projects only when they are in scope
-                    all('/projects/' + m.gid + '/tasks?limit=100&opt_fields=' + FIELDS).forEach(function (t) {
-                        insertTask(t, m.gid, m.name, m.gid);         // real project: its tasks...
-                        if (t.num_subtasks) walk(t, m.gid);          // ...and their subtasks
-                    });
+                    (PLAN[m.gid] || []).forEach(function (planGid) { loadPlan(planGid, m.gid, m.name); });  // + linked plan project
+                } else if (SOURCE != 'tracker') {
+                    loadPlan(m.gid, m.gid, m.name);                  // real Asana project: sections, tasks, subtasks
                 }
             });
         }

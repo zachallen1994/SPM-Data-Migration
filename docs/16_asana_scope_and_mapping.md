@@ -1,6 +1,7 @@
 # Asana -> ServiceNow: scope and mapping (single source of truth)
 
-Status: DRAFT - to be confirmed line by line before any further build. Nothing is changed in DEV/TEST/PROD until
+Status: S1 (Project Warren) and T2 (Annual Enrollment subtasks) CONFIRMED 2026-11-23. Task rules below built from the
+Project Warren export. Still DRAFT where marked ☐. Nothing is changed in DEV/TEST/PROD until
 this page is confirmed. Every later change must update this page first.
 
 ## 1. Scope - which Asana items become ServiceNow PROJECTS
@@ -22,7 +23,7 @@ Amanda Warfield, Mallory Trucksis (both email domains).
 | T1 | S1 project: **all its tasks and every level of subtasks** (e.g. Project Warren > HRTS > Health Benefit Plan Build > its 4 subtasks) | ☐ |
 | T2 | S2 row: its subtasks (e.g. Annual Enrollment > Nayya, Virtual Benefit Fairs, Ayble) | ☐ |
 | T3 | Completed tasks are loaded too (as Closed Complete), so the plan is whole | ☐ |
-| T4 | Asana **sections** (e.g. HRTS, Benefits): loaded as a top-level task each, with the section's tasks under it - OR not loaded (kept as text) | ☐ choose |
+| T4 | Asana **sections** (e.g. HRTS, Benefits): a task each under the project, with the section's tasks under it; "Untitled section" tasks sit directly under the project | built - ☐ confirm |
 
 ## 3. Project fields
 
@@ -49,11 +50,11 @@ Amanda Warfield, Mallory Trucksis (both email domains).
 |---|---|---|
 | Short description | task name | ☐ |
 | Parent | parent task (subtasks) or the project / section | ☐ |
-| Assigned to | Assignee (Tricia Figg) | ☐ |
+| Assigned to | Asana Assignee by email (Tricia Figg). Free-text "Assigned To" (Billie, IT) goes into the description | ☐ |
 | Planned start | custom "Start Date" (Sep 1), else Asana start date, else = due date | ☐ |
 | Planned end | Due date (Oct 23) | ☐ |
-| State | completed = Closed Complete; else "PMO Status"/"Task Status": In Progress = WIP; else Open | ☐ |
-| % complete | custom "% Complete" (50%) | ☐ |
+| State | Completed box or PMO Status exactly "Complete" = Closed Complete; "In Progress" (incl. "In Progress, Complete" not ticked) = WIP; else Open | ☐ |
+| % complete | custom "% Complete" (0.50 = 50%); closed = 100 | ☐ |
 | Actual start / end (closed tasks) | planned start / due date | ☐ |
 | Description | notes | ☐ |
 
@@ -68,3 +69,11 @@ Amanda Warfield, Mallory Trucksis (both email domains).
 One update set, built only after DEV passes section 5, containing: both Asana data sources, both Asana transform
 maps with ALL field maps and transform scripts. Reference data and properties set by hand per instance:
 portfolio "HR", x_mig.asana.token / project_gid / plan_links, Sites / Functional Area choices.
+
+## 7. Build files (current)
+
+| Piece | File |
+|---|---|
+| Both Asana data sources | servicenow/asana_data_source.js (version 2026-11-24a; MODE projects / tasks) |
+| Asana Project Tasks map | servicenow/asana_tasks_transform.js - complete map, checklist at the top |
+| Asana HR Project Portfolio map | field map files listed in section 3 (one consolidated file to follow after section 3 is confirmed) |

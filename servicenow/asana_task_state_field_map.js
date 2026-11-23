@@ -1,3 +1,4 @@
+// SUPERSEDED by asana_tasks_transform.js (the complete Asana tasks map). Do not use.
 // "Import Asana Project Tasks Transform Map" (u_import_asana_project_tasks -> pm_project_task)
 // Fixes "Validate state mapped to bucket" (every Asana task refused in TEST): the old State script read
 // u_project_status - a PROJECT column, empty on task rows - so it returned nothing ("undefined"), and it also used
