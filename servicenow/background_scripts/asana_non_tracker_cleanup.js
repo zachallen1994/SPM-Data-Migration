@@ -36,7 +36,7 @@ try {
     var keep = {}, found = 0;
     all('/projects/' + TRACKER + '/tasks?limit=100&opt_fields=name,completed,start_on,due_on,assignee.email,custom_fields.name,custom_fields.display_value').forEach(function (t) {
         found++;
-        if (pmOk(t.assignee ? t.assignee.email : '', cf(t, 'PM Assigned')) && inWindow(t.start_on, t.due_on) && active(t)) keep['ASANA:' + t.gid] = true;
+        if (inWindow(t.start_on, t.due_on) && active(t))   /* tracker rows: no PM filter */ keep['ASANA:' + t.gid] = true;
     });
     all('/workspaces/' + WORKSPACE + '/projects?archived=false&limit=100&opt_fields=name,completed,start_on,due_on,owner.email,current_status_update.status_type,custom_fields.name,custom_fields.display_value').forEach(function (p) {
         found++;

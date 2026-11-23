@@ -40,7 +40,8 @@ try {
     out('Scope: PMs on the HR PM list | ' + FROM + '..' + TO + ' | ' + (INCLUDE_COMPLETED ? 'active + completed' : 'active only'));
     all('/projects/' + TRACKER + '/tasks?limit=100&opt_fields=name,completed,start_on,due_on,assignee.email,custom_fields.name,custom_fields.display_value').forEach(function (t) {
         var pm = pmOf(t.assignee ? t.assignee.email : '', cf(t, 'PM Assigned'));
-        if (!pm || !inWindow(t.start_on, t.due_on)) return;
+        if (!inWindow(t.start_on, t.due_on)) return;          // tracker rows: no PM filter (HR portfolio)
+        pm = pm || '(tracker, PM ' + (cf(t, 'PM Assigned') || 'blank') + ')';
         if (done(t) && !INCLUDE_COMPLETED) { n.completedLeftOut++; return; }
         n.tracker++; perPm[pm] = (perPm[pm] || 0) + 1; TR.push(t);
         out('TRACKER | ' + t.name + ' | PM ' + cf(t, 'PM Assigned') + ' | ' + (t.start_on || '-') + ' -> ' + (t.due_on || '-') + ' | ' + (cf(t, 'Project Status') || '-') +

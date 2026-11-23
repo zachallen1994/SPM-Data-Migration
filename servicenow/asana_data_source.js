@@ -25,7 +25,7 @@
     var ONLY = [];                               // MODE 'tasks' test: ServiceNow project numbers or names, e.g. ['PRJ0011499']; [] = all
     // HR PMO scope (Richard Becker, HR PM list): only projects of THESE project managers, dated in the WINDOW.
     //   regular project: its Asana owner's email is in PM_EMAILS (either domain)
-    //   tracker row:     its "PM Assigned" names one of PM_NAMES (e.g. "Jen Angle/Carrie Lynn" counts)
+    //   tracker row:     ALWAYS in scope when active (the tracker is the HR portfolio) - no PM filter
     //   window:          start..due overlaps FROM..TO (no dates at all = included, logged)
     // [] = no PM filter. System property x_mig.asana.pm_emails (emails separated by ;) overrides PM_EMAILS.
     var PM_EMAILS = ['jennifer.angle@bsmhealth.org', 'jennifer.angle@mercy.com', 'carrie_lynn@bsmhealth.org', 'carrie_lynn@mercy.com',
@@ -185,7 +185,8 @@
             if (INCLUDE_TRACKER_ITEMS) {
                 tracker.forEach(function (t) {
                     if (!inPilot(t.name)) return;
-                    if (!pmNameOk(custom(t, 'PM Assigned')) && !pmEmailOk(t.assignee ? t.assignee.email : '')) { otherPm++; return; }
+                    // tracker rows = the HR portfolio itself: every active row is in scope, whoever the PM is (or none,
+                    // e.g. the Ireland rows). The PM list applies to regular Asana projects only.
                     if (!inWindow(t.start_on, t.due_on)) { outOfWindow++; return; }
                     if (!INCLUDE_COMPLETED && (t.completed || /^\s*\(closed\)/i.test(t.name) || SKIP_STATUS.indexOf(custom(t, 'Project Status')) >= 0)) {
                         skipped++;
