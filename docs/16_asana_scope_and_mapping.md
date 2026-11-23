@@ -1,79 +1,101 @@
-# Asana -> ServiceNow: scope and mapping (single source of truth)
+# Asana -> ServiceNow: requirements (single source of truth)
 
-Status: S1 (Project Warren) and T2 (Annual Enrollment subtasks) CONFIRMED 2026-11-23. Task rules below built from the
-Project Warren export. Still DRAFT where marked ☐. Nothing is changed in DEV/TEST/PROD until
-this page is confirmed. Every later change must update this page first.
+Status: REQUIREMENTS - reorganized 2026-11-23. No configuration changes until the open decisions (section 6) are
+answered. Every later change starts here.
 
 ## 1. Scope - which Asana items become ServiceNow PROJECTS
 
-| # | Rule | Example | Confirm |
+| # | Requirement | Source of truth | Status |
 |---|---|---|---|
-| S1 | Every **active** Asana project (not marked complete, not archived, name not starting "(Closed)") whose **owner** is on the HR PM list (Richard Becker's email) | Project Warren, Ireland WFM, Definity VMS Transition (if owned by a listed PM) | ☐ |
-| S2 | Every **active row** of the "HR Project Portfolio 2026" list, whoever the PM is | AMR, Well-being Program, Ireland HR ServiceNow Integration | ☐ |
-| S3 | A row (S2) and a project (S1) that are the same initiative load as ONE project: the row's fields, the project's tasks (property x_mig.asana.plan_links) | Job Profiles + its 3 phase projects; AMR + "2026 AMR (Jen)" | ☐ |
-| S4 | No date window (active = in scope) | | ☐ |
+| R1 | **Every row of the "HR Project Portfolio 2026" Asana project is a ServiceNow project** (the rows in the Excel export `Asana_Project_Fields.xlsx`), except rows that have a parent task (those are project tasks - R5). | Excel export = Asana register | Confirmed |
+| R2 | **Other Asana projects** (not the register) are in scope when **active** and **owned by** one of the HR PMs or Richard Becker (rbecker0@mercy.com). | Asana owner / "PM Assigned" | Confirmed rule - **list to be confirmed** (section 5) |
+| R3 | An R1 row and an R2 project that are the same initiative become ONE ServiceNow project (row's fields, project's tasks). | Pairs confirmed by Richard | Open (D3) |
 
-HR PM list: Jennifer Angle, Carrie Lynn, Keith McClure, Katie McDearmon, Lynne Hayes, Matthew Caldwell, Ian Whitis,
-Amanda Warfield, Mallory Trucksis (both email domains).
+HR PMs: Jennifer Angle, Carrie Lynn, Keith McClure, Katie McDearmon, Lynne Hayes, Matthew Caldwell, Ian Whitis,
+Amanda Warfield, Mallory Trucksis, + Richard Becker. (Both email domains.)
 
-## 2. Scope - PROJECT TASKS
+## 2. Structure - one ServiceNow model, two Asana shapes
 
-| # | Rule | Confirm |
+| ServiceNow | Normal Asana project (e.g. Project Warren) | Register (HR Project Portfolio 2026) |
 |---|---|---|
-| T1 | S1 project: **all its tasks and every level of subtasks** (e.g. Project Warren > HRTS > Health Benefit Plan Build > its 4 subtasks) | ☐ |
-| T2 | S2 row: its subtasks (e.g. Annual Enrollment > Nayya, Virtual Benefit Fairs, Ayble) | ☐ |
-| T3 | Completed tasks are loaded too (as Closed Complete), so the plan is whole | ☐ |
-| T4 | Asana **sections** (e.g. HRTS, Benefits): a task each under the project, with the section's tasks under it; "Untitled section" tasks sit directly under the project | built - ☐ confirm |
+| Project | the Asana project | each row (Well-being Program, AMR, Annual Enrollment) |
+| Level-1 summary task | each section (Compensation, HRTS) | - |
+| Project task | each task (Associate Job Mapping) | each subtask of the row (Nayya, Ayble) |
+| Child task | subtasks, any depth | sub-subtasks |
+| A section becomes | a task | the Functional Area of each row's project (Benefits & Well-Being = a grouping, not a record) |
+
+Scalability: the only per-structure setting is which Asana project(s) are registers (today one). Every other in-scope
+project is loaded as a normal project with no per-project configuration. Fields that mean the same thing but are named
+differently per Asana project (status: PMO Status / Status_Dim / Task Status; start: built-in / custom "Start Date")
+are read from an ordered list of names.
 
 ## 3. Project fields
 
-| ServiceNow field | Asana source (S2 row) | Asana source (S1 project) | Confirm |
-|---|---|---|---|
-| Name | row name | project name | ☐ |
-| Project manager | "PM Assigned" | project owner | ☐ |
-| Assigned to | same as Project manager | same | ☐ |
-| Business Owner | "HRSP / SME / Project Lead" | blank | ☐ |
-| Planned start / end | start / due date | project start / due date | ☐ |
-| State | "Project Status" (Not Started=Pending, In Progress/Delayed=WIP, On Hold=WIP+On Hold) | Open (Asana project has no status field) | ☐ |
-| Portfolio | HR | HR | ☐ |
-| Functional Area | section (Benefits & Well-Being split by HR COEs) | blank | ☐ |
-| Project Category | "Project Type" | blank | ☐ |
-| IT Required | "I&T Integrations Needed" | blank | ☐ |
-| Funding Type | "Funding" | blank | ☐ |
-| Sites | "Organization" (RSFH = Roper St. Francis Healthcare, GBS = Global Business Services, BSMH = ?) | blank | ☐ |
-| Priority | "Size/Complexity" | blank | ☐ |
-| Detailed description | notes + Size, I&T, Strategy Focus/Timeline, Organization, HR COEs, Cross-Impacts | project notes | ☐ |
-
-## 4. Task fields (Project Warren example: Health Benefit Plan Build)
-
-| ServiceNow task field | Asana source | Confirm |
+| ServiceNow | Register row (R1) | Normal project (R2) |
 |---|---|---|
-| Short description | task name | ☐ |
-| Parent | parent task (subtasks) or the project / section | ☐ |
-| Assigned to | Asana Assignee by email (Tricia Figg). Free-text "Assigned To" (Billie, IT) goes into the description | ☐ |
-| Planned start | custom "Start Date" (Sep 1), else Asana start date, else = due date | ☐ |
-| Planned end | Due date (Oct 23) | ☐ |
-| State | Completed box or PMO Status exactly "Complete" = Closed Complete; "In Progress" (incl. "In Progress, Complete" not ticked) = WIP; else Open | ☐ |
-| % complete | custom "% Complete" (0.50 = 50%); closed = 100 | ☐ |
-| Actual start / end (closed tasks) | planned start / due date | ☐ |
-| Description | notes | ☐ |
+| Name | row name | project name |
+| Project manager, Assigned to | "PM Assigned" (N/A, TBD = blank) | project owner |
+| Business Owner | "HRSP / SME / Project Lead" | blank |
+| Planned start / end | start / due date | project start / due date |
+| State | "Project Status" (Not Started = Pending, Started/Scoping = Investigating, In Progress/Delayed = Work in Progress, On Hold = WIP + On Hold ticked) | Open / Work in Progress (D5) |
+| Portfolio | HR | HR |
+| Functional Area | section (Benefits & Well-Being split by HR COEs Engaged / name) | blank |
+| Project Category | "Project Type" | blank |
+| IT Required | "I&T Integrations Needed" | blank |
+| Funding Type | "Funding" | blank |
+| Sites | "Organization" (RSFH = Roper St. Francis Healthcare, GBS = Global Business Services, BSMH = D4) | blank |
+| Priority | "Size/Complexity" | blank |
+| Description | notes + Size, I&T, Strategy Focus/Timeline, Organization, HR COEs, Cross-Impacts | project notes |
 
-## 5. Acceptance - per environment, before sign-off
+## 4. Task fields
 
-1. `asana_compare.js` (DEV) / manual spot check (TEST, PROD): 0 "NOT IN SERVICENOW", 0 "undefined".
-2. Spot check 3 projects against Asana: one S2 row (AMR), one S1 project (Project Warren), one with no PM (Ireland).
-3. Task count per project = Asana (Project Warren, Annual Enrollment).
-
-## 6. Moving between environments
-
-One update set, built only after DEV passes section 5, containing: both Asana data sources, both Asana transform
-maps with ALL field maps and transform scripts. Reference data and properties set by hand per instance:
-portfolio "HR", x_mig.asana.token / project_gid / plan_links, Sites / Functional Area choices.
-
-## 7. Build files (current)
-
-| Piece | File |
+| ServiceNow | Asana |
 |---|---|
-| Both Asana data sources | servicenow/asana_data_source.js (version 2026-11-24a; MODE projects / tasks) |
-| Asana Project Tasks map | servicenow/asana_tasks_transform.js - complete map, checklist at the top |
-| Asana HR Project Portfolio map | field map files listed in section 3 (one consolidated file to follow after section 3 is confirmed) |
+| Name | task name |
+| Parent | parent task, else its section (normal projects), else the project |
+| Planned start / end | start date (built-in, else custom "Start Date") / due date; only a due date = one-day task; no dates = placed by ServiceNow within its parent |
+| State | completed box, status "Complete", or name starting "(Closed)" = Closed Complete; "In Progress" = Work in Progress; else Open |
+| % complete | custom "% Complete"; closed = 100 |
+| Actual start / end (closed tasks) | planned start / due date |
+| Assigned to | Asana assignee (by email) |
+| Description | notes + free-text "Assigned To" (e.g. "Billie") + Asana status |
+
+Attachments: files stored in Asana are copied to the matching project / task; linked files (Drive, Box, OneDrive) are
+kept as a link in work notes.
+
+## 5. How the scope list is produced and confirmed (no Asana UI access needed)
+
+1. Run `background_scripts/asana_pm_scope_preview.js` (read-only, reads Asana with the migration token). It lists:
+   every register row (R1) and every other Asana project matching R2, with owner, dates, status and a link, plus
+   possible doubles (R3).
+2. Export the output and send it to Richard Becker: "These are the Asana items we will migrate. Confirm, strike, or add."
+3. His answer is recorded here (section 7) and becomes the only scope. Additions outside the rule go into the
+   property x_mig.asana.include; exclusions into a skip list.
+
+## 6. Open decisions
+
+| # | Decision | Owner |
+|---|---|---|
+| D1 | R1: ALL register rows, or only active ones (rows marked complete in Asana)? | Richard |
+| D2 | R1: rows with no listed PM (Well-being Program "N/A", Ireland rows) are in scope - confirm | Richard |
+| D3 | R3: which register rows have their plan in a separate Asana project (e.g. AMR / "2026 AMR (Jen)", Job Profiles / 3 phase projects, Pay Practice Optimization) | Richard / Jen Angle |
+| D4 | Sites value for "BSMH" | BA |
+| D5 | State for normal projects (no status field in Asana) | BA |
+| D6 | Is the extra-project list (section 5) complete - anything owned by someone else that must come? | Richard |
+
+## 7. Confirmed scope list
+
+(to be filled from section 5)
+
+## 8. Acceptance (per environment)
+
+1. Project count = confirmed list (section 7).
+2. `asana_compare.js` (DEV): 0 NOT IN SERVICENOW, 0 "undefined"; TEST/PROD: spot check.
+3. Three projects checked against Asana: AMR (register row), Project Warren (normal project, Workbench tree), Ireland
+   HR ServiceNow Integration (row without PM).
+4. Task counts per project = Asana.
+
+## 9. Build pieces (for reference - applied only after section 6 is answered)
+
+Data source: servicenow/asana_data_source.js (one script, MODE projects / tasks).
+Maps: built by background_scripts/asana_projects_map_setup.js and asana_tasks_map_setup.js (no manual pasting).
