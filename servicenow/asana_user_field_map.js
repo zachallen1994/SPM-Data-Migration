@@ -22,6 +22,17 @@ answer = (function transformEntry(source) {
         log.warn('Asana: no ServiceNow user with email ' + em + ' on ' + source.getValue('u_name'));
         return '';
     }
+    // HR PM list (Richard Becker): last name -> emails. Exact and safe even with duplicate user records in DEV.
+    var PM = { angle: ['jennifer.angle@bsmhealth.org', 'jennifer.angle@mercy.com'], lynn: ['carrie_lynn@bsmhealth.org', 'carrie_lynn@mercy.com'],
+        mcclure: ['kamcclure@bsmhealth.org', 'kamcclure@mercy.com'], mcdearmon: ['kmcdearmon@mercy.com'], hayes: ['lhayes@mercy.com'],
+        caldwell: ['mcaldwell4@mercy.com'], whitis: ['iwhitis@bsmhealth.org', 'iwhitis@mercy.com'],
+        warfield: ['awarfield@bsmhealth.org', 'awarfield@mercy.com'], trucksis: ['menims@bsmhealth.org', 'menims@mercy.com'] };
+    var last = name.toLowerCase().split(/\s+/).pop();
+    if (PM[last]) {
+        var up = new GlideRecord('sys_user');
+        up.addQuery('email', 'IN', PM[last].join(',')); up.orderByDesc('active'); up.setLimit(1); up.query();
+        if (up.next()) return up.getUniqueValue();
+    }
     var u = new GlideRecord('sys_user');
     u.addQuery('name', name); u.addQuery('active', true); u.query();
     if (u.getRowCount() == 1 && u.next()) return u.getUniqueValue();
