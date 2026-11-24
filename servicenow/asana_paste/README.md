@@ -18,6 +18,7 @@ Generated from the source files - if a source file changes, these are regenerate
 | on_hold.js | on_hold | |
 | u_sites.js | u_sites | |
 | u_it_required.js | u_it_required | |
+| onAfter_order_100.js | Transform Scripts > NEW onAfter, Order 100, Active | (keeps the Asana end date on insert) |
 Also: correlation_id <- u_correlation_id (direct, Coalesce); delete the primary_program field map;
 u_funding_type / u_project_category / priority / primary_goal: keep yours, with `return '';` above the last line.
 

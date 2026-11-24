@@ -14,13 +14,18 @@ answer = (function transformEntry(source) {
     var raw = (source.getValue(COLUMN) || '').trim();
     var name = raw.split(/\s*[\/,;&]\s*|\s+and\s+/i)[0].trim();
     if (!name || /^(n\/?a|tbd|none|undefined)$/i.test(name)) {
-        var em = (source.getValue('u_assignee_email') || '').toLowerCase().trim();
-        if (!FALLBACK_EMAIL || !em || em == 'undefined') return '';
-        var ue = new GlideRecord('sys_user');
-        ue.addQuery('email', em); ue.orderByDesc('active'); ue.setLimit(1); ue.query();
-        if (ue.next()) return ue.getUniqueValue();
-        log.warn('Asana: no ServiceNow user with email ' + em + ' on ' + source.getValue('u_name'));
-        return '';
+        if (!FALLBACK_EMAIL) return '';
+        // regular Asana project: the OWNER. Email when the staging table has an "Assignee Email" column, else the
+        // owner's NAME from the "Assignee" column (matched below like a PM name, e.g. Richard Becker)
+        var em = source.isValidField('u_assignee_email') ? (source.getValue('u_assignee_email') || '').toLowerCase().trim() : '';
+        if (em && em != 'undefined') {
+            var ue = new GlideRecord('sys_user');
+            ue.addQuery('email', em); ue.orderByDesc('active'); ue.setLimit(1); ue.query();
+            if (ue.next()) return ue.getUniqueValue();
+        }
+        name = source.isValidField('u_assignee') ? (source.getValue('u_assignee') || '').trim() : '';
+        if (!name || name == 'undefined') return '';
+        raw = name;
     }
     // HR PM list (Richard Becker): last name -> emails. Exact and safe even with duplicate user records in DEV.
     var PM = { angle: ['jennifer.angle@bsmhealth.org', 'jennifer.angle@mercy.com'], lynn: ['carrie_lynn@bsmhealth.org', 'carrie_lynn@mercy.com'],
