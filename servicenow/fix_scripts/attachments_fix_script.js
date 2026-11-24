@@ -5,7 +5,7 @@
 // Start with DRY_RUN = true: it only logs what it would do (System Logs, source "x_mig.attachments").
 var DRY_RUN = false;   // FULL LOAD setting (true = list only)
 var TABLES = ['pm_project', 'pm_project_task', 'dmn_demand', 'issue', 'risk'];   // records with an ASANA:/ADAPTIVE: correlation_id
-var ONLY = [];   // ✏️ test on a few records first: correlation_ids, e.g. ['ADAPTIVE:/Project/{05506AB6-...}', 'ASANA:1219075311754614']
+var ONLY = [];   // ✏️ project correlation ids = the project AND all its tasks. Test on a few first: correlation_ids, e.g. ['ADAPTIVE:/Project/{05506AB6-...}', 'ASANA:1219075311754614']
                 //    [] = every migrated record
 var MAX_MB = 0;                                                   // 0 = no limit (every stored file is copied);
                                                                   // ServiceNow's own max size (com.glide.attachment.max_size) still applies
@@ -126,7 +126,10 @@ TABLES.forEach(function (table) {
         gs.logWarning(table + ' has no correlation_id field - skipped (migrated records cannot be identified)', LOG);
         return;
     }
-    if (ONLY.length) gr.addQuery('correlation_id', 'IN', ONLY.join(','));
+    if (ONLY.length) {   // the listed records AND, for project tasks, every task of a listed project
+        var oc = gr.addQuery('correlation_id', 'IN', ONLY.join(','));
+        if (table == 'pm_project_task') oc.addOrCondition('top_task.correlation_id', 'IN', ONLY.join(','));
+    }
     else gr.addQuery('correlation_id', 'STARTSWITH', 'ASANA:').addOrCondition('correlation_id', 'STARTSWITH', 'ADAPTIVE:');
     gr.query();
     while (gr.next()) {
