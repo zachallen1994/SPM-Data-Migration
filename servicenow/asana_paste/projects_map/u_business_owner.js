@@ -22,6 +22,9 @@ answer = (function transformEntry(source) {
             var ue = new GlideRecord('sys_user');
             ue.addQuery('email', em); ue.orderByDesc('active'); ue.setLimit(1); ue.query();
             if (ue.next()) return ue.getUniqueValue();
+            ue = new GlideRecord('sys_user');                // same mailbox on another domain (@mercy.com vs @bsmhealth.org)
+            ue.addQuery('email', 'STARTSWITH', em.split('@')[0] + '@'); ue.addQuery('active', true); ue.query();
+            if (ue.getRowCount() == 1 && ue.next()) return ue.getUniqueValue();
         }
         name = source.isValidField('u_assignee') ? (source.getValue('u_assignee') || '').trim() : '';
         if (!name || name == 'undefined') return '';
