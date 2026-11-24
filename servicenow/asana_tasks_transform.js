@@ -21,6 +21,7 @@
 //   Field map  [script] -> assigned_to                   PART G   Choice action ignore
 //   Field map  [script] -> description                   PART H
 //   Transform script onBefore Order 100                  PART A   (project + parent)
+//   Transform script onAfter  Order 100                  asana_paste/tasks_map/onAfter_order_100.js (keeps dates on insert)
 //   Transform script onBefore Order 200                  PART B   (planned dates; dateless = parent's, else project's)
 //   NO field maps for start_date / end_date / top_task / parent (PART A / B set them).
 // =====================================================================================================================

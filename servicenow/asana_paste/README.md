@@ -27,6 +27,7 @@ u_funding_type / u_project_category / priority / primary_goal: keep yours, with 
 |---|---|---|
 | onBefore_order_100.js | Transform Scripts > onBefore, Order 100, Active | |
 | onBefore_order_200.js | Transform Scripts > onBefore, Order 200, Active | |
+| onAfter_order_100.js | Transform Scripts > NEW onAfter, Order 100, Active | keeps planned end; actual start = planned start |
 | state.js | Field Maps > state | Choice action ignore |
 | percent_complete.js | Field Maps > percent_complete | |
 | work_start.js | Field Maps > work_start | Date format yyyy-MM-dd |
