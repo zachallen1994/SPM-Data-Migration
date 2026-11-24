@@ -34,5 +34,7 @@ u_funding_type / u_project_category / priority / primary_goal: keep yours, with 
 | work_end.js | Field Maps > work_end | Date format yyyy-MM-dd |
 | assigned_to.js | Field Maps > assigned_to | Choice action ignore |
 | description.js | Field Maps > description | |
+| status.js | Field Maps > NEW status | Choice action ignore |
+| override_status.js | Field Maps > NEW override_status | |
 Also: correlation_id <- u_correlation_id (direct, Coalesce); short_description <- u_task_name (direct).
 Delete everything else on this map (start_date, end_date, additional_assignee_list, work_notes field maps; other scripts).

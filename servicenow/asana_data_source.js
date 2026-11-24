@@ -148,7 +148,7 @@
             'task name': s.name.trim(),
             'name': s.name.trim(),
             'section/column': section(s),
-            'assigned to': s.assignee ? s.assignee.name : '',
+            'assigned to': custom(s, 'Assigned To'),          // the free-text custom field (e.g. "Billie"); the Asana assignee goes to Assignee / Assignee Email
             'assignee': s.assignee ? s.assignee.name : '',
             'assignee email': s.assignee ? s.assignee.email : '',
             'start date': s.start_on || custom(s, 'Start Date'),   // Asana start date, else the custom "Start Date" field
@@ -193,7 +193,7 @@
     try {
         var tracker = all('/projects/' + gs.getProperty('x_mig.asana.project_gid') + '/tasks?limit=100&opt_fields=' + FIELDS);
         var withFields = tracker.filter(function (t) { return (t.custom_fields || []).length; }).length;
-        import_log.info('Tracker rows read: ' + tracker.length + ' | with custom fields: ' + withFields + ' | script version 2026-11-24h');
+        import_log.info('Tracker rows read: ' + tracker.length + ' | with custom fields: ' + withFields + ' | script version 2026-11-24i');
         if (tracker.length && !withFields) import_log.error('Asana returned NO custom fields for the tracker rows - check the token (x_mig.asana.token) has access to the HR Project Portfolio 2026 project');
 
         if (MODE == 'projects') {
