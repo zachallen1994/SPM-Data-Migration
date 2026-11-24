@@ -14,8 +14,13 @@ answer = (function transformEntry(source) {
     };
     var DEFAULT = 'BSMH';      // no rate card in Adaptive -> BSMH (BA); '' = leave blank
 
+    // Adaptive Project Type -> rate model, whatever the rate card says (BA: Construction projects use "Construction")
+    var BY_PROJECT_TYPE = { 'construction': 'Construction' };   // ✏️ project type (lower case) : rate model name
+
     var v = (source.getValue(SOURCE_COLUMN) || '').trim();
     if (v == 'undefined' || v == 'null') v = '';
+    var ptype = source.isValidField('u_project_type') ? (source.getValue('u_project_type') || '').toLowerCase().trim() : '';
+    if (BY_PROJECT_TYPE[ptype]) v = BY_PROJECT_TYPE[ptype];
     if (!v) v = DEFAULT;
     if (!v || !TABLE) return '';
     var name = ALIASES[v.toLowerCase()] || v;
