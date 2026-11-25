@@ -6,8 +6,8 @@
 
     // ======================= CONFIG ✏️ =======================
     var STATES = ['Active'];           // Adaptive program states to load
-    var EXCLUDE = ['Test Program'];    // exact names to leave out
-    var INCLUDE = ['Construction Program'];   // ✏️ exact names loaded whatever their State (programs whose projects are migrated)
+    var EXCLUDE = ['Test Program', 'Construction Program'];   // exact names to leave out (Construction Program = a PROJECT, see the projects data source)
+    var INCLUDE = [];                  // ✏️ exact names loaded whatever their State (programs whose projects are migrated)
     var MAP = {                        // column LABEL : Adaptive Program field
         'Correlation ID':  'id',
         'Name':            'Name',

@@ -195,6 +195,37 @@
         rows = rows.slice((n - 1) * size, n * size);
         import_log.info('Batch ' + n + ' of ' + of + ': ' + rows.length + ' of ' + inScope + ' projects in scope');
     }
+    // Adaptive PROGRAMS that are really projects (BA: "Construction Program" = a project under the IT portfolio).
+    // Loaded as a project row with Project Type "Program" (demand_project_split.js: always a project;
+    // construction_portfolio_transform.js: Program -> IT portfolio). Only with no batch or batch 1, and when PILOT
+    // is "all" or names it.
+    var PROGRAMS_AS_PROJECTS = ['Construction Program'];   // ✏️ exact Adaptive program names
+    if (!BATCH || parseInt(BATCH[1], 10) == 1) PROGRAMS_AS_PROJECTS.forEach(function (pname) {
+        if (PILOT.length && PILOT.indexOf(pname) < 0) return;
+        var pr = new sn_ws.RESTMessageV2();
+        pr.setHttpMethod('POST');
+        pr.setEndpoint(gs.getProperty('x_mig.adaptive.url') + '/data/query');
+        pr.setRequestHeader('Authorization', 'ApiKey ' + gs.getProperty('x_mig.adaptive.key'));
+        pr.setRequestHeader('Content-Type', 'application/json');
+        pr.setRequestBody(JSON.stringify({ q: "SELECT Name, Description, StartDate, DueDate, State, Manager.Email, Manager.DisplayName FROM Program WHERE Name = '" +
+            pname.replace(/'/g, "''") + "'", paging: { from: 0, limit: 5 } }));
+        var pres = pr.execute();
+        if (pres.getStatusCode() != 200) { import_log.error('Adaptive program "' + pname + '": ' + pres.getStatusCode() + ' ' + pres.getBody()); return; }
+        (JSON.parse(pres.getBody()).entities || []).forEach(function (e) {
+            var row = {}, set = function (label, v) { var c = colByLabel[label]; if (c && v) row[c] = v; };
+            set('correlation id', 'ADAPTIVE:' + e.id);
+            set('name', e.Name);
+            set('project description', val(e, 'Description'));
+            set('schedule start', val(e, 'StartDate'));
+            set('schedule finish', val(e, 'DueDate'));
+            set('state', val(e, 'State'));
+            set('manager email', val(e, 'Manager.Email'));
+            set('manager', val(e, 'Manager.DisplayName'));
+            set('project type', 'Program');
+            rows.push({ id: e.id, row: row });
+            import_log.info('Adaptive program loaded as a project: ' + e.Name);
+        });
+    });
     rows.forEach(function (r) { import_set_table.insert(r.row); count++; });
     import_log.info('Adaptive projects loaded: ' + count + ' (skipped, other project type: ' + skippedType +
         '; skipped by State: ' + JSON.stringify(skippedState) + ')');
