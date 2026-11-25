@@ -4,6 +4,7 @@ Step No.,Step,Responsible,Estimate (all 381 projects),Notes
 16.2,"System properties set: x_mig.adaptive.url / key (PROD key), pilot = all, states = Active;On Hold, project_types = Project;Construction;Operational Projects, batch = 1/7, scope = latest",GF,5 min,Property names exactly as listed (states with an s).
 16.3,"x_mig.migration_running = true; notifications suppressed (row 13); 'Restrict time card to unassigned user' inactive (row 12)",BSMH/GF,5 min,
 16.4,"Old maps inactive: Adaptive Capex Budget, Adaptive Opex Budget, Adaptive Capex Actuals, Adaptive Opex Actuals",GF,5 min,Prevents duplicate budget lines.
+16.6,"Each resource has exactly ONE resource group on their employee profile (TEST, PROD)",BSMH (Implementation),TBD,"Resource assignments take the group from it; done before the resource load."
 16.5,"Portfolio 'Construction' exists; rate models, cost types (incl. Other Opex / Other Capex), fiscal years, Groups choice 'Business Partners'",BSMH (Implementation),TBD,Reference data - not in the update sets.
 17,Data Migration - once,,,
 17.1,1. Adaptive Programs - API -> Import Adaptive Programs,GF,1 min,
@@ -22,6 +23,7 @@ Step No.,Step,Responsible,Estimate (all 381 projects),Notes
 19.4,10. Asana Projects - API -> Asana Projects map,GF,5 min,Can run any time after step 1.
 19.5,11. Asana Project Tasks - API -> Asana Project Tasks map,GF,~3 h (not re-measured),
 19.6,12. Time cards to Approved / Processed,GF,TBD - being timed in DEV,"Business rules on = ~6 s per card (~70,000 cards = days). Method to be decided: pre-load before the window, or load as Processed with one roll-up."
+19.65,"12b. Resource assignment groups: background script resource_assignment_group_fill.js (DRY_RUN first; fills only empty groups from the employee profile)",GF,~minutes,"Safety net after the resource load; counts show any person still without a group."
 19.7,13. Resource assignments to Allocated (background script),GF,TBD - being timed in DEV,After 16.1.
 19.8,14. Attachments (run as background script in chunks - fix scripts not available in PROD),GF,TBD - file count being measured,
 19.9,"x_mig.migration_running = false; notifications and rules back on",BSMH/GF,10 min,
